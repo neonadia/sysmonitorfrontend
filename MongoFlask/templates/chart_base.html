@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <meta http-equiv="refresh" content="3600">
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <!-- bootstrap -->
+    <script src="../static/Chart.min.js"></script>
+    <script src="../static/utils.js"></script>
+    <script src="../static/chartjs-plugin-zoom.js"></script>
+    <script src="../static/hammer.min.js"></script>
+    <style>
+    canvas{
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="form-row align-items-center">
+            <div class='col col-auto'>
+                <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
+            </div>
+            <div class="col col-auto">
+                <i class="fas fa-history text-white"></i>
+            </div>
+            <div class="col col-auto">
+                <input type="text" id="start" class="form-control" style="font-size:18px;" value="">
+            </div>
+            <div class="col col-auto">
+                <i class="fas fa-angle-double-right text-white"></i>
+            </div>
+            <div class="col col-auto">
+                <input type="text" id="end" class="form-control" style="font-size:18px;" value="">
+            </div>
+            <div class="col col-auto">
+                <button class="btn btn-primary btn-lg mr-1" id="submit">Submit</button>
+            </div>
+            <div class="col col-auto">
+                <button class="btn btn-primary btn-lg mr-1" id="allData">All Data</button>
+            </div>
+            <div class="dropdown col col-auto">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Time Range Setting
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <button class="dropdown-item" id="defaulttime">Last half-hour</button>
+                        <button class="dropdown-item" id="oneHour">Last hour </button>
+                        <button class="dropdown-item" id="oneDay">Last day</button>   
+                    </div>
+            </div>
+            <div class="dropdown col col-auto">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Other Sensors
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}">Power Consumption</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}">Power Supply Voltage</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}">Power Supply Power</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}">Voltage</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}">Processors Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}">VRM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}">DIMM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}">Others Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}">Fan Speed</a>
+                    </div>
+            </div>
+            <div class="dropdown col col-auto">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Other Nodes
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for ip in ip_list %}
+                        <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                        {% endfor %}
+                    </div>
+            </div>
+            <div class="col col-auto ">
+                <button class="btn btn-danger btn-lg mr-1" onclick="self.close()">Close</button>
+            </div>
+        </div>
+    </nav>
+
+    <div style="width:90%;text-align: center;">
+        {% block canvas %}
+        {# canvas name #}
+        {% endblock %}
+        <!-- <p type="text" id="clock"></p> --> 
+    </div>
+
+    <script>
+        var dataset = {{ dataset|tojson }};
+        
+        {% block config %}
+        {% endblock %}
+        
+        var start = dataset.datetime[0];
+        var end = dataset.datetime[dataset.datetime.length - 1];
+        document.getElementById("start").value = start;
+        document.getElementById("end").value = end;
+
+        function getRange(data, start, end){
+            var i;
+            var result = [0, data.length-1];
+            var t = "";
+            for (i=0; i < data.length; i++){
+                if (data[i] >= start) {
+                    result[0] = i;
+                    break;
+                }
+            }
+            for (i=0; i < data.length; i++) {
+                if (data[i] > end) {
+                    result[1] = i-1;
+                    break;
+                } else if (data[i] == end) {
+                    result[1] = i;
+                    break;
+                }
+            }
+            return result
+
+        }
+        
+        {% block submit %}
+        {# function of submit button #}
+        {% endblock %}
+
+                // rearrange the time span
+        function rearange(tstart, tend){
+            document.getElementById("start").value = tstart;
+            document.getElementById("end").value = tend;
+            document.getElementById('submit').click();
+        }
+        
+        
+        // show all
+        document.getElementById('allData').addEventListener('click', function() {
+            rearange(dataset.datetime[0],dataset.datetime[dataset.datetime.length - 1]);
+        });
+        
+        // If the dataset contains more than data longer than the time range, it will only show the data of the last time period of time range.
+
+        function settimerange(timerange) {         
+            const defTimeRange = 1 * timerange * 60 * 60 * 1000; //default time range day * hour * min * sec * msec
+            const lastDate = new Date(dataset.datetime[dataset.datetime.length - 1]);
+            const firstDate = new Date(dataset.datetime[0]);
+            const defTimeRangeBefore = new Date(lastDate - defTimeRange);
+            var defTimeRangeBeforeStr = defTimeRangeBefore.getFullYear() + "-" + ("00" + (defTimeRangeBefore.getMonth() + 1)).slice(-2) + "-" + ("00" + defTimeRangeBefore.getDate()).slice(-2) + " " + ("00"+ defTimeRangeBefore.getHours()).slice(-2) + ":" + ("00" + defTimeRangeBefore.getMinutes()).slice(-2) + ":" + ("00" + defTimeRangeBefore.getSeconds()).slice(-2);
+            if ( defTimeRangeBefore > firstDate){
+                range_ini = getRange(dataset.datetime, defTimeRangeBeforeStr, end);        
+                rearange(dataset.datetime[range_ini[0]],dataset.datetime[dataset.datetime.length - 1]);
+            } else {
+            document.getElementById('allData').click();
+            }
+        }
+
+        document.getElementById('defaulttime').addEventListener('click', function() { 
+            settimerange(0.5)
+        });
+        document.getElementById('oneHour').addEventListener('click', function() { 
+            settimerange(1)
+        });
+        document.getElementById('oneDay').addEventListener('click', function() { 
+            settimerange(24)
+        });
+        
+        document.getElementById('defaulttime').click();
+
+
+/*      
+        function startTime() {
+            var today = new Date()
+            today.setHours(today.getHours() + 7) // adjust time
+            var year = today.getYear() + 1900;
+            var month = today.getMonth() + 1;
+            var day = today.getDate();
+            var h = today.getHours();
+            var m = today.getMinutes();
+            var s = today.getSeconds();
+            year = checkTime(year);
+            month = checkTime(month);
+            day = checkTime(day);
+            h = checkTime(h);
+            m = checkTime(m);
+            s = checkTime(s);
+            document.getElementById('clock').innerHTML = "Local Time: " + year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s;
+            var t = setTimeout(startTime, 500);
+        }
+        function checkTime(i) {
+            if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
+            return i;
+        }
+        startTime();
+*/
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+    <li class="dropdown">
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Documentations
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="{{ url_for('howToDeploy') }}" role="button" target="_blank">Deployment Manual</a>
+                <a class="dropdown-item" href="{{ url_for('developmentnote') }}" role="button" target="_blank">Development Notes</a>
+                <a class="dropdown-item" href="{{ url_for('downloadClusterReport') }}" role="button" target="_blank">Cluster Report</a>
+            </div>            
+    </li>
+    <li class="dropdown">
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Our Team
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="https://www.supermicro.com/en/solutions/high-performance-computing" target="_blank">HPC Overview</a>   
+                <a class="dropdown-item" href="http://172.31.32.198:8080/" target="_blank">Benchmark BLOG</a>
+                <a class="dropdown-item" href="http://solution.supermicro.com/bin/solutions?req=solutions&preload=db" target="_blank">Our Solutions</a>             
+            </div>
+    </li>
+    
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('about') }}" role="button" target="_blank">About</a>
+    </li>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>udpsercercontroller</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <!-- <script src='static/knockout-3.5.1.js' type='text/javascript'></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/alfg/ping.js@0.2.2/dist/ping.min.js" type="text/javascript"></script> -->
+    <!-- <script src="static/ping.js" type="text/javascript"></script> -->
+
+</head>
+
+<style>
+    ul span {
+    color: green;
+}
+    hr.dotted {
+    border-top: 3px dotted #0275d8;
+}
+
+    hr.solid {
+    border-top: 3px solid #0275d8;
+}
+
+</style>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+        <ul class="navbar-nav">
+        
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white"  href="" role="button">
+                <i class="fas fa-power-off"></i>
+                </a>
+            </li>
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                UDP SERVER
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item">Beta Version 1.0</a> 
+                </div>
+            </li>
+            
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('udpoutput') }}" role="button">
+                UDP Benchmark Results
+                </a>
+            </li>
+            
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Current Selected OS IPs
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    {% for ip, indicator in data %}
+                    {% if indicator == 1 %}
+                    <a class="dropdown-item text-success font-weight-bold">{{ ip }}</a>
+                    {% else %}
+                    <a class="dropdown-item">{{ ip }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </li>
+            
+            
+            {% include "documentationButton.html" %}
+
+        </ul>
+    </nav>
+
+    <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+        <div class ="row">
+            <div class="col">
+                <form action="/udpserverupload" method="POST" enctype="multipart/form-data" id = "fileform">
+
+                    <div class="form-group">
+                        <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
+                        <br>
+                        <h4>Option 1: Upload a text file of the BMC IPs</h4>
+                        <label>Choose your text file</label>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="file" id="file" required>
+                            <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> OS IPs.
+                            </small>
+                            <output id="list"></output>
+                        </div>
+                    </div>
+
+                    <button id="uploadbutton" type="submit" class="btn btn-primary">UPLOAD FILE</button>                                        
+                    <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
+
+                </form>
+            </div>
+        </div>
+        
+        <br>
+        
+        <div class ="row">
+            <div class="col">
+
+                <form action="/advanceinputgenerator" method="POST" enctype="multipart/form-data" id = "inputform">
+
+                    <div class="form-group">
+                        <h4>Option 2: Input IPs</h4>
+                        <label>Input IP range</label>
+                            <div class ="row">
+                            <div class="col-auto">
+                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                            </div>
+                            <div class="col-auto">
+                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
+                            </div>
+                            <input type="hidden" id="inputtype" name="inputtype" value="udpserveruploadip">
+                            <input type="hidden" id="redirectpage" name="redirectpage" value="udpserverupload">
+                            <input type="hidden" id="iptype" name="iptype" value="os">
+                            </div>
+                    </div>
+
+                    <button id="inputbutton" type="submit" class="btn btn-primary">CREATE FILE</button>                                        
+                    <small id="help1" class="form-text text-muted">Input file will be created.</small>
+
+                </form>
+            </div>
+        </div>
+        
+        <hr class="solid">
+        
+        <div class ="row">
+            <div class="col">
+                <form action="/udpserverinitialize" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP 2:</u> Initialize Target Clients</h3>
+                    <small id="help0" class="form-text text-muted">Request target clients to send h back.</small>
+                    <br>
+                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">SEND REQUEST</button>
+                </form>
+            </div>
+        </div>
+        
+        <hr class="solid">
+        
+        <div class ="row">
+            <div class="col">
+                <form action="/udpserveruploadinputfile" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP 3 Optional:</u> Upload Benchmark Input</h3>
+                    <br>
+                    <h4>Input File Upload</h4>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="bminputfile" id="bminputfile" required>
+                            <small id="help1" class="form-text text-muted">Please upload the necessary input files before running benchmark</small>
+                            <br>                            
+                        </div>
+                    <button id="uploadfilebutton" type="submit" class="btn btn-primary" target="_blank">UPLOAD</button>
+                </form>
+            </div>
+            <div class="col">
+                <form action="/udpserversendfileandrun" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP 3:</u> Run Benchmarks</h3>
+                    <br>
+                    <h4>Config File Upload</h4>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="inputfile" id="inputfile" required>
+                            <small id="help2" class="form-text text-muted">Please upload the configs for running benchmarks</small>
+                            <output id="dict"></output>
+                            <br>                            
+                        </div>
+                    <button id="uploadfilebutton" type="submit" class="btn btn-primary" target="_blank">RUN BENCHMARK</button>
+                </form>
+            </div>
+        </div>
+        
+        <hr class="solid">
+        
+        <div class ="row">
+            <div class="col">
+                <form action="/udpservercheckonline" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP X:</u> Check Connections</h3>
+                    <small id="help3" class="form-text text-muted">Check connections between server and client.</small>
+                    <br>
+                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">CHECK CONNECTIONS</button>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+    <!-- Footer -->
+    <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+        <!-- Footer Text -->
+        <div class="container-fluid text-center text-md-left">
+    
+    
+    
+            <!-- Content -->
+            <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+            <p>LINUX CLUSTER MONITOR TESTING MODULE is currently under construction.  
+            </p>
+    
+    
+    
+        </div>
+        <!-- Footer Text -->
+    
+        <!-- Copyright  class="footer-copyright text-center py-3" -->
+        <div class="text-center text-light bg-dark">Copyright © 2020 
+            <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+            All Rights Reserved
+        </div>
+        <!-- Copyright -->
+  
+    </footer>
+    <!-- Footer -->
+    
+    <script type="text/javascript">
+
+        
+        
+        function handleFileSelect(evt) {
+            var file = document.getElementById("file").files[0];
+
+            if (file) {
+                var reader = new FileReader();
+                reader.readAsText(file, "UTF-8");
+                reader.onload = function (evt) {
+                    const inputarray = evt.target.result.split("\n");
+                    var output = "";
+                    for(i = 0; i < inputarray.length; i++ ){
+                        if (inputarray[i].split(" ").length != 1) {
+                            output = output + '<div style="color:red">EACH LINE NEEDS OS IP only!</div>';
+                            continue;
+                        }
+
+                        var iparray = inputarray[i].split(" ")[0];
+                        if (iparray.length == 0 ){
+                            output = output + ' <div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>'
+                            continue;
+                        }
+                        else {          
+                            if (ValidateIPaddress(iparray)){
+                                output = output + iparray + ' <a style="color:green">VALID IP</a><br>';
+                            }
+                            else {
+                                output = output + iparray + ' <a style="color:red">INVALID IP</a><br>';
+                            }
+                        }   
+                    }
+                    output = "<strong>FOUND OS IPs:<br />" + output;
+                    document.getElementById("list").innerHTML = output;
+                }
+                reader.onerror = function (evt) {
+                    document.getElementById("list").innerHTML = "error reading file";
+                }
+            }
+        }
+
+        document.getElementById('file').addEventListener('change', handleFileSelect, false);
+        
+        function ValidateIPaddress(ipaddress) {
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+        
+        function handleInputFileSelect(evt) {
+            var inputfile = document.getElementById("inputfile").files[0];
+
+            if (inputfile) {
+                var reader = new FileReader();
+                reader.readAsText(inputfile, "UTF-8");
+                reader.onload = function (evt) {
+                    var inputdict= JSON.parse(evt.target.result);
+                    var output2 = '<strong class="text-success">Found Configurations as below:</strong><br>';
+                    for ( key in inputdict ) {
+                       output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
+                    }
+                    document.getElementById("dict").innerHTML = output2;
+                }
+                reader.onerror = function (evt) {
+                    document.getElementById("dict").innerHTML = "error reading file";
+                }
+            }
+        }
+
+        document.getElementById('inputfile').addEventListener('change', handleInputFileSelect, false);
+        
+    </script>
+</body>
+</html>
+

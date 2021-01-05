@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>sumtoolbox</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <!-- <script src='static/knockout-3.5.1.js' type='text/javascript'></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/alfg/ping.js@0.2.2/dist/ping.min.js" type="text/javascript"></script> -->
+    <!-- <script src="static/ping.js" type="text/javascript"></script> -->
+
+</head>
+
+<style>
+    ul span {
+    color: green;
+}
+    hr.dotted {
+    border-top: 3px dotted #0275d8;
+}
+
+    hr.solid {
+    border-top: 3px solid #0275d8;
+}
+
+</style>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+        <ul class="navbar-nav">
+        
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white"  href="" role="button">
+                <i class="fas fa-power-off"></i>
+                </a>
+            </li>
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                SUM TOOL BOX
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item">Beta Version 1.0</a> 
+                </div>
+            </li>
+            
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Current Selected IPs
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    {% for ip, indicator in data %}
+                    {% if indicator == 1 %}
+                    <a class="dropdown-item text-success font-weight-bold">{{ ip }}</a>
+                    {% else %}
+                    <a class="dropdown-item">{{ ip }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </li>
+            
+            
+            {% include "documentationButton.html" %}
+
+        </ul>
+    </nav>
+
+    <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+        <div class ="row">
+            <div class="col">
+                <form action="/sumtoolboxupload" method="POST" enctype="multipart/form-data" id = "fileform">
+
+                    <div class="form-group">
+                        <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
+                        <br>
+                        <h4>Option 1: Upload a text file of the BMC IPs</h4>
+                        <label>Choose your text file</label>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="file" id="file" required>
+                            <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> BMC IPs, USER NAME and PASSWORD seperated by space.
+                            </small>
+                            <output id="list"></output>
+                        </div>
+                    </div>
+
+                    <button id="uploadbutton" type="submit" class="btn btn-primary">UPLOAD FILE</button>                                        
+                    <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
+
+                </form>
+            </div>
+        </div>
+        
+        <br>
+        
+        <div class ="row">
+            <div class="col">
+
+                <form action="/advanceinputgenerator" method="POST" enctype="multipart/form-data" id = "inputform">
+
+                    <div class="form-group">
+                        <h4>Option 2: Input IPs</h4>
+                        <label>Input IP range</label>
+                            <div class ="row">
+                            <div class="col-auto">
+                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                            </div>
+                            <div class="col-auto">
+                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
+                            </div>
+                            <input type="hidden" id="inputtype" name="inputtype" value="suminput">
+                            <input type="hidden" id="redirectpage" name="redirectpage" value="sumtoolboxupload">
+                            <input type="hidden" id="iptype" name="iptype" value="ipmi">
+                            </div>
+                    </div>
+
+                    <button id="inputbutton" type="submit" class="btn btn-primary">CREATE FILE</button>                                        
+                    <small id="help1" class="form-text text-muted">Input file will be created.</small>
+
+                </form>
+            </div>
+        </div>
+        
+        <hr class="solid">
+        
+        <div class ="row">
+            <div class="col">
+                <form action="/sumbioscompoutput" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP 2:</u> Run SUM Processes</h3>
+                    <br>
+                    <h4>Option 1: BIOS Settings Comparison</h4>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp GetCurrentBiosCfg &nbsp --file &nbsp htmlBios --overwrite</label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Commands above will be sent to target systems and comparison will be made.</small>
+                          <br>
+                    <button id="testrunbutton" type="submit" class="btn btn-success" target="_blank">COMPARE</button>
+                </form>
+            </div>
+            <div class="col">
+                <form action="/sumbootorderdownload" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <br>
+                    <br>
+                    <h4>Option 2: Boot Order Download</h4>
+
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp GetCurrentBiosCfg &nbsp --file &nbsp htmlBios --overwrite</label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Commands above will be sent to target systems and boot order table will be sent.</small>
+                          <br>
+                    <button id="testrunbutton" type="submit" class="btn btn-success">DOWNLOAD</button>
+                </form>
+            </div>
+        </div>
+        
+        <hr class="dotted">
+        
+        <div class ="row">
+            <div class="col">
+                <form action="/sumbiosimageupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h4>Option 3: BIOS Update</h4>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="biosimage" id="biosimage" required>
+                            <small id="help" class="form-text text-muted">Please upload a bios image</small>
+                        </div>
+                        <br>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp UpdateBios &nbsp --file &nbsp 
+                            <a class="text-success">BiosImage</a></label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Please upload the BIOS image before start updating.</small>
+                          <br>
+                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumbiosupdateoutput') }}">UPATE</a>
+                </form>
+            </div>
+            <div class="col">
+                <form action="/sumbmcimageupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h4>Option 4: BMC Update</h4>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="bmcimage" id="bmcimage" required>
+                            <small id="help" class="form-text text-muted">Please upload a bios image</small>
+                        </div>
+                        <br>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp UpdateBmc &nbsp --file &nbsp 
+                            <a class="text-success">BMCImage</a></label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Please upload the BMC image before submit.</small>
+                          <br>
+                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumbmcupdateoutput') }}">UPATE</a>
+                </form>
+            </div>
+        </div>
+
+        <hr class="dotted">
+        
+        <div class ="row">
+            <div class="col">
+                    <h4>Option 5: Get BIOS Settings</h4>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">
+                            ./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp GetCurrentBiosCfg &nbsp --file &nbsp BiosSettings_RackName/html --overwrite
+                            </label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">The BIOS settings are downloaded as tar file.</small>
+                          <br>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumdownloadbiossettings') }}">DOWNLOAD</a>
+            </div>
+            <div class="col">
+                <form action="/sumbiossettingsupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h4>Option 6: Change BIOS Settings</h4>
+                        <div class="custom-file">
+                            <input type="file" class="form-control-file form-primary" name="biossettings" id="biossettings" required>
+                            <small id="help" class="form-text text-muted">Please upload BIOS settings file</small>
+                        </div>
+                        <br>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp ChangeBiosCfg &nbsp --file &nbsp 
+                            <a class="text-success">BiosSettings</a> --skip_unknown</label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Please upload BIOS settings before start changing.</small>
+                          <br>
+                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD SETTINGS</button>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumbiossettingschangeoutput') }}">CHANGE</a>
+                </form>
+            </div>
+        </div>
+        
+        <hr class="dotted">
+        
+        <div class ="row">
+            <div class="col">
+                    <h4>Option 7: Get DMI Infomation</h4>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">
+                            ./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp GetDmiInfo &nbsp --file &nbsp DMI_RackName/txt --overwrite
+                            </label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">The DMI files are downloaded as tar file.</small>
+                          <br>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumdownloaddmi') }}">DOWNLOAD</a>
+            </div>
+        </div>
+        
+        
+        
+        <hr class="solid">
+        
+        <div class ="row">
+            <div class="col">                
+                    <h3><u class="font-weight-bold text-primary">STEP 3:</u> Show SUM Running Status</h3>
+                    <small id="help1" class="form-text text-muted">Read sum log file with the current running process pid.</small>
+                    <br>
+                    <a class="btn btn-success mr-1" href="{{ url_for('sumlogpage') }}" target="_blank">SUM STATUS</a>
+            </div>
+        </div>       
+        
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+        <!-- Footer Text -->
+        <div class="container-fluid text-center text-md-left">
+    
+    
+    
+            <!-- Content -->
+            <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+            <p>LINUX CLUSTER MONITOR TESTING MODULE is currently under construction.  
+            </p>
+    
+    
+    
+        </div>
+        <!-- Footer Text -->
+    
+        <!-- Copyright  class="footer-copyright text-center py-3" -->
+        <div class="text-center text-light bg-dark">Copyright © 2020 
+            <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+            All Rights Reserved
+        </div>
+        <!-- Copyright -->
+  
+    </footer>
+    <!-- Footer -->
+    
+    <script type="text/javascript">
+
+        
+        
+        function handleFileSelect(evt) {
+            var file = document.getElementById("file").files[0];
+
+            if (file) {
+                var reader = new FileReader();
+                reader.readAsText(file, "UTF-8");
+                reader.onload = function (evt) {
+                    const inputarray = evt.target.result.split("\n");
+                    var output = "";
+                    for(i = 0; i < inputarray.length; i++ ){
+                        if (inputarray[i].split(" ").length != 3) {
+                            output = output + '<div style="color:red">EACH LINE NEEDS IP, USERNAME AND PASSWORD!</div>';
+                            continue;
+                        }
+
+                        var iparray = inputarray[i].split(" ")[0];
+                        if (iparray.length == 0 ){
+                            output = output + ' <div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>'
+                            continue;
+                        }
+                        else {          
+                            if (ValidateIPaddress(iparray)){
+                                output = output + iparray + ' <a style="color:green">VALID IP</a><br>';
+                            }
+                            else {
+                                output = output + iparray + ' <a style="color:red">INVALID IP</a><br>';
+                            }
+                        }   
+                    }
+                    output = "<strong>FOUND IPMI IP:<br />" + output;
+                    document.getElementById("list").innerHTML = output;
+                }
+                reader.onerror = function (evt) {
+                    document.getElementById("list").innerHTML = "error reading file";
+                }
+            }
+        }
+
+        document.getElementById('file').addEventListener('change', handleFileSelect, false);
+        
+        function ValidateIPaddress(ipaddress) {
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+    </script>
+</body>
+</html>
+

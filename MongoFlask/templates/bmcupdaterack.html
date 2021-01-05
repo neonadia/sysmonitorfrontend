@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>BMC UPDATE</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <!-- <script src='static/knockout-3.5.1.js' type='text/javascript'></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/alfg/ping.js@0.2.2/dist/ping.min.js" type="text/javascript"></script> -->
+    <!-- <script src="static/ping.js" type="text/javascript"></script> -->
+
+</head>
+
+<style>
+    ul span {
+    color: green;
+}
+</style>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+        <ul class="navbar-nav">
+        
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white"  href="" role="button">
+                <i class="fas fa-upload"></i>
+                </a>
+            </li>
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Linux Cluster Monitor BMC UPDATE MODULE
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item">Beta Version 1.0</a> 
+                </div>
+            </li>
+            {% include "documentationButton.html" %}
+
+        </ul>
+    </nav>
+
+    <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+        <div class ="row">
+            <div class="col">
+                <form action="/bmcupdatestartrack" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <h3>Step 3: Start BMC updating for multiple nodes:</h3>
+                        <h5>Number of nodes: <a class="text-danger">{{ numOfNodes }}</a></h5>
+                        <small id="help" class="form-text text-muted">
+                            Updating BMC takes several minutes, please do not refresh this page or turn off the system during updating.
+                        </small>
+                    </div>
+                    
+                    <div class ="row">
+                        <div class="col">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="cfg">PreserveCFG</label>
+                                </div>
+                                <select class="custom-select" id="cfg" name="cfg" required>
+                                    <option value="">Choose...</option>
+                                    <option value="1" selected="selected">True</option>
+                                    <option value="2">False</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="sdr">PreserveSDR</label>
+                                </div>
+                                <select class="custom-select" id="sdr" name="sdr" required>
+                                    <option value="">Choose...</option>
+                                    <option value="1" selected="selected">True</option>
+                                    <option value="2">False</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="ssl">PreserveSSL</label>
+                                </div>
+                                <select class="custom-select" id="ssl" name="ssl" required>
+                                    <option value="">Choose...</option>
+                                    <option value="1" selected="selected">True</option>
+                                    <option value="2">False</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="inputips" name="inputips" value="{{ ip }}">
+                        </div>
+                    </div>
+                                      
+                    <small id="help" class="form-text text-muted">
+                        True: Preserve original setting, False: Use default setting.
+                    </small>                    
+                    <br>
+                    
+                    <button id="updatestart" type="submit" class="btn btn-primary">Start BMC Updating</button>
+                    <a class="btn btn-success mr-1" href="{{ url_for('firmwareupdatestatus') }}" target="_blank">Update Status</a>
+                    <small id="help" class="form-text text-muted">
+                        Message will show when updating finished.
+                    </small>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+        <!-- Footer Text -->
+        <div class="container-fluid text-center text-md-left">
+    
+    
+    
+            <!-- Content -->
+            <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+            <p>LINUX CLUSTER MONITOR BMC UPDATE MODULE is currently under construction. 
+            </p>
+    
+    
+    
+        </div>
+        <!-- Footer Text -->
+    
+        <!-- Copyright  class="footer-copyright text-center py-3" -->
+        <div class="text-center text-light bg-dark">Copyright © 2020 
+            <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+            All Rights Reserved
+        </div>
+        <!-- Copyright -->
+  
+    </footer>
+    <!-- Footer -->
+    
+    <script type="text/javascript">
+        $("#updatestart").on("click", function() {
+            $(this).addClass('disabled');
+        });
+    </script>
+
+</body>
+</html>
+

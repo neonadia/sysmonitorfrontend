@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<style>
+      table, th, td {
+      padding: 2px;
+      border: 1px solid black;
+      background-color:rgba(211, 211, 211, 0.5);
+      border-collapse: collapse;
+      font-size: 11px;
+</style>
+<h2>Detailed Node Information</h2>
+<br>
+<th>System Summary </th>
+<table style==>
+<td> {{ system | safe }} </td>
+</table>
+<th>CPU Summary </th>
+<table>
+    <tr> 
+    <th id="cpumodel">Model</th>
+    <th id="cpucount">Count</th>
+    <th id="cpucores">Cores per CPU</th>
+    <th id="cpuspeed">Max Speed MHz</th>
+ </tr>
+ <tr>
+<td headers="cpumodel"> {{ processorModel }} </td>
+<td headers="cpucount"> {{ processorCount }} </td>
+<td headers="cpucores"> {{ processorCores }} </td>
+<td headers="cpuspeed"> {{ processorSpeed }} </td>
+ </tr>
+</table>
+<th style="text-align:center;">Memory Summary </th>
+<table>
+ <tr> 
+    <th id="memcount">Count</th>
+    <th id="memcapacity">Capacity MB</th>
+    <th id="memdevicetype">Device Type</th>
+    <th id="memopspeed">Operating Speed MHz</th>
+    <th id="memmanufacturer">Manufacturer</th>
+    <th id="mempartnumber">Part Number</th>
+ </tr>
+ <tr>
+<td style="text-align:center" headers="memcount"> {{ memCount }} </td>
+<td style="text-align:center" headers="memcapacity"> {{ memCapacity }} </td>
+<td style="text-align:center" headers="memdevicetype"> {{ memDeviceType }} </td>
+<td style="text-align:center" headers="memopspeed"> {{ memOpSpeed }} </td>
+<td style="text-align:center" headers="memmanufacturer"> {{ memManufacturer }} </td> 
+<td style="text-align:center" headers="mempartnumber"> {{ memPartNumber }} </td>
+ </tr>
+</table>
+
+<th style="text-align:center">Memory Serial Numbers </th>
+<table>
+{% for serial in memSerial %}
+<td style="text-align:center" headers="memserial"> {{ serial }} </tr>
+{% endfor %}
+</table>    
+<th style="text-align:center">Storage Summary </th>
+<table>
+ <tr>
+    <th id="drivedescription">Description</th>
+    <th id="drivecount">Drive Count</th>
+    <th id="drivemodel">Model</th>
+ </tr>
+ <tr>
+<td style="text-align:center" headers="drivedescription"> {{ driveDescription }} </td>
+<td style="text-align:center" headers="drivecount"> {{ driveCount }} </td>
+<td style="text-align:center" headers="drivemodel"> {{ driveModel }} </td>
+ </tr>
+</table>
+
+<th style="text-align:center">PCIe Summary </th>
+<table> 
+<tr>
+    <td style="text-align:center"> {{ pcie | safe }} </td>
+</tr>
+</table>
+
+</html>

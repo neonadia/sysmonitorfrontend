@@ -1,0 +1,16 @@
+body {
+    background-image: url("/static/images/background.png");
+    background-size: cover;
+    color: blue;
+}
+
+table.table-bordered{
+    border:1px solid blue;
+    margin-top:20px;
+  }
+table.table-bordered > thead > tr > th{
+    border:1px solid blue;
+}
+table.table-bordered > tbody > tr > td{
+    border:1px solid blue;
+}

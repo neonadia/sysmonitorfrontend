@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Redfish Program</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+
+        <ul class="navbar-nav">
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}" role="button">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
+            </li>
+            {% include "documentationButton.html" %}
+        </ul>
+    </nav>
+        
+        
+
+<div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+    <h1>About</h1>
+    <p>
+        Learn more about the developers creating and maintaining Linux Cluster Monitor, how and why the project started.
+    </p>
+    <h3>Developers information</h3>
+    <p>
+        This project is lead by <strong>Reeann Zhang</strong>, the manager of Rack team. It is created and currently maintained by:
+        <li><strong>Chenyang Li</strong>, Computer hardware engineer focus on machine learning, webpage design and cluster testing.</li>        
+        <li><strong>Byron Wang</strong>, System engineer working to enable HPC/AI solutions on Supermicro’s server platforms.</li>
+    </p>
+    <h3>Architecture</h3>
+    <p>
+        This program consists of two parts: the front-end and back-end, the front-end is based on flask a micro web framework written in Python. 
+        The back-end is supported by mongoDB, Redifsh module and Intelligent Platform Management Interface (IPMI) toolkit
+    </p>
+    <p>
+        The real-time system data is query from Baseboard Management Controllers (BMC) by redfish module and IPMI toolkit, stored in the mongoDB databse.
+        And the data is visuallized by the webpage front-end.
+    </p>
+    <p>
+        The latest progress has included the UDP-server/client support for this program which is the basis of benchmark support.
+    </p>
+    <p><img src="../static/images/architecture20201221.png" height="714" width="1200"></p>
+    <h3>History</h3>
+    <p>
+        The first version of this programe is createdin 2019. Including basic sensor reading and redfish query functions.
+    </p>
+    <p>
+        From early 2020, Chenyang Li is responsible for the New function development, UI design, performance optimization and debugs.
+        Byron is responsible for auto-report generator.
+    </p>
+    <h3>Contact Information</h3>
+    <p>
+        For any bugs report and technical support, please contact: (888) 888-8888.
+    </p>
+    <p>
+        For more informations please vist <a href="http://solution.supermicro.com">Supermicro Solution and Integration Center</a>.
+    </p>
+</div>
+
+  <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+  <!-- Footer Text -->
+  <div class="container-fluid text-center text-md-left">
+
+
+
+        <!-- Content -->
+        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+        </p>
+
+
+
+  </div>
+  <!-- Footer Text -->
+
+  <!-- Copyright  class="footer-copyright text-center py-3" -->
+  <div class="text-center text-light bg-dark">Copyright © 2020 
+    <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+    All Rights Reserved
+  </div>
+  <!-- Copyright -->
+
+</footer>
+<!-- Footer -->
+<script>
+        function startTime() {
+            var today = new Date()
+            today.setHours(today.getHours() + 7) // adjust time
+            var year = today.getYear() + 1900;
+            var month = today.getMonth() + 1;
+            var day = today.getDate();
+            var h = today.getHours();
+            var m = today.getMinutes();
+            var s = today.getSeconds();
+            year = checkTime(year);
+            month = checkTime(month);
+            day = checkTime(day);
+            h = checkTime(h);
+            m = checkTime(m);
+            s = checkTime(s);
+            document.getElementById('clock').innerHTML = year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s;
+            var t = setTimeout(startTime, 500);
+        }
+        function checkTime(i) {
+            if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
+            return i;
+        }
+        startTime();
+</script>
+
+</body>
+</html>
+

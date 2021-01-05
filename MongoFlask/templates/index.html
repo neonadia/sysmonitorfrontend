@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="60">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Redfish Program</title>
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"> -->
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+    
+    
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"> -->
+    
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap4.css"> -->
+
+    <!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.1/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/jquery.dataTables.min.js"></script>
+    -->
+    
+    <style>
+        table,
+        thead,
+        tr,
+        tbody,
+        th,
+        td {
+        text-align: center;
+        }
+        .table td {
+        text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+<ul class="navbar-nav">
+
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg text-white"  href="{{ rackobserverurl }}" role="button">
+        <i class="fas fa-tv"></i>
+        </a>
+    </li>
+    <li class='dropdown'>
+        <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Linux Cluster Monitor
+        </a>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item">Beta Version: 1.1</a>
+            <a class="dropdown-item">Supported BMC Versions: 01.71, 1.76.10, 3.72.02</a>
+        </div>
+    </li>
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button" target="_blank">{{ rackname }}</a>
+    </li>
+    
+    <li class="dropdown">
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Advanced Features
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="{{ url_for('biosupload') }}" target="_blank">BIOS Update</a>
+                <a class="dropdown-item" href="{{ url_for('bmcupload') }}" target="_blank">BMC Update</a>
+                <a class="dropdown-item" href="{{ url_for('systemresetupload') }}" target="_blank">Power Reset Test</a>
+                <a class="dropdown-item" href="{{ url_for('bmceventcleanerupload') }}" target="_blank">BMC Events Cleaner</a>
+                <a class="dropdown-item" href="{{ url_for('ipmitoolcommandlineupload') }}" target="_blank">IPMI CLI</a>
+                <a class="dropdown-item" href="{{ url_for('bioscomparisonoutput') }}" target="_blank">BIOS Comparison</a>
+                <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
+                <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
+                <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+                <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
+            </div>
+    </li>
+    
+    {% include "documentationButton.html" %}
+
+    <li class='dropdown'>
+        <!-- <a class="btn pull-right btn-primary btn-lg mr-1 text-white" id="clock"><a> -->
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="clock" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item">This is the local time of docker container.</a> 
+            </div>
+    </li>
+</ul>
+</nav>
+
+<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
+<table id="indexpage" class="table table-bordered table-striped" style="width:100%">
+    <thead class="thead-dark" >
+        <th class="align-middle" >ID</th>
+        <th class="align-middle" >IKVM</th>
+        <th class="align-middle" >OS IP</th>
+        <th class="align-middle" >IPMI PWD</th>
+        <th class="align-middle" >BMC MAC Address</th>
+        <th class="align-middle" >NIC MAC Address</th>
+        <th class="align-middle" >System Model # </th>
+        <th class="align-middle" >System Serial # </th>
+        <th class="align-middle" >BIOS Version </th>
+        <th class="align-middle" >BMC Version </th>
+        <th class="align-middle" >BMC Status </th>
+        <th class="align-middle" >Boot Time </th>
+        <th class="align-middle" >Status</th>
+        <th class="align-middle" >UDP Message</th>
+        <th class="align-middle" >Info & Sensors</th>
+    </thead>
+    <tbody>
+        {% for row in x %}
+            <tr>
+            <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
+            {% set ikvm = 'https://' +  row[9] %}
+            <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}">{{ row[0] }}</a></td>
+            <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
+            <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[1] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[14] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[2] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[3] }}</td> 
+            <td class="align-middle font-weight-bold" >{{ row[4] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[5] }}</td>
+            <td style="text-align:center">
+                <div class="dropdown">
+                    {% if row[6] == "OK" %}
+                    <button class="btn btn-success btn-small btn-block font-weight-bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {{ row[6] }}
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item">Everything is good, no event reported!</a>     
+                    </div>
+                    {% elif row[6] == "WARNING" %}
+                    <button class="btn btn-warning btn-small btn-block font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ffa31a">{{ row[8]|length }}</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for n in range(5) if row[8][n] %}
+                            <a class="dropdown-item">{{ row[8][n] }}</a>
+                        {% endfor %}
+                        {% if row[8]|length > 5 %}
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>More Events</u></a>
+                        {% else %}
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>Click for details</u></a>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <button class="btn btn-small btn-danger btn-block font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ff3333" >{{ row[8]|length }}</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for n in range(5) if row[8][n] %}
+                            <a class="dropdown-item">{{ row[8][n] }}</a>
+                        {% endfor %}
+                        {% if row[8]|length > 5 %}
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>More Events</u></a>
+                        {% else %}
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>Click for details</u></a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </td>
+            <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
+            {% if "OFF" in row[10] %}
+                <td class="align-middle font-weight-bold text-danger" >{{ row[10] }} </td>
+            {% else %}
+                <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
+            {% endif %}
+            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>
+            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-area" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+ 
+<!-- Footer -->
+<footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+  <!-- Footer Text -->
+  <div class="container-fluid text-center text-md-left">
+
+
+
+        <!-- Content -->
+        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+        </p>
+
+
+
+  </div>
+  <!-- Footer Text -->
+
+  <!-- Copyright  class="footer-copyright text-center py-3" -->
+  <div class="text-center text-light bg-dark">Copyright © 2020 
+    <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+    All Rights Reserved
+  </div>
+  <!-- Copyright -->
+
+</footer>
+<!-- Footer -->
+<script>
+        function startTime() {
+            var today = new Date()
+            //today.setHours(today.getHours() + 7) // adjust time
+            var year = today.getYear() + 1900;
+            var month = today.getMonth() + 1;
+            var day = today.getDate();
+            var h = today.getHours();
+            var m = today.getMinutes();
+            var s = today.getSeconds();
+            year = checkTime(year);
+            month = checkTime(month);
+            day = checkTime(day);
+            h = checkTime(h);
+            m = checkTime(m);
+            s = checkTime(s);
+            document.getElementById('clock').innerHTML = year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s;
+            var t = setTimeout(startTime, 500);
+        }
+        function checkTime(i) {
+            if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
+            return i;
+        }
+        startTime();
+        
+    $(document).ready(function() {
+        $('#indexpage').DataTable( {
+            "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
+            "pageLength" : -1,
+            dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
+            stateSave: true,
+            buttons: [
+                       'colvis'
+            ],
+        } );
+    } );
+    
+    $('body .dropdown-toggle').dropdown(); 
+</script>
+
+</body>
+</html>
+
