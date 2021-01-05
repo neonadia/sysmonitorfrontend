@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Redfish Program</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+
+        <ul class="navbar-nav">
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}" role="button">
+                    <i class="fas fa-home"></i>
+                </a>
+            </li>
+            <li class='nav-item'>
+                <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
+            </li>
+            {% include "documentationButton.html" %}
+        </ul>
+    </nav>
+        
+        
+
+<div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+    <h4 class ="text-info">Error Message:</h4>
+    <br>
+    <h4 class ="text-danger">{{ error }}</h4>
+    <hr>
+    <div><a id="back-link">Back to previous page</a></div>
+    <div><a href="{{ url_for('index') }}">Back to home page</a></div>
+</div>
+
+  <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+
+  <!-- Footer Text -->
+  <div class="container-fluid text-center text-md-left">
+
+
+
+        <!-- Content -->
+        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+        </p>
+
+
+
+  </div>
+  <!-- Footer Text -->
+
+  <!-- Copyright  class="footer-copyright text-center py-3" -->
+  <div class="text-center text-light bg-dark">Copyright © 2020 
+    <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+    All Rights Reserved
+  </div>
+  <!-- Copyright -->
+
+</footer>
+<!-- Footer -->
+<script>
+var element = document.getElementById('back-link');
+
+// Provide a standard href to facilitate standard browser features such as 
+//  - Hover to see link
+//  - Right click and copy link
+//  - Right click and open in new tab
+element.setAttribute('href', document.referrer);
+
+// We can't let the browser use the above href for navigation. If it does, 
+// the browser will think that it is a regular link, and place the current 
+// page on the browser history, so that if the user clicks "back" again,
+// it'll actually return to this page. We need to perform a native back to
+// integrate properly into the browser's history behavior
+element.onclick = function() {
+  history.back();
+  return false;
+}
+</script>
+
+</body>
+</html>
