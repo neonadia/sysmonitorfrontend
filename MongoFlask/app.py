@@ -1264,6 +1264,41 @@ def make_tarfile(output_filename, source_dir):
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
 
+@app.route('/min_max_temperatures/<bmc_ip>')
+def min_max_temperatures(bmc_ip):
+    entries = db.monitor
+    data_entry = entries.find({"BMC_IP": bmc_ip})
+    all_readings = list(data_entry)
+    all_vals = {}
+    for sensorID in all_readings[0]['Temperatures']:
+        all_vals[sensorID] = [all_readings[0]['Temperatures'][sensorID]['Name']]
+
+    for i in range(len(all_readings)):
+        for sensorID in all_vals:
+            all_vals[sensorID].append(all_readings[i]['Temperatures'][sensorID]['ReadingCelsius'])
+
+    extreme_vals = {}
+    for sensorID in all_vals:
+        low = 9999
+        high = -9999
+        for n in all_vals[sensorID]:
+            if type(n) == int or type(n) == float:
+                if low > n and n != 0:
+                    low = n
+                if high < n:
+                    high = n
+        extreme_vals[all_vals[sensorID][0]] = [low,high]
+    
+    messages = []
+    for sensorName in extreme_vals:
+        min_temp = extreme_vals[sensorName][0]
+        max_temp = extreme_vals[sensorName][1]
+        if min_temp > max_temp or min_temp == 9999 or max_temp == -9999:
+            continue
+        else:
+            messages.append(sensorName + ": MIN=" + str(extreme_vals[sensorName][0]) + " MAX=" + str(extreme_vals[sensorName][1]))
+    return render_template('simpleresult.html',messages=messages)
+
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
     data = get_data.find_powercontrol(bmc_ip)
