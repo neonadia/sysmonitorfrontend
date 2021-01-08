@@ -24,6 +24,8 @@ import tarfile
 from udpcontroller import getMessage, insertUdpevent, cleanIP
 from glob import iglob
 import datetime
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -1264,40 +1266,114 @@ def make_tarfile(output_filename, source_dir):
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
 
-@app.route('/min_max_temperatures/<bmc_ip>')
-def min_max_temperatures(bmc_ip):
+def find_min_max(bmc_ip, api1, api2, boundry):
     entries = db.monitor
     data_entry = entries.find({"BMC_IP": bmc_ip})
     all_readings = list(data_entry)
     all_vals = {}
-    for sensorID in all_readings[0]['Temperatures']:
-        all_vals[sensorID] = [all_readings[0]['Temperatures'][sensorID]['Name']]
-
+    for sensorID in all_readings[0][api1]:
+        all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
     for i in range(len(all_readings)):
         for sensorID in all_vals:
-            all_vals[sensorID].append(all_readings[i]['Temperatures'][sensorID]['ReadingCelsius'])
-
+            all_vals[sensorID].append(all_readings[i][api1][sensorID][api2])
     extreme_vals = {}
     for sensorID in all_vals:
-        low = 9999
-        high = -9999
+        low = boundry
+        high = -boundry
         for n in all_vals[sensorID]:
             if type(n) == int or type(n) == float:
                 if low > n and n != 0:
                     low = n
                 if high < n:
                     high = n
-        extreme_vals[all_vals[sensorID][0]] = [low,high]
-    
+        extreme_vals[all_vals[sensorID][0]] = [low,high]    
     messages = []
+    max_min_vals = []
+    sensorNames = []
     for sensorName in extreme_vals:
         min_temp = extreme_vals[sensorName][0]
         max_temp = extreme_vals[sensorName][1]
-        if min_temp > max_temp or min_temp == 9999 or max_temp == -9999:
+        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry:
             continue
         else:
+            max_min_vals.append(max_temp)
+            max_min_vals.append(min_temp)
+            sensorNames.append("MAX " + sensorName)
+            sensorNames.append("MIN " + sensorName)
             messages.append(sensorName + ": MIN=" + str(extreme_vals[sensorName][0]) + " MAX=" + str(extreme_vals[sensorName][1]))
+    return messages, max_min_vals, sensorNames
+
+@app.route('/min_max_temperatures/<bmc_ip>')
+def min_max_temperatures(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     return render_template('simpleresult.html',messages=messages)
+
+@app.route('/min_max_temperatures_chart/<bmc_ip>')
+def min_max_temperatures_chart(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    df_minmax = pd.DataFrame({"Temperature (Celsius)":max_min_vals, "Sensor names": sensorNames})
+    sns.set_theme(style="whitegrid")
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1)) # +1 can prevent plot too short
+    custom_palette = ["red","blue"]
+    sns_plot = sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette,data=df_minmax, ax=ax)
+    ax.xaxis.label.set_color('black')
+    ax.yaxis.label.set_color('black')
+    ax.tick_params(labelcolor='black')
+    plt.tight_layout()
+    imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    fig.savefig("/app/static/images/" + imagepath)
+    imageheight = (len(df_minmax)/4+1)*1500/10
+    while not os.path.isfile("/app/static/images/" + imagepath):
+        time.sleep(1)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
+
+@app.route('/min_max_voltages/<bmc_ip>')
+def min_max_voltages(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    return render_template('simpleresult.html',messages=messages)
+
+@app.route('/min_max_voltages_chart/<bmc_ip>')
+def min_max_voltages_chart(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    df_minmax = pd.DataFrame({"Voltages (Volts)":max_min_vals, "Sensor names": sensorNames})
+    sns.set_theme(style="whitegrid")
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
+    custom_palette = ["red","blue"]
+    sns_plot = sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette,data=df_minmax, ax=ax)
+    ax.xaxis.label.set_color('black')
+    ax.yaxis.label.set_color('black')
+    ax.tick_params(labelcolor='black')
+    plt.tight_layout()
+    imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    fig.savefig("/app/static/images/" + imagepath)
+    imageheight = (len(df_minmax)/4+1)*1500/10
+    while not os.path.isfile("/app/static/images/" + imagepath):
+        time.sleep(1)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
+
+@app.route('/min_max_fans/<bmc_ip>')
+def min_max_fans(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    return render_template('simpleresult.html',messages=messages)
+
+@app.route('/min_max_fans_chart/<bmc_ip>')
+def min_max_fans_chart(bmc_ip):
+    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    df_minmax = pd.DataFrame({"Fan Speed(rd/min)":max_min_vals, "Sensor names": sensorNames})
+    sns.set_theme(style="whitegrid")
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
+    custom_palette = ["red","blue"]
+    sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_minmax, ax=ax)
+    ax.xaxis.label.set_color('black')
+    ax.yaxis.label.set_color('black')
+    ax.tick_params(labelcolor='black')
+    plt.tight_layout()
+    imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    fig.savefig("/app/static/images/" + imagepath)
+    imageheight = (len(df_minmax)/4+1)*1500/10
+    while not os.path.isfile("/app/static/images/" + imagepath):
+        time.sleep(1)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
