@@ -1314,7 +1314,7 @@ def min_max_temperatures_chart(bmc_ip):
     df_minmax = pd.DataFrame({"Temperature (Celsius)":max_min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1)) # +1 can prevent plot too short
-    custom_palette = ["red","blue"]
+    custom_palette = ["green","blue"]
     sns_plot = sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette,data=df_minmax, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
@@ -1338,7 +1338,7 @@ def min_max_voltages_chart(bmc_ip):
     df_minmax = pd.DataFrame({"Voltages (Volts)":max_min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
-    custom_palette = ["red","blue"]
+    custom_palette = ["green","blue"]
     sns_plot = sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette,data=df_minmax, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
@@ -1362,7 +1362,7 @@ def min_max_fans_chart(bmc_ip):
     df_minmax = pd.DataFrame({"Fan Speed(rd/min)":max_min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
-    custom_palette = ["red","blue"]
+    custom_palette = ["green","blue"]
     sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_minmax, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
