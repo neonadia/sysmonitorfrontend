@@ -1288,89 +1288,110 @@ def find_min_max(bmc_ip, api1, api2, boundry):
                     high = n
         extreme_vals[all_vals[sensorID][0]] = [low,high]    
     messages = []
-    max_min_vals = []
+    max_vals = []
+    min_vals = []
     sensorNames = []
     for sensorName in extreme_vals:
-        min_temp = extreme_vals[sensorName][0]
-        max_temp = extreme_vals[sensorName][1]
-        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry:
+        min_reading = extreme_vals[sensorName][0]
+        max_reading = extreme_vals[sensorName][1]
+        if min_reading> max_reading or min_reading == boundry or max_reading == -boundry:
             continue
         else:
-            max_min_vals.append(max_temp)
-            max_min_vals.append(min_temp)
-            sensorNames.append("MAX " + sensorName)
-            sensorNames.append("MIN " + sensorName)
-            messages.append(sensorName + ": MIN=" + str(extreme_vals[sensorName][0]) + " MAX=" + str(extreme_vals[sensorName][1]))
-    return messages, max_min_vals, sensorNames
+            max_vals.append(max_reading)
+            min_vals.append(min_reading)
+            sensorNames.append(sensorName)
+            messages.append(sensorName + ": MAX=" + str(max_reading) + " MIN=" + str(min_reading))
+    return messages, max_vals, min_vals, sensorNames
 
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
-    df_minmax = pd.DataFrame({"Temperature (Celsius)":max_min_vals, "Sensor names": sensorNames})
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
+    df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
-    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1)) # +1 can prevent plot too short
-    custom_palette = ["green","blue"]
-    sns_plot = sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette,data=df_minmax, ax=ax)
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
+    custom_palette = ["green"]
+    sns_plot = sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette,data=df_max, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
+    ax2 = ax.twinx()
+    custom_palette2 = ["white"]
+    sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette2,alpha=0.9,data=df_min,ax=ax2)
+    ax2.set_yticklabels([])
+    ax2.set_yticks([])
+    ax2.set_ylabel('')
     plt.tight_layout()
     imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
-    imageheight = (len(df_minmax)/4+1)*1500/10
+    imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
-    df_minmax = pd.DataFrame({"Voltages (Volts)":max_min_vals, "Sensor names": sensorNames})
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)   
+    df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
+    df_min = pd.DataFrame({"Voltages (Volts)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
-    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
-    custom_palette = ["green","blue"]
-    sns_plot = sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette,data=df_minmax, ax=ax)
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
+    custom_palette = ["green"]
+    sns_plot = sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette,data=df_max, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
+    ax2 = ax.twinx()
+    custom_palette2 = ["white"]
+    sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette2,alpha=0.9,data=df_min,ax=ax2)
+    ax2.set_yticklabels([])
+    ax2.set_yticks([])
+    ax2.set_ylabel('')
     plt.tight_layout()
-    imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    imagepath = "min_max_voltages_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
-    imageheight = (len(df_minmax)/4+1)*1500/10
+    imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
-    messages, max_min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
-    df_minmax = pd.DataFrame({"Fan Speed(rd/min)":max_min_vals, "Sensor names": sensorNames})
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)   
+    df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
+    df_min = pd.DataFrame({"Fan Speed(rd/min)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
-    fig, ax =plt.subplots(1,1,figsize=(10,len(df_minmax)/4+1))
-    custom_palette = ["green","blue"]
-    sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_minmax, ax=ax)
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
+    custom_palette = ["green"]
+    sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_max, ax=ax)
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
+    ax2 = ax.twinx()
+    custom_palette2 = ["white"]
+    sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette2,alpha=0.9,data=df_min,ax=ax2)
+    ax2.set_yticklabels([])
+    ax2.set_yticks([])
+    ax2.set_ylabel('')
     plt.tight_layout()
-    imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    imagepath = "min_max_fansspeed_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
-    imageheight = (len(df_minmax)/4+1)*1500/10
+    imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
