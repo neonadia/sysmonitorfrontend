@@ -1332,7 +1332,7 @@ def min_max_temperatures_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures_chart")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
@@ -1363,7 +1363,7 @@ def min_max_voltages_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages_chart")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
@@ -1394,7 +1394,7 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans_chart")
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
