@@ -41,12 +41,15 @@
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         {% for ip in ip_list %}
-                        <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}_chart/{{ ip }}">{{ ip }}</a>
                         {% endfor %}
                     </div>
             </li>
-            <li class="col">
-                <button class="btn btn-danger btn-lg mr-1" onclick="self.close()">Close</button>
+            <li class="nav-item">
+                <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}{{ chart_name }}/{{ bmc_ip }}">Raw Results</a>
+            </li>           
+            <li class="nav-item">
+                <button class="btn btn-danger btn-lg text-white" onclick="self.close()">Close</button>
             </li>
             
         </ul>
