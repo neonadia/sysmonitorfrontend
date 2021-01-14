@@ -1300,7 +1300,7 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             max_vals.append(max_reading)
             min_vals.append(min_reading)
             sensorNames.append(sensorName)
-            messages.append(sensorName + ": MAX=" + str(max_reading) + " MIN=" + str(min_reading))
+            messages.append(sensorName + ": MIN=" + str(min_reading) + " MAX=" + str(max_reading))
     return messages, max_vals, min_vals, sensorNames
 
 @app.route('/min_max_temperatures/<bmc_ip>')
