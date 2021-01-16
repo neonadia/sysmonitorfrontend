@@ -63,15 +63,18 @@
                     Other Sensors
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}">Power Consumption</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}">Power Supply Voltage</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}">Power Supply Power</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}">Voltage</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}">Processors Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}">VRM Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}">DIMM Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}">Others Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}">Fan Speed</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_blank">Processors Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_blank">VRM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_blank">DIMM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_blank">Others Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}"  target="_blank">Fan Speed</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_blank">Power Consumption</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}" target="_blank">Power Supplies Power</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}" target="_blank">Power Supplies Voltage</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_blank">System Voltages</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ bmc_ip }}" target="_blank">Min/Max Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ bmc_ip }}" target="_blank">Min/Max Fan Speed</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_blank">Min/Max Voltages</a>                   
                     </div>
             </div>
             <div class="dropdown col col-auto">

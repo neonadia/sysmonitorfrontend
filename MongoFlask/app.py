@@ -1311,12 +1311,15 @@ def min_max_temperatures(bmc_ip):
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
     messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages.insert(0,'Numerical Results: (Units: Celsius)')
+    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
     sns_plot = sns.barplot(y="Sensor names", x="Temperature (Celsius)", palette = custom_palette,data=df_max, ax=ax)
+    ax.set_xticks(range(0,int(max(max_vals))+1,10))
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
@@ -1332,7 +1335,7 @@ def min_max_temperatures_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+    return render_template('imageOutput.html',chart_headers = chart_headers, messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
@@ -1341,13 +1344,16 @@ def min_max_voltages(bmc_ip):
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)   
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages.insert(0,'Numerical Results: (Units: Voltages)')
+    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Voltages (Volts)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
     sns_plot = sns.barplot(y="Sensor names", x="Voltages (Volts)", palette = custom_palette,data=df_max, ax=ax)
+    ax.set_xticks(range(0,int(max(max_vals))+1,1))
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
@@ -1363,7 +1369,7 @@ def min_max_voltages_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+    return render_template('imageOutput.html',chart_headers = chart_headers, messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
@@ -1372,13 +1378,16 @@ def min_max_fans(bmc_ip):
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)   
+    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages.insert(0,'Numerical Results: (Units: rd/min)')
+    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Fan Speed(rd/min)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
     sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_max, ax=ax)
+    ax.set_xticks(range(0,int(max(max_vals))+1,1000))
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
@@ -1394,7 +1403,7 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+    return render_template('imageOutput.html',chart_headers = chart_headers ,messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
