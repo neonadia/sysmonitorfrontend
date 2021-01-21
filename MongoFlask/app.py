@@ -1271,46 +1271,58 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     data_entry = entries.find({"BMC_IP": bmc_ip})
     all_readings = list(data_entry)
     all_vals = {}
+    all_dates = []
     for sensorID in all_readings[0][api1]:
         all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
     for i in range(len(all_readings)):
+        all_dates.append(all_readings[i]["Datetime"])
         for sensorID in all_vals:
             all_vals[sensorID].append(all_readings[i][api1][sensorID][api2])
     extreme_vals = {}
     for sensorID in all_vals:
         low = boundry
         high = -boundry
-        for n in all_vals[sensorID]:
+        low_date = "N/A"
+        high_date = "N/A" 
+        for i, n in enumerate(all_vals[sensorID]):
             if type(n) == int or type(n) == float:
                 if low > n and n != 0:
                     low = n
+                    low_date = all_dates[i-1] # i-1 because the first element of all_vals is name, so it has one more element than all_dates
                 if high < n:
                     high = n
-        extreme_vals[all_vals[sensorID][0]] = [low,high]    
+                    high_date = all_dates[i-1]
+        extreme_vals[all_vals[sensorID][0]] = [low, low_date, high, high_date]    
     messages = []
     max_vals = []
     min_vals = []
+    max_dates = []
+    min_dates = []
     sensorNames = []
     for sensorName in extreme_vals:
-        min_reading = extreme_vals[sensorName][0]
-        max_reading = extreme_vals[sensorName][1]
-        if min_reading> max_reading or min_reading == boundry or max_reading == -boundry:
+        min_temp = extreme_vals[sensorName][0]
+        min_date = extreme_vals[sensorName][1]
+        max_temp = extreme_vals[sensorName][2]
+        max_date = extreme_vals[sensorName][3]
+        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry:
             continue
         else:
-            max_vals.append(max_reading)
-            min_vals.append(min_reading)
+            max_vals.append(max_temp)
+            min_vals.append(min_temp)
+            max_dates.append(max_date)
+            min_dates.append(min_date)
             sensorNames.append(sensorName)
-            messages.append(sensorName + ": MIN=" + str(min_reading) + " MAX=" + str(max_reading))
-    return messages, max_vals, min_vals, sensorNames
+            messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
+    return messages, max_vals, min_vals, max_dates, min_dates, sensorNames
 
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     messages.insert(0,'Numerical Results: (Units: Celsius)')
     chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
@@ -1335,16 +1347,16 @@ def min_max_temperatures_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers, messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     messages.insert(0,'Numerical Results: (Units: Voltages)')
     chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
@@ -1369,16 +1381,16 @@ def min_max_voltages_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers, messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
-    messages, max_vals, min_vals, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     messages.insert(0,'Numerical Results: (Units: rd/min)')
     chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
@@ -1403,7 +1415,7 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers ,messages=messages,imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+    return render_template('imageOutput.html',chart_headers = chart_headers ,data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
