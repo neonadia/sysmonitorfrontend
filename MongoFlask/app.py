@@ -1324,7 +1324,7 @@ def min_max_temperatures(bmc_ip):
 def min_max_temperatures_chart(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     messages.insert(0,'Numerical Results: (Units: Celsius)')
-    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip,'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -1358,7 +1358,7 @@ def min_max_voltages(bmc_ip):
 def min_max_voltages_chart(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     messages.insert(0,'Numerical Results: (Units: Voltages)')
-    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip, 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Voltages (Volts)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -1392,7 +1392,7 @@ def min_max_fans(bmc_ip):
 def min_max_fans_chart(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     messages.insert(0,'Numerical Results: (Units: rd/min)')
-    chart_headers = ['Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip, 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Fan Speed(rd/min)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
