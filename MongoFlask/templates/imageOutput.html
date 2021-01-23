@@ -114,15 +114,17 @@
             <th class="align-middle" >MIN DATETIME</th>
             <th class="align-middle" >MAX READING</th>
             <th class="align-middle" >MAX DATETIME</th>
+            <th class="align-middle" >AVG READING</th>
         </thead>
         <tbody>
-            {% for sensorNames, min_vals, min_dates, max_vals, max_dates in data %}
+            {% for sensorNames, min_vals, min_dates, max_vals, max_dates, avg_vals in data %}
                 <tr>
                 <td class="align-middle font-weight-bold" ><h4>{{ sensorNames }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ min_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ max_dates }}</h4></td>
+                <td class="align-middle font-weight-bold text-success" ><h4>{{ avg_vals }}</h4></td>
                 </tr>
             {% endfor %}
         </tbody>
