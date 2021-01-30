@@ -182,7 +182,11 @@ def powerState(IPMI,auth):
     user = auth[0]
     pwd = auth[1]
     process = Popen('ipmitool ' +  'chassis status' + ' -H ' +  ip + ' -U ' + user + ' -P ' + pwd + ' | grep "System Power"', shell=True, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = process.communicate(timeout=2)
+    try:
+        stdout, stderr = process.communicate(timeout=2)
+    except:
+        printf("No connection!!!")
+        return False
     if "on" in str(stdout):
         printf(str(stdout))
         return True

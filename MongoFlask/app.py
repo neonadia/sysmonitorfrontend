@@ -1282,9 +1282,11 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     date_format = "%Y-%m-%d %H:%M:%S"
     elapsed_time = datetime.datetime.strptime(all_dates[-1], date_format) - datetime.datetime.strptime(all_dates[0], date_format)
     elapsed_hour = str(round(elapsed_time.total_seconds()/3600,2))
+    zero_count  = []
     for sensorID in all_vals:
         low = boundry
         avg = 0
+        zero_count.append(0)
         high = -boundry
         low_date = "N/A"
         high_date = "N/A" 
@@ -1298,7 +1300,13 @@ def find_min_max(bmc_ip, api1, api2, boundry):
                     if high < n:
                         high = n
                         high_date = all_dates[i-1]
-        avg = round(avg/(len(all_vals[sensorID])-1),2)
+                else:
+                    zero_count[-1] += 1
+        if  len(all_vals[sensorID]) - zero_count[-1] -1  == 0:
+            avg = 0
+            zero_count.pop() # delete all zero reading
+        else:
+            avg = round(avg/(len(all_vals[sensorID]) - zero_count[-1] -1),2)
         extreme_vals[all_vals[sensorID][0]] = [low, low_date, high, high_date,avg]    
     messages = []
     max_vals = []
@@ -1307,13 +1315,16 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     min_dates = []
     avg_vals = []
     sensorNames = []
-    for sensorName in extreme_vals:
+    good_count =[]
+    for i in zero_count:
+        good_count.append(len(all_dates)-i) 
+    for i, sensorName in enumerate(extreme_vals):
         min_temp = extreme_vals[sensorName][0]
         min_date = extreme_vals[sensorName][1]
         max_temp = extreme_vals[sensorName][2]
         max_date = extreme_vals[sensorName][3]
         avg_val = extreme_vals[sensorName][4]
-        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry:
+        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry or avg_val == 0:
             continue
         else:
             max_vals.append(max_temp)
@@ -1323,18 +1334,18 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             avg_vals.append(avg_val)
             sensorNames.append(sensorName)
             messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
-    return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour
+    return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count
 
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
     messages.insert(0,'Numerical Results: (Units: Celsius)')
-    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals),'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -1357,18 +1368,18 @@ def min_max_temperatures_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
     messages.insert(0,'Numerical Results: (Units: Voltages)')
-    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals),'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Voltages (Volts)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -1391,18 +1402,18 @@ def min_max_voltages_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+    return render_template('imageOutput.html',chart_headers = chart_headers, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     return render_template('simpleresult.html',messages=messages)
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour = find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count = find_min_max(bmc_ip,"Fans", "Reading", 999999)
     messages.insert(0,'Numerical Results: (Units: rd/min)')
-    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals),'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Fan Speed(rd/min)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -1425,7 +1436,7 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers ,data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+    return render_template('imageOutput.html',chart_headers = chart_headers ,data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
