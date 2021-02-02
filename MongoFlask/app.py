@@ -1440,6 +1440,11 @@ def min_max_fans_chart(bmc_ip):
     ax2.set_yticklabels([])
     ax2.set_yticks([])
     ax2.set_ylabel('')
+    for p in ax.patches:
+        _x = p.get_x() + p.get_width() + 0.1
+        _y = p.get_y() + p.get_height() - 0.2
+        value = int(p.get_width())
+        ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom', size='x-small')  
     plt.tight_layout()
     imagepath = "min_max_fansspeed_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
