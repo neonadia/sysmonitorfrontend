@@ -1362,6 +1362,11 @@ def min_max_temperatures_chart(bmc_ip):
     ax2.set_yticklabels([])
     ax2.set_yticks([])
     ax2.set_ylabel('')
+    for p in ax.patches:
+        _x = p.get_x() + p.get_width() + 0.3
+        _y = p.get_y() + p.get_height()
+        value = int(p.get_width())
+        ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom')   
     plt.tight_layout()
     imagepath = "min_max_temperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
@@ -1396,6 +1401,11 @@ def min_max_voltages_chart(bmc_ip):
     ax2.set_yticklabels([])
     ax2.set_yticks([])
     ax2.set_ylabel('')
+    for i, p in enumerate(ax.patches):
+        _x = p.get_x() + p.get_width()
+        _y = p.get_y() + p.get_height() - 0.2
+        value = max_vals[i]
+        ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom',size='xx-small')
     plt.tight_layout()
     imagepath = "min_max_voltages_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
