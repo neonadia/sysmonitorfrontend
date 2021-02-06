@@ -115,11 +115,13 @@
         <th class="align-middle" >System Serial # </th>
         <th class="align-middle" >BIOS Version </th>
         <th class="align-middle" >BMC Version </th>
-        <th class="align-middle" >BMC Status </th>
         <th class="align-middle" >Boot Time </th>
         <th class="align-middle" >Status</th>
         <th class="align-middle" >UDP Message</th>
-        <th class="align-middle" >Info & Sensors</th>
+        <th class="align-middle" >BMC Status </th>
+        <th class="align-middle" >Details</th>
+        <th class="align-middle" >Sensors</th>
+        <th class="align-middle" >Min/Max</th>
     </thead>
     <tbody>
         {% for row in x %}
@@ -135,7 +137,14 @@
             <td class="align-middle font-weight-bold" >{{ row[3] }}</td> 
             <td class="align-middle font-weight-bold" >{{ row[4] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[5] }}</td>
-            <td style="text-align:center">
+            <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
+            {% if "OFF" in row[10] %}
+                <td class="align-middle font-weight-bold text-danger" >{{ row[10] }} </td>
+            {% else %}
+                <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
+            {% endif %}
+            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>
+                        <td style="text-align:center">
                 <div class="dropdown">
                     {% if row[6] == "OK" %}
                     <button class="btn btn-success btn-small btn-block font-weight-bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -174,15 +183,10 @@
                     </div>
                     {% endif %}
                 </div>
-            </td>
-            <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
-            {% if "OFF" in row[10] %}
-                <td class="align-middle font-weight-bold text-danger" >{{ row[10] }} </td>
-            {% else %}
-                <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
-            {% endif %}
-            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>
-            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-area" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
+            </td>            
+            <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
+            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-line" href="{{ url_for('index') }}chart_cputemperatures/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
+            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             </tr>
         {% endfor %}
     </tbody>
