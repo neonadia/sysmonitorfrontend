@@ -1480,12 +1480,14 @@ def chart_allpowercontrols():
     data = get_data.find_allpowercontrols(ip_list)
     return render_template('chart_allpowercontrols.html', title='All Power Controls', dataset=data, chart_name = "chart_allpowercontrols")
 
-"""
-@app.route('/chart_temperatures/<bmc_ip>')
-def chart_temperatures(bmc_ip):
-    data = get_data.find_temperatures(bmc_ip)
-    return render_template('chart_temperatures.html', title='Temperatures', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist())
-"""
+@app.route('/chart_alltemperatures')
+def chart_alltemperatures():
+    ip_list = getIPlist()
+    sensor_id = request.args.get('var')
+    sensor_id = str(sensor_id)
+    data = get_data.find_alltemperatures(ip_list, sensor_id)
+    sensor_name = list(data.keys())[-1]
+    return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures")    
 
 @app.route('/chart_fans/<bmc_ip>')
 def chart_fans(bmc_ip):

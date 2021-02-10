@@ -1,0 +1,270 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <meta http-equiv="refresh" content="3600">
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <!-- bootstrap -->
+    <script src="../static/Chart.min.js"></script>
+    <script src="../static/utils.js"></script>
+    <script src="../static/chartjs-plugin-zoom.js"></script>
+    <script src="../static/hammer.min.js"></script>
+    <style>
+    canvas{
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="form-row align-items-center">
+            <div class="col col-auto">
+                <i class="fas fa-history text-white"></i>
+            </div>
+            <div class="col col-auto">
+                <input type="text" id="start" class="form-control" style="font-size:18px;" value="">
+            </div>
+            <div class="col col-auto">
+                <i class="fas fa-angle-double-right text-white"></i>
+            </div>
+            <div class="col col-auto">
+                <input type="text" id="end" class="form-control" style="font-size:18px;" value="">
+            </div>
+            <div class="col col-auto">
+                <button class="btn btn-primary btn-lg mr-1" id="submit">Submit</button>
+            </div>
+            <div class="col col-auto">
+                <button class="btn btn-primary btn-lg mr-1" id="allData">All Data</button>
+            </div>
+            <div class="dropdown col col-auto">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Time Range Setting
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <button class="dropdown-item" id="defaulttime">Last half-hour</button>
+                        <button class="dropdown-item" id="oneHour">Last hour </button>
+                        <button class="dropdown-item" id="oneDay">Last day</button>   
+                    </div>
+            </div>
+            <div class="col col-auto ">
+                <button class="btn btn-danger btn-lg mr-1" onclick="self.close()">Close</button>
+            </div>
+        </div>
+    </nav>
+
+    <div style="width:90%;text-align: center;">
+        <canvas id="canvas_all_temperature"></canvas>
+    </div>
+
+    <script>
+        var dataset = {{ dataset|tojson }};
+        var sensorname = {{ sensor_name|tojson }};
+        
+        var config_temp = {
+            type: 'line',
+            data: {
+                labels: dataset.datetime,
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: dataset.RACK + sensorname,
+                    fontSize: 30
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Datetime'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Celsius'
+                        }                 
+                    }]
+                },
+                plugins: {
+                    zoom: {
+                        // Container for pan options
+                        pan: {
+                            // Boolean to enable panning
+                            enabled: true,
+
+                            // Panning directions. Remove the appropriate direction to disable
+                            // Eg. 'y' would only allow panning in the y direction
+                            mode: 'xy'
+                        },
+
+                        // Container for zoom options
+                        zoom: {
+                            // Boolean to enable zooming
+                            enabled: true,
+
+                            // Zooming directions. Remove the appropriate direction to disable
+                            // Eg. 'y' would only allow zooming in the y direction
+                            mode: 'x',
+                        }
+                    }
+                }
+            }
+        };
+
+        var i;
+        for (i = 0; i < dataset[sensorname].length; i++){
+            var colorNames = Object.keys(window.chartColors);
+            var colorName = colorNames[config_temp.data.datasets.length % colorNames.length];
+            var newColor = window.chartColors[colorName];
+            var newDataset = {
+                    label: dataset[sensorname][i]['Name'],
+                    backgroundColor: newColor,
+                    borderColor: newColor,
+                    data: dataset[sensorname][i]['Reading'],
+                    fill: false
+                };
+            config_temp.data.datasets.push(newDataset);
+        }
+
+        window.onload = function() {
+            var ctx_temp = document.getElementById('canvas_all_temperature').getContext('2d');
+            window.myLine = new Chart(ctx_temp, config_temp);
+        };
+
+        
+        var start = dataset.datetime[0];
+        var end = dataset.datetime[dataset.datetime.length - 1];
+        document.getElementById("start").value = start;
+        document.getElementById("end").value = end;
+
+        function getRange(data, start, end){
+            var i;
+            var result = [0, data.length-1];
+            var t = "";
+            for (i=0; i < data.length; i++){
+                if (data[i] >= start) {
+                    result[0] = i;
+                    break;
+                }
+            }
+            for (i=0; i < data.length; i++) {
+                if (data[i] > end) {
+                    result[1] = i-1;
+                    break;
+                } else if (data[i] == end) {
+                    result[1] = i;
+                    break;
+                }
+            }
+            return result
+
+        }
+        
+        document.getElementById('submit').addEventListener('click', function() {
+            start = document.getElementById("start").value;
+            end = document.getElementById("end").value;
+
+            const regex = /[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01][0-9]|2[0-3]):[0-5]\d:[0-5]\d$/;
+            
+            if (regex.test(start) == false || regex.test(end) == false || start.localeCompare(end) == 1) {
+                document.getElementById('defaulttime').click();
+            }
+
+            var range = getRange(dataset.datetime, start, end);       
+            var n_labels = [];
+            var i;
+
+            // trimm those points which are unneccesarry
+            var step = 1; 
+            if ( (range[1] - range[0]) > 50 ){ // only show 80 points
+                step = Math.round((range[1] - range[0])/50)
+            }
+            //
+
+            for (i=range[0]; i <= range[1]; i=i+step) {
+                n_labels.push(dataset.datetime[i]);
+            }
+            config_temp.data.labels = n_labels;
+
+            var n_data = [];
+            for (j=0; j <= dataset[sensorname].length-1; j++) {
+                 n_data = [];
+                 for (i=range[0]; i <= range[1]; i=i+step) {
+                    n_data.push(dataset[sensorname][j]['Reading'][i])
+                }
+                config_temp.data.datasets[j].data = n_data;
+            }
+            window.myLine.resetZoom();
+            window.myLine.update();
+        });
+
+                // rearrange the time span
+        function rearange(tstart, tend){
+            document.getElementById("start").value = tstart;
+            document.getElementById("end").value = tend;
+            document.getElementById('submit').click();
+        }
+        
+        
+        // show all
+        document.getElementById('allData').addEventListener('click', function() {
+            rearange(dataset.datetime[0],dataset.datetime[dataset.datetime.length - 1]);
+        });
+        
+        // If the dataset contains more than data longer than the time range, it will only show the data of the last time period of time range.
+
+        function settimerange(timerange) {         
+            const defTimeRange = 1 * timerange * 60 * 60 * 1000; //default time range day * hour * min * sec * msec
+            const lastDate = new Date(dataset.datetime[dataset.datetime.length - 1]);
+            const firstDate = new Date(dataset.datetime[0]);
+            const defTimeRangeBefore = new Date(lastDate - defTimeRange);
+            var defTimeRangeBeforeStr = defTimeRangeBefore.getFullYear() + "-" + ("00" + (defTimeRangeBefore.getMonth() + 1)).slice(-2) + "-" + ("00" + defTimeRangeBefore.getDate()).slice(-2) + " " + ("00"+ defTimeRangeBefore.getHours()).slice(-2) + ":" + ("00" + defTimeRangeBefore.getMinutes()).slice(-2) + ":" + ("00" + defTimeRangeBefore.getSeconds()).slice(-2);
+            if ( defTimeRangeBefore > firstDate){
+                range_ini = getRange(dataset.datetime, defTimeRangeBeforeStr, end);        
+                rearange(dataset.datetime[range_ini[0]],dataset.datetime[dataset.datetime.length - 1]);
+            } else {
+            document.getElementById('allData').click();
+            }
+        }
+
+        document.getElementById('defaulttime').addEventListener('click', function() { 
+            settimerange(0.5)
+        });
+        document.getElementById('oneHour').addEventListener('click', function() { 
+            settimerange(1)
+        });
+        document.getElementById('oneDay').addEventListener('click', function() { 
+            settimerange(24)
+        });
+        
+        document.getElementById('defaulttime').click();
+
+
+    </script>
+</body>
+
+</html>
+
+
+
