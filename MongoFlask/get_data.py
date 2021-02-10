@@ -1,5 +1,5 @@
 import pymongo
-from app import mongoport
+from app import mongoport, rackname
 
 def find_ikvm(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -111,7 +111,7 @@ def find_allpowercontrols(ip_list):
         data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "PowerControl": 1}))
 
     # initial dataset
-    dataset = {'RACK': "RACK", 'datetime': [], 'PowerControl': []}
+    dataset = {'RACK': rackname, 'datetime': [], 'PowerControl': []}
 
     # power supplies
     for bmc_ip, data_entry in zip(ip_list, data_entries):
@@ -188,7 +188,7 @@ def find_alltemperatures(ip_list, sensor_id):
         data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1}))
     
     # initial dataset
-    dataset = {'RACK': "RACK ", 'datetime': [], sensor_name: []}
+    dataset = {'RACK': rackname, 'datetime': [], sensor_name: []}
 
     # temperatures
     for bmc_ip, data_entry in zip(ip_list, data_entries):
