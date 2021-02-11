@@ -232,3 +232,42 @@ def find_fans(bmc_ip):
 
     return dataset
 
+def find_allfans(ip_list, sensor_id):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    collection = 'monitor'
+    entries = db[collection]
+    
+    # get sensor name
+    data_entries = []
+    for bmc_ip in ip_list:
+        data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1}))
+        break    
+    for j in data_entries[0]:
+        sensor_name = j['Fans'][sensor_id]['Name']
+        break
+    
+    # get data
+    data_entries = []
+    for bmc_ip in ip_list:
+        data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1}))
+    
+    # initial dataset
+    dataset = {'RACK': rackname, 'datetime': [], sensor_name: []}
+
+    # temperatures
+    for bmc_ip, data_entry in zip(ip_list, data_entries):
+        dataset[sensor_name].append({'Name': bmc_ip , 'Reading': []})
+        
+    # get dataset
+    all_nodes_time = []
+    for i, data_entry in enumerate(data_entries):
+        all_time = []
+        all_reading = []
+        for j in data_entry:
+            all_time.append(j['Datetime'])
+            all_reading.append(j['Fans'][sensor_id]['Reading'])
+        all_nodes_time.append(all_time)
+        dataset[sensor_name][i]['Reading'] = all_reading
+    dataset['datetime'] = all_nodes_time[0] # different node has slightly different datetime
+    return dataset

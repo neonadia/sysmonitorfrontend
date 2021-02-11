@@ -1487,7 +1487,16 @@ def chart_alltemperatures():
     sensor_id = str(sensor_id)
     data = get_data.find_alltemperatures(ip_list, sensor_id)
     sensor_name = list(data.keys())[-1]
-    return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures")    
+    return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures")
+
+@app.route('/chart_allfans')
+def chart_allfans():
+    ip_list = getIPlist()
+    sensor_id = request.args.get('var')
+    sensor_id = str(sensor_id)
+    data = get_data.find_allfans(ip_list, sensor_id)
+    sensor_name = list(data.keys())[-1]
+    return render_template('chart_allfans.html', title='All Fans ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_allfans")     
 
 @app.route('/chart_fans/<bmc_ip>')
 def chart_fans(bmc_ip):
