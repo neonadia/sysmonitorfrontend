@@ -34,6 +34,7 @@ rackname = os.environ['RACKNAME'].upper()
 client = MongoClient('localhost', mongoport)
 db = client.redfish
 collection = db.servers
+monitor_collection = db.monitor
 udp_collection = db.udp
 udp_deleted_collection = db.udpdel
 
@@ -1307,7 +1308,7 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             avg = 0
             zero_count.pop() # delete all zero reading
         else:
-            avg = round(avg/(len(all_vals[sensorID]) - zero_count[-1] -1),2)
+            avg = round(avg/(len(all_vals[sensorID]) - zero_count[-1] -1),4) # -1 because the first element is name
         extreme_vals[all_vals[sensorID][0]] = [low, low_date, high, high_date,avg]    
     messages = []
     max_vals = []
@@ -1336,6 +1337,72 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             sensorNames.append(sensorName)
             messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
     return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count, last_date
+
+def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
+    all_vals = {}
+    all_dates = {}
+    # save data to dict
+    for bmc_ip in ip_list:
+        data = monitor_collection.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
+        all_vals[bmc_ip] = []
+        all_dates[bmc_ip] = []
+        for i in data: # data contains multiple readings, each reading has a time
+            all_vals[bmc_ip].append(i[api1][sensor_id][api2])
+            sensor_name = i[api1][sensor_id]['Name']
+            all_dates[bmc_ip].append(i['Datetime'])            
+    # find min/max  
+    max_vals = []
+    max_dates = []
+    min_vals = []
+    min_dates = []
+    avg_vals = []
+    zero_count = []
+    for bmc_ip in ip_list:
+        high = -boundry
+        low = boundry
+        high_date = "N/A"
+        min_date = "N/A"
+        zero_count.append(0)
+        avg = 0
+        for i, n in enumerate(all_vals[bmc_ip]):
+            if type(n) == int or type(n) == float:
+                if n != 0:
+                    avg += n
+                    if low > n:
+                        low = n
+                        low_date = all_dates[bmc_ip][i-1] # i-1 because the first element of all_vals is name, so it has one more element than all_dates
+                    if high < n:
+                        high = n
+                        high_date = all_dates[bmc_ip][i-1]
+                else:
+                    zero_count[-1] += 1
+        if  len(all_vals[bmc_ip]) - zero_count[-1]  == 0:
+            avg = 0
+            #zero_count.pop() # delete all zero reading
+        else:
+            avg = round(avg/(len(all_vals[bmc_ip]) - zero_count[-1]),4)
+        max_vals.append(high)
+        max_dates.append(high_date)
+        min_vals.append(low)
+        min_dates.append(low_date)
+        avg_vals.append(avg)
+
+    date_format = "%Y-%m-%d %H:%M:%S"
+    elapsed_time = datetime.datetime.strptime(all_dates[ip_list[-1]][-1], date_format) - datetime.datetime.strptime(all_dates[ip_list[0]][0], date_format)
+    elapsed_hour = str(round(elapsed_time.total_seconds()/3600,2))
+    last_date = all_dates[ip_list[-1]][-1]
+
+    good_count = []
+    for i, bmc_ip in enumerate(ip_list):
+        good_count.append(len(all_dates[bmc_ip])-zero_count[i])
+        
+    all_count = 0
+    for i in all_dates.values():
+        all_count += len(i)
+    all_count = int(all_count/len(all_dates))
+    
+    return max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name
+
 
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
@@ -1452,7 +1519,44 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers ,data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+    return render_template('imageOutput.html',chart_headers = chart_headers ,data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+
+@app.route('/min_max_alltemperatures_chart')
+def min_max_alltemperatures_chart():
+    ip_list = getIPlist()
+    sensor_id = request.args.get('var')
+    sensor_id = str(sensor_id)
+    max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
+    chart_headers = ['Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "BMC IPs": ip_list})
+    df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "BMC IPs": ip_list})
+    sns.set_theme(style="whitegrid")
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
+    custom_palette = ["green"]
+    sns_plot = sns.barplot(y="BMC IPs", x="Temperature (Celsius)", palette = custom_palette,data=df_max, ax=ax)
+    ax.set_xticks(range(0,int(max(max_vals))+1,10))
+    ax.xaxis.label.set_color('black')
+    ax.yaxis.label.set_color('black')
+    ax.tick_params(labelcolor='black')
+    ax2 = ax.twinx()
+    custom_palette2 = ["white"]
+    sns.barplot(y="BMC IPs", x="Temperature (Celsius)", palette = custom_palette2,alpha=0.9,data=df_min,ax=ax2)
+    ax2.set_yticklabels([])
+    ax2.set_yticks([])
+    ax2.set_ylabel('')
+    for p in ax.patches:
+        _x = p.get_x() + p.get_width() + 0.3
+        _y = p.get_y() + p.get_height()
+        value = int(p.get_width())
+        ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom')   
+    plt.tight_layout()
+    imagepath = "min_max_alltemperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    fig.savefig("/app/static/images/" + imagepath)
+    imageheight = (len(df_min)/4+1)*1500/10
+    while not os.path.isfile("/app/static/images/" + imagepath):
+        time.sleep(1)
+    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
