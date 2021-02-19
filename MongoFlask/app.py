@@ -1370,10 +1370,10 @@ def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
                     avg += n
                     if low > n:
                         low = n
-                        low_date = all_dates[bmc_ip][i-1] # i-1 because the first element of all_vals is name, so it has one more element than all_dates
+                        low_date = all_dates[bmc_ip][i] 
                     if high < n:
                         high = n
-                        high_date = all_dates[bmc_ip][i-1]
+                        high_date = all_dates[bmc_ip][i]
                 else:
                     zero_count[-1] += 1
         if  len(all_vals[bmc_ip]) - zero_count[-1]  == 0:
