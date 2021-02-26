@@ -1,4 +1,5 @@
 import pymongo
+import datetime
 from app import mongoport, rackname
 
 def find_ikvm(bmc_ip):
@@ -271,3 +272,144 @@ def find_allfans(ip_list, sensor_id):
         dataset[sensor_name][i]['Reading'] = all_reading
     dataset['datetime'] = all_nodes_time[0] # different node has slightly different datetime
     return dataset
+
+def find_min_max(bmc_ip, api1, api2, boundry):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    data_entry = entries.find({"BMC_IP": bmc_ip})
+    all_readings = list(data_entry)
+    all_vals = {}
+    all_dates = []
+    for sensorID in all_readings[0][api1]:
+        all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
+    for i in range(len(all_readings)):
+        all_dates.append(all_readings[i]["Datetime"])
+        for sensorID in all_vals:
+            all_vals[sensorID].append(all_readings[i][api1][sensorID][api2])
+    extreme_vals = {}
+    date_format = "%Y-%m-%d %H:%M:%S"
+    elapsed_time = datetime.datetime.strptime(all_dates[-1], date_format) - datetime.datetime.strptime(all_dates[0], date_format)
+    elapsed_hour = str(round(elapsed_time.total_seconds()/3600,2))
+    last_date = all_dates[-1]
+    zero_count  = []
+    for sensorID in all_vals:
+        low = boundry
+        avg = 0
+        zero_count.append(0)
+        high = -boundry
+        low_date = "N/A"
+        high_date = "N/A" 
+        for i, n in enumerate(all_vals[sensorID]):
+            if type(n) == int or type(n) == float:
+                if n != 0:
+                    avg += n
+                    if low > n:
+                        low = n
+                        low_date = all_dates[i-1] # i-1 because the first element of all_vals is name, so it has one more element than all_dates
+                    if high < n:
+                        high = n
+                        high_date = all_dates[i-1]
+                else:
+                    zero_count[-1] += 1
+        if  len(all_vals[sensorID]) - zero_count[-1] -1  == 0:
+            avg = 0
+            zero_count.pop() # delete all zero reading
+        else:
+            avg = round(avg/(len(all_vals[sensorID]) - zero_count[-1] -1),4) # -1 because the first element is name
+        extreme_vals[all_vals[sensorID][0]] = [low, low_date, high, high_date,avg]    
+    messages = []
+    max_vals = []
+    min_vals = []
+    max_dates = []
+    min_dates = []
+    avg_vals = []
+    sensorNames = []
+    good_count =[]
+    for i in zero_count:
+        good_count.append(len(all_dates)-i) 
+    for i, sensorName in enumerate(extreme_vals):
+        min_temp = extreme_vals[sensorName][0]
+        min_date = extreme_vals[sensorName][1]
+        max_temp = extreme_vals[sensorName][2]
+        max_date = extreme_vals[sensorName][3]
+        avg_val = extreme_vals[sensorName][4]
+        if min_temp > max_temp or min_temp == boundry or max_temp == -boundry or avg_val == 0:
+            continue
+        else:
+            max_vals.append(max_temp)
+            min_vals.append(min_temp)
+            max_dates.append(max_date)
+            min_dates.append(min_date)
+            avg_vals.append(avg_val)
+            sensorNames.append(sensorName)
+            messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
+    return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count, last_date
+
+def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    all_vals = {}
+    all_dates = {}
+    # save data to dict
+    for bmc_ip in ip_list:
+        data = entries.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
+        all_vals[bmc_ip] = []
+        all_dates[bmc_ip] = []
+        for i in data: # data contains multiple readings, each reading has a time
+            all_vals[bmc_ip].append(i[api1][sensor_id][api2])
+            sensor_name = i[api1][sensor_id]['Name']
+            all_dates[bmc_ip].append(i['Datetime'])            
+    # find min/max  
+    max_vals = []
+    max_dates = []
+    min_vals = []
+    min_dates = []
+    avg_vals = []
+    zero_count = []
+    for bmc_ip in ip_list:
+        high = -boundry
+        low = boundry
+        high_date = "N/A"
+        min_date = "N/A"
+        zero_count.append(0)
+        avg = 0
+        for i, n in enumerate(all_vals[bmc_ip]):
+            if type(n) == int or type(n) == float:
+                if n != 0:
+                    avg += n
+                    if low > n:
+                        low = n
+                        low_date = all_dates[bmc_ip][i] 
+                    if high < n:
+                        high = n
+                        high_date = all_dates[bmc_ip][i]
+                else:
+                    zero_count[-1] += 1
+        if  len(all_vals[bmc_ip]) - zero_count[-1]  == 0:
+            avg = 0
+            #zero_count.pop() # delete all zero reading
+        else:
+            avg = round(avg/(len(all_vals[bmc_ip]) - zero_count[-1]),4)
+        max_vals.append(high)
+        max_dates.append(high_date)
+        min_vals.append(low)
+        min_dates.append(low_date)
+        avg_vals.append(avg)
+
+    date_format = "%Y-%m-%d %H:%M:%S"
+    elapsed_time = datetime.datetime.strptime(all_dates[ip_list[-1]][-1], date_format) - datetime.datetime.strptime(all_dates[ip_list[0]][0], date_format)
+    elapsed_hour = str(round(elapsed_time.total_seconds()/3600,2))
+    last_date = all_dates[ip_list[-1]][-1]
+
+    good_count = []
+    for i, bmc_ip in enumerate(ip_list):
+        good_count.append(len(all_dates[bmc_ip])-zero_count[i])
+        
+    all_count = 0
+    for i in all_dates.values():
+        all_count += len(i)
+    all_count = int(all_count/len(all_dates))
+    
+    return max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name
