@@ -127,6 +127,13 @@ def get_ip():
         s.close()
     return IP
 
+def getSerialNumberFromFile(ip,opt):
+    df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
+    if opt == 0:
+        return(df_all[df_all['OS_IP'] == ip]['System S/N'].values[0])
+    elif opt == 1:
+        return(df_all[df_all['IPMI_IP'] == ip]['System S/N'].values[0])
+
 @app.route('/about')
 def about():
     return render_template('about.html')
@@ -1387,6 +1394,9 @@ def min_max_fans_chart(bmc_ip):
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
     ip_list = getIPlist()
+    sn_list = []
+    for ip in ip_list:
+        sn_list.append(getSerialNumberFromFile(ip,1))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
@@ -1418,11 +1428,14 @@ def min_max_alltemperatures_chart():
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/min_max_allpower_chart')
 def min_max_allpower_chart():
     ip_list = getIPlist()
+    sn_list = []
+    for ip in ip_list:
+        sn_list.append(getSerialNumberFromFile(ip,1))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
@@ -1453,7 +1466,7 @@ def min_max_allpower_chart():
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):

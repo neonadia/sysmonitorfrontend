@@ -76,6 +76,7 @@
     <table id="obpage" class="table table-bordered table-striped" style="width:100%">
         <thead class="thead-dark" >
             <th class="align-middle" >BMC IPs</th>
+			<th class="align-middle" >SERIAL No.</th>
             <th class="align-middle" >MIN READING</th>
             <th class="align-middle" >MIN DATETIME</th>
             <th class="align-middle" >MAX READING</th>
@@ -85,9 +86,10 @@
             <th class="align-middle" >NA COUNT</th>
         </thead>
         <tbody>
-            {% for bmc_ips, min_vals, min_dates, max_vals, max_dates, avg_vals, good_count, zero_count in data %}
+            {% for bmc_ips, sn, min_vals, min_dates, max_vals, max_dates, avg_vals, good_count, zero_count in data %}
                 <tr>
                 <td class="align-middle font-weight-bold" ><h4>{{ bmc_ips }}</h4></td>
+				<td class="align-middle font-weight-bold" ><h4>{{ sn }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ min_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
