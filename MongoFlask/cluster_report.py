@@ -282,6 +282,7 @@ class Test(object):
         d2 = []
         font_size = 10
         centered = ParagraphStyle(name="centered", alignment=TA_CENTER)
+        warning = ParagraphStyle(name="normal",fontSize=12, textColor="red",leftIndent=40)
         for text in text_data:
             ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
             p = Paragraph(ptext, centered)
@@ -364,6 +365,7 @@ fontName="Helvetica">Jump to Benchmark Report</link>"""
         #self.story.append(PageBreak())
         #self.story.append(KeepTogether([Paragraph(ptext2, centered), dline, spacer, table2, p, dline]))
         
+        self.story.append(PageBreak())
         ptext_bm = """<a name="BM_TITLE"/><font color="black" size="12">Benchmark Report</font>"""
         benchmarks_title = Paragraph(ptext_bm, centered)
         benchmarks_title.keepWithNext = True
@@ -371,6 +373,24 @@ fontName="Helvetica">Jump to Benchmark Report</link>"""
         #self.story.append(KeepTogether([benchmarks_title,spacer,dline]))
         self.story.append(benchmarks_title)
         self.story.append(p)
+        
+        # if no benchmark data found
+        if len(benchmark_data) == 0:
+            ptext_nocontent1 = """<font>WARNING: No Benchmark selected or performed !!</font>"""
+            ptext_nocontent2 = """<font>1. Use UDP server controller page to perform benchmarks.</font>"""
+            ptext_nocontent3 = """<font>2. Use UDP benchmark result page to select results.</font>"""
+            benchmarks_nocontent1 = Paragraph(ptext_nocontent1, warning)
+            benchmarks_nocontent2 = Paragraph(ptext_nocontent2, warning)
+            benchmarks_nocontent3 = Paragraph(ptext_nocontent3, warning)
+            benchmarks_nocontent1.keepWithNext = True
+            benchmarks_nocontent2.keepWithNext = True
+            benchmarks_nocontent3.keepWithNext = True
+            self.story.append(Spacer(1, inch * 0.1))
+            self.story.append(benchmarks_nocontent1)
+            self.story.append(benchmarks_nocontent2)
+            self.story.append(benchmarks_nocontent3)
+        
+        
         #benchmark charts and tables
         
         #columns = ["Serial Number", "Results", "Unit"]

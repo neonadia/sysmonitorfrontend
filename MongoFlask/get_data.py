@@ -372,7 +372,7 @@ def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
         high = -boundry
         low = boundry
         high_date = "N/A"
-        min_date = "N/A"
+        low_date = "N/A"
         zero_count.append(0)
         avg = 0
         for i, n in enumerate(all_vals[bmc_ip]):
