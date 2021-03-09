@@ -3,7 +3,7 @@ redfish==2.1.5
 pymongo==3.10.1
 json2html==1.3.0
 flask_weasyprint
-reportlab==3.2.0
+reportlab==3.5.55
 requests==2.23.0
 pandas==1.0.5
 jsondiff==1.2.0
