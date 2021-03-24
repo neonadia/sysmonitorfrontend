@@ -80,10 +80,13 @@ def index():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
-        if powerState(i['BMC_IP'],current_auth):
-            current_state = "ON"
+        if os.environ['POWERDISP'] == "ON":
+            if powerState(i['BMC_IP'],current_auth):
+                current_state = "ON"
+            else:
+                current_state = "OFF"
         else:
-            current_state = "OFF"
+            current_state = "N/A"
         if current_flag == 0:
             monitorStatus.append("IDLE " + current_state)
         elif current_flag == 1:
