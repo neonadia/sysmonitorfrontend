@@ -101,7 +101,9 @@ def index():
             monitorStatus.append("UNKOWN " + current_state)
         
     for k in bmc_ip:
-        details = list(db.monitor.find({"BMC_IP": k}, {"_id":0, "Event":1}))[-1]['Event']
+        for i in monitor_collection.find({"BMC_IP": k}, {"_id":0, "Event":1}).sort("_id",-1):
+            details = i['Event']
+            break
         details.reverse() # begin from latest
         bmc_details.append(details)
         ikvm.append(get_data.find_ikvm(k))
@@ -1041,7 +1043,9 @@ def pwdoutput():
 @app.route('/event')
 def event():
     ip = request.args.get('var')
-    events = list(db.monitor.find({"BMC_IP": ip}, {"_id":0, "Event":1}))[-1]['Event']
+    for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).sort("_id",-1):
+        events = i['Event']
+        break   
     return render_template('event.html', data=events)
 
 @app.route('/udpserverupload',methods=["GET","POST"])
