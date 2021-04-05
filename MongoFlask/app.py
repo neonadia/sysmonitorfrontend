@@ -228,7 +228,7 @@ def systemresetstart():
             time.sleep(1)
         starttime = time.time()
         insert_flag(3)
-        with Pool(100) as p:
+        with Pool() as p:
             p.map(systemresetone, data)
         insert_flag(4)
         endtime = time.time()
@@ -410,7 +410,7 @@ def biosupdatestartrack():
             flag = read_flag()
             time.sleep(1)
         insert_flag(2)
-        with Pool(100) as p:
+        with Pool() as p:
             biosflag = p.map(updateBIOSrack, data)
         time.sleep(3)
         insert_flag(0)
@@ -528,7 +528,7 @@ def bmcupdatestartrack():
             flag = read_flag()
             time.sleep(1)
         insert_flag(2)
-        with Pool(100) as p:
+        with Pool() as p:
             bmcflag = p.map(updateBMCrack, data)
         bftime = time.time()
         tspend = str(int(bftime - bstime)) + " secs"
@@ -619,7 +619,7 @@ def bmceventcleanerstart():
                 data.append([])
                 data[i].append(iplist[i])
                 data[i].append(df_pwd[df_pwd['ip'] == iplist[i]]['pwd'].values[0])            
-        with Pool(100) as p:
+        with Pool() as p:
             p.map(bmceventcleanerone, data)
         os.remove(savepath+"bmceventcleanerip.txt")
         messages = []
@@ -679,7 +679,7 @@ def ipmitoolstart():
                 data[i].append(iplist[i])
                 data[i].append(df_pwd[df_pwd['ip'] == iplist[i]]['pwd'].values[0])
                 data[i].append(request.form['ipmicmd'])
-        #with Pool(100) as p:
+        #with Pool() as p:
         #    ipmioutput = p.map(ipmistartone, data)
         ipmistdout = []
         ipmistderr = []

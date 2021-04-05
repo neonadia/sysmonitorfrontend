@@ -1,6 +1,7 @@
 import pymongo
 import datetime
 from app import mongoport, rackname
+from multiprocessing import Pool
 
 def find_ikvm(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -346,21 +347,40 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
     return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count, last_date
 
-def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
+
+
+def find_min_max_rack_helper(input_list):
     connect = pymongo.MongoClient('localhost', mongoport)
     db = connect['redfish']
     entries = db.monitor
     all_vals = {}
     all_dates = {}
-    # save data to dict
-    for bmc_ip in ip_list:
-        data = entries.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
-        all_vals[bmc_ip] = []
-        all_dates[bmc_ip] = []
-        for i in data: # data contains multiple readings, each reading has a time
-            all_vals[bmc_ip].append(i[api1][sensor_id][api2])
-            sensor_name = i[api1][sensor_id]['Name']
-            all_dates[bmc_ip].append(i['Datetime'])            
+    bmc_ip = input_list[0]
+    api1 = input_list[1]
+    api2 = input_list[2]
+    sensor_id = input_list[3]
+    data = entries.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
+    all_vals[bmc_ip] = []
+    all_dates[bmc_ip] = []
+    for i in data: # data contains multiple readings, each reading has a time
+        all_vals[bmc_ip].append(i[api1][sensor_id][api2])
+        sensor_name = i[api1][sensor_id]['Name']
+        all_dates[bmc_ip].append(i['Datetime'])
+    return all_vals, sensor_name, all_dates
+
+def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
+    input_list = []
+    for bmc in ip_list:
+        input_list.append([bmc, api1, api2, sensor_id])
+    with Pool() as p:
+        output = p.map(find_min_max_rack_helper, input_list)
+    all_vals = {}
+    all_dates = {}
+    for i in output:
+        cur_key = list(i[0].keys())[0]
+        all_vals[cur_key] = i[0][cur_key]
+        sensor_name = i[1]
+        all_dates[cur_key] = i[2][cur_key]        
     # find min/max  
     max_vals = []
     max_dates = []
