@@ -38,13 +38,29 @@ monitor_collection = db.monitor
 udp_collection = db.udp
 udp_deleted_collection = db.udpdel
 
+err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
+
 
 def printf(data):
     print(data, flush=True)
 
+def indexHelper(bmc_ip):
+    for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id":0, "Event":1}).sort("_id",-1):
+        details = i['Event']
+        break
+    details.reverse() # begin from latest
+    bmc_details = details
+    ikvm = get_data.find_ikvm(bmc_ip)
+    if details == ['']:
+        bmc_event = "OK"
+    elif any(w in " ".join(str(x) for x in details) for w in err_list):
+        bmc_event = "ERROR"
+    else:
+        bmc_event = "WARNING"
+    return [bmc_event, bmc_details, ikvm]
+
 @app.route('/')
 def index():
-    err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
     bmc_ip = []
     timestamp = []
     serialNumber = []
@@ -99,20 +115,14 @@ def index():
             monitorStatus.append("REBOOT DONE " + current_state)
         else:
             monitorStatus.append("UNKOWN " + current_state)
+    
+    with Pool() as p:
+        output = p.map(indexHelper, bmc_ip)
         
-    for k in bmc_ip:
-        for i in monitor_collection.find({"BMC_IP": k}, {"_id":0, "Event":1}).sort("_id",-1):
-            details = i['Event']
-            break
-        details.reverse() # begin from latest
-        bmc_details.append(details)
-        ikvm.append(get_data.find_ikvm(k))
-        if details == ['']:
-            bmc_event.append("OK")
-        elif any(w in " ".join(str(x) for x in details) for w in err_list):
-            bmc_event.append("ERROR")
-        else:
-            bmc_event.append("WARNING")
+    for i in output:
+        bmc_event.append(i[0])
+        bmc_details.append(i[1])
+        ikvm.append(i[2])
             
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)

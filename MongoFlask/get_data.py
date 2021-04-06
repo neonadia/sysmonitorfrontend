@@ -143,7 +143,7 @@ def find_allpowercontrols(ip_list):
         output = p.map(find_allpowercontrols_helper, input_list)
     dataset['datetime'] = output[0][0]
     for i, bmc_ip in enumerate(ip_list):
-        if bmc_ip != output[i][2] or bmc_ip != dataset[sensor_name][i]['Name']:
+        if bmc_ip != output[i][2] or bmc_ip != dataset[sensor_name][i]['Name'].replace(' ,Unit: W',''):
             print("WARINING!! bmc_ip not match: " + bmc_ip + " && " + output[i][2] + " && " + dataset[sensor_name][i]['Name'],flush=True)
         else:
             print("Fetched " + bmc_ip, flush=True)
