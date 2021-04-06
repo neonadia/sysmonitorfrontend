@@ -101,7 +101,21 @@ def find_powersupplies(bmc_ip):
     connect.close()
 
     return dataset    
-    
+
+def find_allpowercontrols_helper(input_list):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    bmc_ip = input_list[0]
+    sensor_id = input_list[1]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "PowerControl": 1})
+    all_time = []
+    all_reading = []
+    for j in data_entry:
+        all_time.append(j['Datetime'])
+        all_reading.append(j['PowerControl'][sensor_id]['PowerConsumedWatts'])
+    return all_time, all_reading, bmc_ip
+
 
 def find_allpowercontrols(ip_list):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -109,6 +123,8 @@ def find_allpowercontrols(ip_list):
     collection = 'monitor'
     entries = db[collection]
     data_entries = []
+    sensor_name = "PowerControl"
+    sensor_id = "1"
     for bmc_ip in ip_list:
         data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "PowerControl": 1}))
 
@@ -120,16 +136,18 @@ def find_allpowercontrols(ip_list):
         dataset['PowerControl'].append({'Name': bmc_ip + ' ,Unit: W', 'Reading': []})
 
     # get dataset
-    all_nodes_time = []
-    for i, data_entry in enumerate(data_entries):
-        all_time = []
-        all_reading = []
-        for j in data_entry:
-            all_time.append(j['Datetime'])
-            all_reading.append(j['PowerControl']['1']['PowerConsumedWatts'])
-        all_nodes_time.append(all_time)
-        dataset['PowerControl'][i]['Reading'] = all_reading
-    dataset['datetime'] = all_nodes_time[0] # different node has slightly different datetime
+    input_list = []
+    for ip in ip_list:
+        input_list.append([ip, sensor_id])
+    with Pool() as p:
+        output = p.map(find_allpowercontrols_helper, input_list)
+    dataset['datetime'] = output[0][0]
+    for i, bmc_ip in enumerate(ip_list):
+        if bmc_ip != output[i][2] or bmc_ip != dataset[sensor_name][i]['Name']:
+            print("WARINING!! bmc_ip not match: " + bmc_ip + " && " + output[i][2] + " && " + dataset[sensor_name][i]['Name'],flush=True)
+        else:
+            print("Fetched " + bmc_ip, flush=True)
+        dataset[sensor_name][i]['Reading'] = output[i][1]
     
     # avg and sum
     power_sum = [ 0 for x in range(len(dataset['datetime']))]
@@ -169,6 +187,20 @@ def find_temperatures(bmc_ip):
 
     return dataset
 
+def find_alltemperatures_helper(input_list):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    bmc_ip = input_list[0]
+    sensor_id = input_list[1]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1})
+    all_time = []
+    all_reading = []
+    for j in data_entry:
+        all_time.append(j['Datetime'])
+        all_reading.append(j['Temperatures'][sensor_id]['ReadingCelsius'])
+    return all_time, all_reading, bmc_ip
+
 def find_alltemperatures(ip_list, sensor_id):
     connect = pymongo.MongoClient('localhost', mongoport)
     db = connect['redfish']
@@ -197,16 +229,18 @@ def find_alltemperatures(ip_list, sensor_id):
         dataset[sensor_name].append({'Name': bmc_ip , 'Reading': []})
         
     # get dataset
-    all_nodes_time = []
-    for i, data_entry in enumerate(data_entries):
-        all_time = []
-        all_reading = []
-        for j in data_entry:
-            all_time.append(j['Datetime'])
-            all_reading.append(j['Temperatures'][sensor_id]['ReadingCelsius'])
-        all_nodes_time.append(all_time)
-        dataset[sensor_name][i]['Reading'] = all_reading
-    dataset['datetime'] = all_nodes_time[0] # different node has slightly different datetime
+    input_list = []
+    for ip in ip_list:
+        input_list.append([ip, sensor_id])
+    with Pool() as p:
+        output = p.map(find_alltemperatures_helper, input_list)
+    dataset['datetime'] = output[0][0]
+    for i, bmc_ip in enumerate(ip_list):
+        if bmc_ip != output[i][2] or bmc_ip != dataset[sensor_name][i]['Name']:
+            print("WARINING!! bmc_ip not match: " + bmc_ip + " && " + output[i][2] + " && " + dataset[sensor_name][i]['Name'],flush=True)
+        else:
+            print("Fetched " + bmc_ip, flush=True)
+        dataset[sensor_name][i]['Reading'] = output[i][1]
     return dataset
 
 def find_fans(bmc_ip):
@@ -233,6 +267,20 @@ def find_fans(bmc_ip):
     connect.close()
 
     return dataset
+
+def find_allfans_helper(input_list):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    bmc_ip = input_list[0]
+    sensor_id = input_list[1]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1})
+    all_time = []
+    all_reading = []
+    for j in data_entry:
+        all_time.append(j['Datetime'])
+        all_reading.append(j['Fans'][sensor_id]['Reading'])
+    return all_time, all_reading, bmc_ip
 
 def find_allfans(ip_list, sensor_id):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -262,16 +310,18 @@ def find_allfans(ip_list, sensor_id):
         dataset[sensor_name].append({'Name': bmc_ip , 'Reading': []})
         
     # get dataset
-    all_nodes_time = []
-    for i, data_entry in enumerate(data_entries):
-        all_time = []
-        all_reading = []
-        for j in data_entry:
-            all_time.append(j['Datetime'])
-            all_reading.append(j['Fans'][sensor_id]['Reading'])
-        all_nodes_time.append(all_time)
-        dataset[sensor_name][i]['Reading'] = all_reading
-    dataset['datetime'] = all_nodes_time[0] # different node has slightly different datetime
+    input_list = []
+    for ip in ip_list:
+        input_list.append([ip, sensor_id])
+    with Pool() as p:
+        output = p.map(find_allfans_helper, input_list)
+    dataset['datetime'] = output[0][0]
+    for i, bmc_ip in enumerate(ip_list):
+        if bmc_ip != output[i][2] or bmc_ip != dataset[sensor_name][i]['Name']:
+            print("WARINING!! bmc_ip not match: " + bmc_ip + " && " + output[i][2] + " && " + dataset[sensor_name][i]['Name'], flush=True)
+        else:
+            print("Fetched " + bmc_ip, flush=True)
+        dataset[sensor_name][i]['Reading'] = output[i][1]
     return dataset
 
 def find_min_max(bmc_ip, api1, api2, boundry):
