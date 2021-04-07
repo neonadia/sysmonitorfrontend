@@ -39,7 +39,7 @@ udp_collection = db.udp
 udp_deleted_collection = db.udpdel
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
-
+IPMIdict = {"#0x09": "| Inlet Temperature"} # add "|" if neccessary
 
 def printf(data):
     print(data, flush=True)
@@ -49,7 +49,13 @@ def indexHelper(bmc_ip):
         details = i['Event']
         break
     details.reverse() # begin from latest
-    bmc_details = details
+    bmc_details = []
+    for i in range(len(details)):
+        cur_detail = details[i]
+        for key in IPMIdict.keys():
+            if key in cur_detail:
+                cur_detail = cur_detail.replace(key,IPMIdict[key])
+        bmc_details.append(cur_detail)
     ikvm = get_data.find_ikvm(bmc_ip)
     if details == ['']:
         bmc_event = "OK"
@@ -1055,7 +1061,11 @@ def event():
     ip = request.args.get('var')
     for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).sort("_id",-1):
         events = i['Event']
-        break   
+        break
+    for i in range(len(events)):
+        for key in IPMIdict.keys():
+            if key in events[i]:
+                events[i] = events[i].replace(key,IPMIdict[key]) + " | Note the error number '" + key + "' has been replaced by '" + IPMIdict[key] + "'!"
     return render_template('event.html', data=events)
 
 @app.route('/udpserverupload',methods=["GET","POST"])
