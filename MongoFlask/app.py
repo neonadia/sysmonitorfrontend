@@ -63,7 +63,29 @@ def indexHelper(bmc_ip):
         bmc_event = "ERROR"
     else:
         bmc_event = "WARNING"
-    return [bmc_event, bmc_details, ikvm]
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
+    if os.environ['POWERDISP'] == "ON":
+        if powerState(bmc_ip,current_auth):
+            current_state = "ON"
+        else:
+                current_state = "OFF"
+    else:
+        current_state = "N/A"
+    current_flag = read_flag()
+    if current_flag == 0:
+        monitor_status = "IDLE " + current_state
+    elif current_flag == 1:
+        monitor_status = "FETCHING " + current_state
+    elif current_flag == 2:
+        monitor_status = "UPDATING " + current_state
+    elif current_flag == 3:
+        monitor_status = "REBOOTING " + current_state
+    elif current_flag == 4:
+        monitor_status = "REBOOT DONE " + current_state
+    else:
+       monitor_status = "UNKOWN " + current_state
+    return [bmc_event, bmc_details, ikvm, monitor_status]
 
 @app.route('/')
 def index():
@@ -97,31 +119,11 @@ def index():
             biosVersion.append(i['UpdateService']['SmcFirmwareInventory']['2']['Version'])
         except:
             biosVersion.append("Not Avaliable")
-        current_flag = read_flag()
         current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == i['BMC_IP']]['pwd'].values[0])
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
-        if os.environ['POWERDISP'] == "ON":
-            if powerState(i['BMC_IP'],current_auth):
-                current_state = "ON"
-            else:
-                current_state = "OFF"
-        else:
-            current_state = "N/A"
-        if current_flag == 0:
-            monitorStatus.append("IDLE " + current_state)
-        elif current_flag == 1:
-            monitorStatus.append("FETCHING " + current_state)
-        elif current_flag == 2:
-            monitorStatus.append("UPDATING " + current_state)
-        elif current_flag == 3:
-            monitorStatus.append("REBOOTING " + current_state)
-        elif current_flag == 4:
-            monitorStatus.append("REBOOT DONE " + current_state)
-        else:
-            monitorStatus.append("UNKOWN " + current_state)
-    
+
     with Pool() as p:
         output = p.map(indexHelper, bmc_ip)
         
@@ -129,6 +131,7 @@ def index():
         bmc_event.append(i[0])
         bmc_details.append(i[1])
         ikvm.append(i[2])
+        monitorStatus.append(i[3])
             
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
