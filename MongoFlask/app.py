@@ -1430,7 +1430,7 @@ def min_max_alltemperatures_chart():
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
-    chart_headers = ['Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "BMC IPs": ip_list})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "BMC IPs": ip_list})
     sns.set_theme(style="whitegrid")
@@ -1469,7 +1469,7 @@ def min_max_allpower_chart():
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
-    chart_headers = ['Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "BMC IPs": ip_list})
     df_min = pd.DataFrame({"Power Consumption (W)":min_vals, "BMC IPs": ip_list})
     sns.set_theme(style="whitegrid")
