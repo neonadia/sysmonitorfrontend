@@ -27,7 +27,7 @@ def find_powercontrol(bmc_ip):
     data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "PowerControl": 1})
 
     # initial dataset
-    dataset = {'bmc_ip': bmc_ip, 'datetime': [], 'PowerControl': []}
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'PowerControl': []}
 
     # power control
     for i in range(len(data_entry[0]['PowerControl'])):
@@ -53,7 +53,7 @@ def find_voltages(bmc_ip):
     data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Voltages": 1})
 
     # initial dataset
-    dataset = {'bmc_ip': bmc_ip, 'datetime': [], 'Voltages': []}
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'Voltages': []}
 
     # voltages
     for i in range(len(data_entry[0]['Voltages'])):
@@ -79,7 +79,7 @@ def find_powersupplies(bmc_ip):
     data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "PowerSupplies": 1})
 
     # initial dataset
-    dataset = {'bmc_ip': bmc_ip, 'datetime': [], 'PowerSupplies': []}
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'PowerSupplies': []}
 
     # power supplies
     for i in range(len(data_entry[0]['PowerSupplies'])):
@@ -171,7 +171,7 @@ def find_temperatures(bmc_ip):
     data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1})
 
     # initial dataset
-    dataset = {'bmc_ip': bmc_ip, 'datetime': [], 'Temperatures': []}
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'Temperatures': []}
 
     # temperatures
     for i in range(len(data_entry[0]['Temperatures'])):
@@ -251,7 +251,7 @@ def find_fans(bmc_ip):
     data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1})
 
     # initial dataset
-    dataset = {'bmc_ip': bmc_ip, 'datetime': [], 'Fans': []}
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'Fans': []}
 
     # fans
     for i in range(len(data_entry[0]['Fans'])):
