@@ -84,8 +84,10 @@ def indexHelper(bmc_ip):
     elif current_flag == 4:
         monitor_status = "REBOOT DONE " + current_state
     else:
-       monitor_status = "UNKOWN " + current_state
-    return [bmc_event, bmc_details, ikvm, monitor_status]
+       monitor_status = "UNKOWN " + current_state   
+    for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
+        cur_date = i['Datetime']
+    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date]
 
 @app.route('/')
 def index():
@@ -107,7 +109,6 @@ def index():
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
-        timestamp.append(i['Datetime'])
         bmcMacAddress.append(i['UUID'][24:])
         serialNumber.append(i['Systems']['1']['SerialNumber'])
         modelNumber.append(i['Systems']['1']['Model'])
@@ -123,7 +124,7 @@ def index():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
-
+    
     with Pool() as p:
         output = p.map(indexHelper, bmc_ip)
         
@@ -132,6 +133,7 @@ def index():
         bmc_details.append(i[1])
         ikvm.append(i[2])
         monitorStatus.append(i[3])
+        timestamp.append(i[4])
             
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
