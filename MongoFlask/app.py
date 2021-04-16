@@ -84,7 +84,7 @@ def indexHelper(bmc_ip):
     elif current_flag == 4:
         monitor_status = "REBOOT DONE " + current_state
     else:
-       monitor_status = "UNKOWN " + current_state   
+        monitor_status = "UNKOWN " + current_state   
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
     return [bmc_event, bmc_details, ikvm, monitor_status, cur_date]
