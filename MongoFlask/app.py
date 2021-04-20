@@ -69,7 +69,7 @@ def indexHelper(bmc_ip):
         if powerState(bmc_ip,current_auth):
             current_state = "ON"
         else:
-                current_state = "OFF"
+            current_state = "OFF"
     else:
         current_state = "N/A"
     current_flag = read_flag()
