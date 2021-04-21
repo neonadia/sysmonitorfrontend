@@ -12,7 +12,7 @@ from sys import getsizeof
 import time
 import subprocess
 from subprocess import Popen, PIPE
-from firmwareupdate import BiosUpdatingMode, BiosUploadingFile, BiosStartUpdating, powerState, systemRebootTesting, FirmUpdatingMode, FirmUploadingFile, FirmStartUpdating, redfishReadyCheck, CancelBiosUpdate, CancelFirmUpdate
+from firmwareupdate import BiosUpdatingMode, BiosUploadingFile, BiosStartUpdating, powerState, systemRebootTesting, FirmUpdatingMode, FirmUploadingFile, FirmStartUpdating, redfishReadyCheck, CancelBiosUpdate, CancelFirmUpdate, checkUID
 from password import find_password
 from multiprocessing import Pool
 from bioscomparison import compareBiosSettings, bootOrderOutput
@@ -70,8 +70,10 @@ def indexHelper(bmc_ip):
             current_state = "ON"
         else:
             current_state = "OFF"
+        uid_state = checkUID(bmc_ip, current_auth)
     else:
         current_state = "N/A"
+        uid_state = "N/A"
     current_flag = read_flag()
     if current_flag == 0:
         monitor_status = "IDLE " + current_state
@@ -87,7 +89,7 @@ def indexHelper(bmc_ip):
         monitor_status = "UNKOWN " + current_state   
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
-    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date]
+    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state]
 
 @app.route('/')
 def index():
@@ -102,6 +104,7 @@ def index():
     bmcMacAddress = []
     ikvm = []
     monitorStatus = []
+    uidStatus = []
     pwd =[]
     mac_list = []
     os_ip = []
@@ -134,10 +137,11 @@ def index():
         ikvm.append(i[2])
         monitorStatus.append(i[3])
         timestamp.append(i[4])
+        uidStatus.append(i[5])
             
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
-    data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list)
+    data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus)
     rackobserverurl = 'http://' + get_ip() + ':' +  os.environ['RACKPORT']
     return render_template('index.html', rackname = rackname, x=data, rackobserverurl = rackobserverurl)
 

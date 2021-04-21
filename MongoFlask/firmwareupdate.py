@@ -9,6 +9,16 @@ fuopath = os.environ['FUOPATH']
 def printf(data):
     print(data, flush=True)
 
+# Check UID light status
+def checkUID(IPMI, auth):
+    login_host = "https://" + IPMI
+    uidAPI = "/redfish/v1/Chassis/1"
+    response = requests.get(login_host + uidAPI,verify=False,auth=auth)    
+    if response.status_code == 200:
+        return(response.json()['IndicatorLED'])
+    else:
+        return(str(response.status_code))
+
 # Entering updating mode
 def BiosUpdatingMode(IPMI,auth):
     biosAPI = "/redfish/v1/UpdateService/SmcFirmwareInventory/BIOS/"

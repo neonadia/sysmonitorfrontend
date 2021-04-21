@@ -119,6 +119,7 @@
         <th class="align-middle" >BMC Status</th>
         <th class="align-middle" >Status</th>
         <th class="align-middle" >UDP Message</th>
+        <th class="align-middle" >UID</th>
         <th class="align-middle" >Details</th>
         <th class="align-middle" >Sensors</th>
         <th class="align-middle" >Min/Max</th>
@@ -183,7 +184,8 @@
             {% else %}
                 <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
             {% endif %}
-            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>            
+            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>     
+            <td class="align-middle font-weight-bold text-success" >{{ row[15] }}</td>             
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle font-weight-bold" ><a class="fas fa-chart-line" href="{{ url_for('index') }}chart_cputemperatures/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
