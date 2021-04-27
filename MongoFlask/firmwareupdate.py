@@ -11,9 +11,23 @@ def printf(data):
 
 # Check UID light status
 def checkUID(IPMI, auth):
+    ipmicmd = 'raw 0x30 0x0c'
+    process = Popen('ipmitool -I lanplus' + ' -H ' +  IPMI + ' -U ' + 'ADMIN' + ' -P ' + auth[1] + ' ' + ipmicmd, shell=True, stdout=PIPE, stderr=PIPE)
+    try:
+        stdout, stderr = process.communicate()
+    except:
+        printf("No connection!!!")
+        return "N/A"
+    if "01" in str(stdout):
+        return "BLINKING"
+    else:
+        return "OFF"
+
+# deprecated
+def checkUIDRedfish(IPMI, auth):
     login_host = "https://" + IPMI
     uidAPI = "/redfish/v1/Chassis/1"
-    response = requests.get(login_host + uidAPI,verify=False,auth=auth)    
+    response = requests.get(login_host + uidAPI,verify=False,auth=auth)     
     if response.status_code == 200:
         return(response.json()['IndicatorLED'])
     else:
