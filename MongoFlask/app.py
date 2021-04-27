@@ -70,9 +70,11 @@ def indexHelper(bmc_ip):
             current_state = "ON"
         else:
             current_state = "OFF"
-        uid_state = checkUID(bmc_ip, current_auth)
     else:
         current_state = "N/A"
+    if os.environ['UIDDISP'] == "ON":
+        uid_state = checkUID(bmc_ip, current_auth)
+    else:
         uid_state = "N/A"
     current_flag = read_flag()
     if current_flag == 0:
