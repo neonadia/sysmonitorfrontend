@@ -1596,9 +1596,13 @@ def internal_error(e):
 def howToDeploy():
     return send_file("/app/templates/Manual.pdf",cache_timeout=0)
 
-@app.route('/developmentnote')
-def developmentnote():
+@app.route('/developmentnote08182020')
+def developmentnote08182020():
     return send_file("/app/templates/DevelopmentNote.pdf",cache_timeout=0)
+
+@app.route('/developmentnote04152021')
+def developmentnote04152021():
+    return send_file("/app/templates/DevelopmentNoteV2.pdf",cache_timeout=0)
 
 ### Report Generation ###
 @app.route('/downloadClusterReport')
