@@ -53,31 +53,28 @@
                     <i class="fas fa-home"></i>
                 </a>
             </li>
-            <li class='nav-item'>
-                <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
-            </li>
             <div class="dropdown">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Other Sensors
+                    Sensors
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_blank">Processors Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_blank">VRM Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_blank">DIMM Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_blank">Others Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}"  target="_blank">Fan Speed</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_blank">Power Consumption</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}" target="_blank">Power Supplies Power</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}" target="_blank">Power Supplies Voltage</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_blank">System Voltages</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ bmc_ip }}" target="_blank">Min/Max Temp</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ bmc_ip }}" target="_blank">Min/Max Fan Speed</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_blank">Min/Max Voltages</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">Processors Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_self">VRM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_self">DIMM Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_self">Others Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}"  target="_self">Fan Speed</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_self">Power Consumption</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}" target="_self">Power Supplies Power</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}" target="_self">Power Supplies Voltage</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_self">System Voltages</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ bmc_ip }}" target="_self">Min/Max Temp</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ bmc_ip }}" target="_self">Min/Max Fan Speed</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_self">Min/Max Voltages</a>
                     </div>
             </div>
             <li class="dropdown">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Other Nodes
+                    Nodes
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         {% for ip in ip_list %}
@@ -89,11 +86,11 @@
             <li class="nav-item">
                 <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}{{ chart_name }}/{{ bmc_ip }}">Raw Results</a>
             </li>
-            -->            
+                        
             <li class="nav-item">
                 <button class="btn btn-danger btn-lg text-white" onclick="self.close()">Close</button>
             </li>
-            
+            -->
         </ul>
     </nav>
         
@@ -121,9 +118,26 @@
         <tbody>
             {% for sensorNames, min_vals, min_dates, max_vals, max_dates, avg_vals, good_count, zero_count in data %}
                 <tr>
-                <td class="align-middle font-weight-bold" ><h4>{{ sensorNames }}</h4></td>
+                <td class="align-middle font-weight-bold" ><h4>
+                    {% if 'Temp' in sensorNames %}
+                        {% if 'DIMM' in sensorNames %}
+                            <a href ="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
+                        {% elif 'CPU' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
+                        {% elif 'VRM' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
+                        {% endif %} 
+                    {% elif 'FAN' in sensorNames %}
+                        <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
+                    {% else %}
+                        <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_self">{{sensorNames}}</a>
+                    {% endif %}
+                    </h4>
+                </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ min_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }}</h4></td>
+                <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }} </h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ max_dates }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ avg_vals }}</h4></td>
@@ -147,8 +161,8 @@
 
 
         <!-- Content -->
-        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
-        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+        <p>
+        LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
         </p>
 
 

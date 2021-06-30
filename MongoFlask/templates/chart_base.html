@@ -28,7 +28,9 @@
     <nav class="navbar navbar-dark bg-primary">
         <div class="form-row align-items-center">
             <div class='col col-auto'>
-                <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
+                <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}" role="button">
+                    <i class="fas fa-home"></i>
+                </a>
             </div>
             <div class="col col-auto">
                 <i class="fas fa-history text-white"></i>
@@ -60,7 +62,7 @@
             </div>
             <div class="dropdown col col-auto">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Other Sensors
+                    Sensors
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_blank">Processors Temp</a>
@@ -79,7 +81,7 @@
             </div>
             <div class="dropdown col col-auto">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Other Nodes
+                    Nodes
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         {% for ip in ip_list %}

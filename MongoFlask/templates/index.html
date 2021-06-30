@@ -129,7 +129,7 @@
             <tr>
             <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
             {% set ikvm = 'https://' +  row[9] %}
-            <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}">{{ row[0] }}</a></td>
+            <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
             <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
             <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[1] }}</td>
@@ -188,7 +188,7 @@
             <td class="align-middle font-weight-bold text-success" >{{ row[15] }}</td>             
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle font-weight-bold" ><a class="fas fa-chart-line" href="{{ url_for('index') }}chart_cputemperatures/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
-            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
+            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_self"></a></td>
             </tr>
         {% endfor %}
     </tbody>
@@ -205,7 +205,6 @@
 
 
         <!-- Content -->
-        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
         <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
         </p>
 

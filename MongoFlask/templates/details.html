@@ -21,12 +21,9 @@
             <i class="fas fa-home"></i>
         </a>
     </li>
-    <li class='nav-item'>
-        <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button">Home</a>
-    </li>
     <li class="dropdown">
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Sensor List
+            Sensors
         </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <a class="dropdown-item" href="chart_cputemperatures/{{ ip }}" target="_blank">Processors Temp</a>
@@ -48,6 +45,7 @@
                 -->
             </div>
     </li>
+    
     <!--
     <li class="dropdown">
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -220,8 +218,7 @@
 
 
 
-        <!-- Content -->
-        <h5 class="text-uppercase font-weight-bold ">Introduction</h5>
+        <!-- Content --> 
         <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
         </p>
 
