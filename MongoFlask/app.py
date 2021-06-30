@@ -159,12 +159,21 @@ def get_ip():
         s.close()
     return IP
 
+
 def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
     if opt == 0:
         return(df_all[df_all['OS_IP'] == ip]['System S/N'].values[0])
     elif opt == 1:
         return(df_all[df_all['IPMI_IP'] == ip]['System S/N'].values[0])
+
+def getSerialNumber(ipmiip):
+    cur = collection.find_one({"BMC_IP": ipmiip},{"Systems.1.SerialNumber":1})
+    if cur != None:
+        return(cur['Systems']['1']['SerialNumber'])
+    else:
+        return("NA")
+        
 
 @app.route('/about')
 def about():
@@ -1434,7 +1443,7 @@ def min_max_alltemperatures_chart():
     ip_list = getIPlist()
     sn_list = []
     for ip in ip_list:
-        sn_list.append(getSerialNumberFromFile(ip,1))   
+        sn_list.append(getSerialNumber(ip))  
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
@@ -1473,7 +1482,7 @@ def min_max_allpower_chart():
     ip_list = getIPlist()
     sn_list = []
     for ip in ip_list:
-        sn_list.append(getSerialNumberFromFile(ip,1))   
+        sn_list.append(getSerialNumber(ip))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
