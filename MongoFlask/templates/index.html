@@ -187,8 +187,35 @@
             <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>     
             <td class="align-middle font-weight-bold text-success" >{{ row[15] }}</td>             
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
-            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-line" href="{{ url_for('index') }}chart_cputemperatures/{{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
-            <td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_self"></a></td>
+            <td class="align-middle">
+                <div class="dropdown" style="align-middle">  
+                    <a class="fas fa-chart-bar text-primary" style="font-size: 24px"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0] }}" target="_blank">Processors Temps</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0] }}" target="_blank">VRM Temps</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}" target="_blank">DIMM Temps</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0] }}" target="_blank">Others Temps</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}"  target="_blank">Fan Speeds</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ row[0] }}" target="_blank">Power Consumption</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ row[0] }}" target="_blank">Power Supplies Power</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ row[0] }}" target="_blank">Power Supplies Voltages</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}"  target="_blank">System Voltages</a>
+                    </div>
+                </div>
+            </td>
+            <td class="align-middle">
+                <div class="dropdown" style="align-middle">  
+                    <a class="fas fa-chart-bar text-primary" style="font-size: 24px"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ row[0] }}" target="_self">Temps</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ row[0] }}" target="_self">Fan Speeds</a>
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ row[0] }}" target="_self">Voltages</a>        
+                    </div>
+                </div>
+            </td>
+           <!--<td class="align-middle font-weight-bold" ><a class="fas fa-chart-bar" href="{{ url_for('index') }}min_max_temperatures_chart/{{row[0]}}" style="font-size: 30px" target="_self"></a></td> -->
             </tr>
         {% endfor %}
     </tbody>
