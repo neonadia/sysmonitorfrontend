@@ -137,9 +137,45 @@
                     </h4>
                 </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ min_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }} </h4></td>
+                <td class="align-middle font-weight-bold text-primary" >
+                    <h4>
+                        {% if 'Temp' in sensorNames %}
+                            {% if 'DIMM' in sensorNames %}
+                                <a href ="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?t={{ min_dates}}" target="_self">{{ min_dates }}</a>
+                            {% elif 'CPU' in sensorNames %}
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?t={{ min_dates}}" target="_self">{{ min_dates }}</a>
+                            {% elif 'VRM' in sensorNames %}
+                                <a href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?t={{ min_dates}}" target="_self">{{ min_dates }}</a>
+                            {% else %}
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?t={{ min_dates}}" target="_self">{{ min_dates }}</a>
+                            {% endif %} 
+                        {% elif 'FAN' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?t={{ min_dates}}" target="_self">{{ min_dates }}</a>
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?t={{ min_dates}}"  target="_self">{{ min_dates }}</a>
+                        {% endif %}
+                    </h4>
+                </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ max_dates }}</h4></td>
+                <td class="align-middle font-weight-bold text-primary" >
+                    <h4>
+                        {% if 'Temp' in sensorNames %}
+                            {% if 'DIMM' in sensorNames %}
+                                <a href ="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?t={{  max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% elif 'CPU' in sensorNames %}
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?t={{  max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% elif 'VRM' in sensorNames %}
+                                <a href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?t={{  max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% else %}
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?t={{  max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% endif %} 
+                        {% elif 'FAN' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?t={{  max_dates }}" target="_self">{{ max_dates }}</a>
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?t={{  max_dates }}"  target="_self">{{ max_dates }}</a>
+                        {% endif %}
+                    </h4>
+                </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ avg_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ good_count }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ zero_count }}</h4></td>
@@ -181,7 +217,6 @@
 <!-- Footer -->
 <script>
 var element = document.getElementById('back-link');
-
 // Provide a standard href to facilitate standard browser features such as 
 //  - Hover to see link
 //  - Right click and copy link

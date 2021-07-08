@@ -104,19 +104,51 @@
 
     <script>
         var dataset = {{ dataset|tojson }};
-        
+
+        var skip = "{{skip}}";//A signal that allows the script to skip submitting a min or max
+
+        //Event listener for Enter key
+        var start_range = document.getElementById("start"); 
+        start_range.addEventListener("keyup",function(event){
+            if(event.keyCode === 13) {
+                event.preventDefault();
+                document.getElementById("submit").click();
+            }
+        });
+        //Event listener for Enter key
+        var end_range = document.getElementById("end");
+        end_range.addEventListener("keyup",function(event){
+            if(event.keyCode === 13) {
+                event.preventDefault();
+                document.getElementById("submit").click();
+            }
+        });
+
+        //If skip ==  no then input custom range in fields
+        if(skip == "no" && t_min != 'undefined' ){
+
+            var t_min = "{{ t_min }}";
+            var t_max = "{{ t_max }}"; 
+            
+            document.getElementById("start").value = t_min;
+            document.getElementById("end").value = t_max;
+            console.log("Parsing through custom range " + t_min + " " + t_max)
+        }
+        else{
+            console.log("Showing defaultTime")
+            var start = dataset.datetime[0];
+            var end = dataset.datetime[dataset.datetime.length - 1];
+            document.getElementById("start").value = start;
+            document.getElementById("end").value = end;
+        }
+
         {% block config %}
         {% endblock %}
-        
-        var start = dataset.datetime[0];
-        var end = dataset.datetime[dataset.datetime.length - 1];
-        document.getElementById("start").value = start;
-        document.getElementById("end").value = end;
 
+        document.getElementById('defaulttime').click();
         function getRange(data, start, end){
             var i;
             var result = [0, data.length-1];
-            var t = "";
             for (i=0; i < data.length; i++){
                 if (data[i] >= start) {
                     result[0] = i;
@@ -129,7 +161,9 @@
                     break;
                 } else if (data[i] == end) {
                     result[1] = i;
+                    console.log("Changed end time" + data[i])
                     break;
+                    
                 }
             }
             return result
@@ -147,12 +181,11 @@
             document.getElementById('submit').click();
         }
         
-        
         // show all
         document.getElementById('allData').addEventListener('click', function() {
             rearange(dataset.datetime[0],dataset.datetime[dataset.datetime.length - 1]);
         });
-        
+
         // If the dataset contains more than data longer than the time range, it will only show the data of the last time period of time range.
 
         function settimerange(timerange) {         
@@ -179,7 +212,6 @@
             settimerange(24)
         });
         
-        document.getElementById('defaulttime').click();
 
 
 /*      

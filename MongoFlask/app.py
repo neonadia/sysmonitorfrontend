@@ -24,6 +24,7 @@ import tarfile
 from udpcontroller import getMessage, insertUdpevent, cleanIP
 from glob import iglob
 import datetime
+from datetime import timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -159,7 +160,6 @@ def get_ip():
         s.close()
     return IP
 
-
 def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
     if opt == 0:
@@ -173,8 +173,8 @@ def getSerialNumber(ipmiip):
         return(cur['Systems']['1']['SerialNumber'])
     else:
         return("NA")
-        
 
+       
 @app.route('/about')
 def about():
     return render_template('about.html')
@@ -1566,8 +1566,26 @@ def chart_fans(bmc_ip):
 
 @app.route('/chart_cputemperatures/<bmc_ip>')
 def chart_cputemperatures(bmc_ip):
-    data = get_data.find_temperatures(bmc_ip)
-    return render_template('chart_cputemperatures.html', title='CPU Temperatures', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+      #Format 2021-07-01 22:22:28
+    if '?' in request.url:
+        t_min_max = request.args.get('t')
+
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+
+        data = get_data.find_temperatures(bmc_ip)
+        skip = "no"
+        return render_template('chart_cputemperatures.html', title='CPU Temperatures',skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+    
+    else:
+        data = get_data.find_temperatures(bmc_ip)
+        skip = "yes"
+        return render_template('chart_cputemperatures.html', title='CPU Temperatures', skip = skip, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+    
+
+    #Format 2021-07-01 22:22:28
+
 
 """
 @app.route('/chart_systemtemperatures/<bmc_ip>')

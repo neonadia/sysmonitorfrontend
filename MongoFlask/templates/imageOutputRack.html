@@ -89,24 +89,48 @@
             {% for bmc_ips, sn, min_vals, min_dates, max_vals, max_dates, avg_vals, good_count, zero_count in data %}
                 <tr>
                 <td class="align-middle font-weight-bold" >
-                <h4>
+                    <h4>
                 
-                {% if 'Temp' in chart_headers[1] %}
-                    {% if 'CPU' in chart_headers[1] %}
-                        <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
-                    {% else %}
-                        <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
-                    {% endif %} 
-                {% else %}
-                    <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}"  target="_self">{{bmc_ips}}</a>
-                {% endif %}
-                </h4>
+                        {% if 'Temp' in chart_headers[1] %}
+                            {% if 'CPU' in chart_headers[1] %}
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
+                            {% else %}
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
+                            {% endif %} 
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}"  target="_self">{{bmc_ips}}</a>
+                        {% endif %}
+                    </h4>
                 </td>
 				<td class="align-middle font-weight-bold" ><h4>{{ sn }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ min_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ min_dates }}</h4></td>
+                <td class="align-middle font-weight-bold text-primary" >
+                    <h4>
+                        {% if 'Temp' in chart_headers[1] %}
+                            {% if 'CPU' in chart_headers[1] %}
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ min_dates }}" target="_self">{{ min_dates }}</a>
+                            {% else %}
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ min_dates }}" target="_self">{{ min_dates }}</a>
+                            {% endif %} 
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ min_dates }}"  target="_self">{{ min_dates }}</a>
+                        {% endif %}
+                    </h4>
+                </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ max_dates }}</h4></td>
+                <td class="align-middle font-weight-bold text-primary" >
+                    <h4>
+                        {% if 'Temp' in chart_headers[1] %}
+                            {% if 'CPU' in chart_headers[1] %}
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% else %}
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ max_dates }}" target="_self">{{ max_dates }}</a>
+                            {% endif %} 
+                        {% else %}
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ max_dates }}"  target="_self">{{ max_dates }}</a>
+                        {% endif %}
+                    </h4>
+                </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ avg_vals }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ good_count }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ zero_count }}</h4></td>

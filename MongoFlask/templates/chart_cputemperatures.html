@@ -67,7 +67,7 @@
                 }
             }
         };
-    
+
         var i;
 
         for (i = 0; i < dataset.Temperatures.length; i++){
@@ -85,24 +85,34 @@
             config_temperatures.data.datasets.push(newDataset);
             }
         }
-
         window.onload = function() {
             var ctx_temperatures = document.getElementById('canvas_cputemperatures').getContext('2d');
             window.myLine = new Chart(ctx_temperatures, config_temperatures);
+            document.getElementById("submit").click();
         };
-        
+  
 {% endblock %}
+
+
+
 
 {% block submit %}
         document.getElementById('submit').addEventListener('click', function() {
+            
             start = document.getElementById("start").value;
             end = document.getElementById("end").value;
 
+            console.log("Start time: "+ start)
+            console.log("End time: " + end)
+
             const regex = /[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01][0-9]|2[0-3]):[0-5]\d:[0-5]\d$/;
             
+            // If incorrect format
             if (regex.test(start) == false || regex.test(end) == false || start.localeCompare(end) == 1) {
+                console.log("Regex failed");
                 document.getElementById('defaulttime').click();
             }
+            console.log("Regex passed with: " + start + " " + end);
 
             var range = getRange(dataset.datetime, start, end);
             var n_labels = [];

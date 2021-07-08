@@ -86,7 +86,26 @@
 
         window.onload = function() {
             var ctx_fan = document.getElementById('canvas_fan').getContext('2d');
-            window.myLine = new Chart(ctx_fan, config_fan);    
+            window.myLine = new Chart(ctx_fan, config_fan);
+            
+            var skip = "{{skip}}";//A signal that allows the script to skip submitting a min or max
+            if(skip == "no" && t_min != 'undefined' ){
+                var t_min = "{{ t_min }}";
+                var t_max = "{{ t_max }}"; 
+                document.getElementById("start").value = t_min;
+                document.getElementById("end").value = t_max;
+                document.getElementById("submit").click();
+                console.log("Showing custom scope");
+            }
+            else{
+                var start = dataset.datetime[0];
+                var end = dataset.datetime[dataset.datetime.length - 1];
+                document.getElementById("start").value = start;
+                document.getElementById("end").value = end;
+                console.log("Clicking on defualt");
+                document.getElementById("defaulttime").click();
+            }
+                
         }
 {% endblock %}
 
