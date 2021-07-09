@@ -174,7 +174,6 @@ def getSerialNumber(ipmiip):
     else:
         return("NA")
 
-       
 @app.route('/about')
 def about():
     return render_template('about.html')
@@ -1443,7 +1442,7 @@ def min_max_alltemperatures_chart():
     ip_list = getIPlist()
     sn_list = []
     for ip in ip_list:
-        sn_list.append(getSerialNumber(ip))  
+        sn_list.append(getSerialNumber(ip))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
@@ -1473,9 +1472,10 @@ def min_max_alltemperatures_chart():
     imagepath = "min_max_alltemperatures_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
     imageheight = (len(df_min)/4+1)*1500/10
+    sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html', sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/min_max_allpower_chart')
 def min_max_allpower_chart():
@@ -1511,30 +1511,74 @@ def min_max_allpower_chart():
     imagepath = "min_max_allpower_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath)
     imageheight = (len(df_min)/4+1)*1500/10
+    sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
     data = get_data.find_powercontrol(bmc_ip)
-    return render_template('chart_powercontrol.html', title='Power Control', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_powercontrol.html', title='Power Control', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+    else:
+        name = request.args.get('name')
+        return render_template('chart_powercontrol.html', title='Power Control',name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
 
 @app.route('/chart_voltages/<bmc_ip>')
 def chart_voltages(bmc_ip):
     data = get_data.find_voltages(bmc_ip)
-    return render_template('chart_voltages.html', title='Voltages', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_voltages.html', title='Voltages', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+
+    else:
+        name = request.args.get('name')
+        return render_template('chart_voltages.html', title='Voltages', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+   
 
 @app.route('/chart_powersuppliesvoltage/<bmc_ip>')
 def chart_powersuppliesvoltage(bmc_ip):
     data = get_data.find_powersupplies(bmc_ip)
-    return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+    else:
+        name = request.args.get('name')
+        return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
 
 @app.route('/chart_powersuppliespower/<bmc_ip>')
 def chart_powersuppliespower(bmc_ip):
     data = get_data.find_powersupplies(bmc_ip)
-    return render_template('chart_powersuppliespower.html', title='Power Supplies Power', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_powersuppliespower.html', title='Power Supplies Power', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
 
+    else:
+        name = request.args.get('name')
+        return render_template('chart_powersuppliespower.html', title='Power Supplies Power', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+   
 @app.route('/chart_allpowercontrols')
 def chart_allpowercontrols():
     ip_list = getIPlist()
@@ -1561,29 +1605,38 @@ def chart_allfans():
 
 @app.route('/chart_fans/<bmc_ip>')
 def chart_fans(bmc_ip):
+
     data = get_data.find_fans(bmc_ip)
-    return render_template('chart_fans.html', title='Fans', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')    
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_fans.html', title='Fans', dataset=data, skip = skip, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+
+    else:
+        name = request.args.get('name')
+        return render_template('chart_fans.html', title='Fans', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+
 
 @app.route('/chart_cputemperatures/<bmc_ip>')
 def chart_cputemperatures(bmc_ip):
       #Format 2021-07-01 22:22:28
-    if '?' in request.url:
-        t_min_max = request.args.get('t')
 
+    data = get_data.find_temperatures(bmc_ip)
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
         date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
-
-        data = get_data.find_temperatures(bmc_ip)
         skip = "no"
-        return render_template('chart_cputemperatures.html', title='CPU Temperatures',skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
-    
+        return render_template('chart_cputemperatures.html', title='CPU Temperatures', name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
     else:
-        data = get_data.find_temperatures(bmc_ip)
-        skip = "yes"
-        return render_template('chart_cputemperatures.html', title='CPU Temperatures', skip = skip, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
-    
-
+        name = request.args.get('name')
+        return render_template('chart_cputemperatures.html', title='CPU Temperatures', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
     #Format 2021-07-01 22:22:28
 
 
@@ -1597,17 +1650,50 @@ def chart_systemtemperatures(bmc_ip):
 @app.route('/chart_vrmtemperatures/<bmc_ip>')
 def chart_vrmtemperatures(bmc_ip):
     data = get_data.find_temperatures(bmc_ip)
-    return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")
+    else:
+        name = request.args.get('name')
+        return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")     
+
 
 @app.route('/chart_dimmctemperatures/<bmc_ip>')
 def chart_dimmctemperatures(bmc_ip):
     data = get_data.find_temperatures(bmc_ip)
-    return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', dataset=data, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+
+    else:
+        name = request.args.get('name')
+        return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
 
 @app.route('/chart_othertemperatures/<bmc_ip>')
 def chart_othertemperatures(bmc_ip):
     data = get_data.find_temperatures(bmc_ip)
-    return render_template('chart_othertemperatures.html', title='Other Temperatures', dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+    if "t=" in request.url:
+        t_min_max = request.args.get('t')
+        name = request.args.get('name')
+        date_time_obj = datetime.datetime.strptime(t_min_max, "%Y-%m-%d %H:%M:%S")
+        t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        skip = "no"
+        return render_template('chart_othertemperatures.html', title='Other Temperatures', name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+
+    else:
+        name = request.args.get('name')
+        return render_template('chart_othertemperatures.html', title='Other Temperatures',name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
 
 @app.errorhandler(404)
 def page_not_found(e):

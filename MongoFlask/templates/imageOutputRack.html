@@ -93,12 +93,12 @@
                 
                         {% if 'Temp' in chart_headers[1] %}
                             {% if 'CPU' in chart_headers[1] %}
-                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?name={{sensor}}" target="_self">{{bmc_ips}}</a>
                             {% else %}
-                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}" target="_self">{{bmc_ips}}</a>
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?name={{sensor}}" target="_self">{{bmc_ips}}</a>
                             {% endif %} 
                         {% else %}
-                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}"  target="_self">{{bmc_ips}}</a>
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?name={{sensor}}"  target="_self">{{bmc_ips}}</a>
                         {% endif %}
                     </h4>
                 </td>
@@ -108,12 +108,12 @@
                     <h4>
                         {% if 'Temp' in chart_headers[1] %}
                             {% if 'CPU' in chart_headers[1] %}
-                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ min_dates }}" target="_self">{{ min_dates }}</a>
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ min_dates }}&name={{sensor}}" target="_self">{{ min_dates }}</a>
                             {% else %}
-                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ min_dates }}" target="_self">{{ min_dates }}</a>
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ min_dates }}&name={{sensor}}" target="_self">{{ min_dates }}</a>
                             {% endif %} 
                         {% else %}
-                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ min_dates }}"  target="_self">{{ min_dates }}</a>
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ min_dates }}&name={{sensor}}"  target="_self">{{ min_dates }}</a>
                         {% endif %}
                     </h4>
                 </td>
@@ -122,12 +122,12 @@
                     <h4>
                         {% if 'Temp' in chart_headers[1] %}
                             {% if 'CPU' in chart_headers[1] %}
-                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ max_dates }}" target="_self">{{ max_dates }}</a>
+                                <a href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ips }}?t={{ max_dates }}&name={{sensor}}" target="_self">{{ max_dates }}</a>
                             {% else %}
-                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ max_dates }}" target="_self">{{ max_dates }}</a>
+                                <a href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ips }}?t={{ max_dates }}&name={{sensor}}" target="_self">{{ max_dates }}</a>
                             {% endif %} 
                         {% else %}
-                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ max_dates }}"  target="_self">{{ max_dates }}</a>
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ips }}?t={{ max_dates }}&name={{sensor}}"  target="_self">{{ max_dates }}</a>
                         {% endif %}
                     </h4>
                 </td>
@@ -171,7 +171,10 @@
 </footer>
 <!-- Footer -->
 <script>
+var sensor = "{{sensor}}";
 var element = document.getElementById('back-link');
+var i = 0;
+for(i = 0; i < chart_headers.lengthi)
 
 // Provide a standard href to facilitate standard browser features such as 
 //  - Hover to see link

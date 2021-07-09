@@ -69,26 +69,70 @@
         };
 
         var i;
+        var name = "{{name}}";
+        var skip = "{{skip}}";//A signal that allows the script to skip submitting a custom scope
 
         for (i = 0; i < dataset.Temperatures.length; i++){
             if (dataset['Temperatures'][i]['Name'].includes('CPU')) { // CPU only
-            colorNames = Object.keys(window.chartColors);
-            colorName = colorNames[config_temperatures.data.datasets.length % colorNames.length];
-            newColor = window.chartColors[colorName];
-            newDataset = {
-                    label: dataset['Temperatures'][i]['Name'],
-                    backgroundColor: newColor,
-                    borderColor: newColor,
-                    data: dataset['Temperatures'][i]['Reading'],
-                    fill: false
-                };
-            config_temperatures.data.datasets.push(newDataset);
+                colorNames = Object.keys(window.chartColors);
+                colorName = colorNames[config_temperatures.data.datasets.length % colorNames.length];
+                newColor = window.chartColors[colorName];
+                    if(name != "None" ){
+                        if(name !== dataset['Temperatures'][i]['Name']){
+                            newDataset = {
+                                label: dataset['Temperatures'][i]['Name'],
+                                backgroundColor: newColor,
+                                borderColor: newColor,
+                                data: dataset['Temperatures'][i]['Reading'],
+                                fill: false,
+                                hidden: true
+                            };
+                        }
+                        else{
+                            newDataset = {
+                                label: dataset['Temperatures'][i]['Name'],
+                                backgroundColor: newColor,
+                                borderColor: newColor,
+                                data: dataset['Temperatures'][i]['Reading'],
+                                fill: false,
+                                hidden: false
+                            };
+                        }
+                    }
+                    else{
+                        newDataset = {
+                            label: dataset['Temperatures'][i]['Name'],
+                            backgroundColor: newColor,
+                            borderColor: newColor,
+                            data: dataset['Temperatures'][i]['Reading'],
+                            fill: false
+                        };
+                    }
+                config_temperatures.data.datasets.push(newDataset);
             }
         }
+
         window.onload = function() {
             var ctx_temperatures = document.getElementById('canvas_cputemperatures').getContext('2d');
             window.myLine = new Chart(ctx_temperatures, config_temperatures);
-            document.getElementById("submit").click();
+
+            if(skip == "no" && t_min != 'undefined' ){
+
+                var t_min = "{{ t_min }}";
+                var t_max = "{{ t_max }}"; 
+                document.getElementById("start").value = t_min;
+                document.getElementById("end").value = t_max;
+                document.getElementById("submit").click();
+                console.log("Showing custom scope");
+            }
+            else{
+                var start = dataset.datetime[0];
+                var end = dataset.datetime[dataset.datetime.length - 1];
+                document.getElementById("start").value = start;
+                document.getElementById("end").value = end;
+                console.log("Clicking on defualt");
+                document.getElementById("defaulttime").click();
+            }
         };
   
 {% endblock %}
@@ -117,6 +161,8 @@
             var range = getRange(dataset.datetime, start, end);
             var n_labels = [];
             var i;
+
+            console.log(range[1], " ", range[0])
 
             // trimm those points which are unneccesarry
             var step = 1; 

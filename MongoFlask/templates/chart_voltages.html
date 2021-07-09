@@ -69,17 +69,44 @@
         };
 
         var i;
+        var name = "{{name}}";
+        var skip = "{{skip}}";//A signal that allows the script to skip submitting a custom scope
+
         for (i = 0; i < dataset.Voltages.length; i++){
             colorNames = Object.keys(window.chartColors);
             colorName = colorNames[config_voltages.data.datasets.length % colorNames.length];
             newColor = window.chartColors[colorName];
-            newDataset = {
+            if(name != "None" ){
+                if(name !== dataset['Voltages'][i]['Name']){
+                    newDataset = {
+                        label: dataset['Voltages'][i]['Name'],
+                        backgroundColor: newColor,
+                        borderColor: newColor,
+                        data: dataset['Voltages'][i]['Reading'],
+                        fill: false,
+                        hidden: true
+                    };
+                }
+                else{
+                    newDataset = {
+                        label: dataset['Voltages'][i]['Name'],
+                        backgroundColor: newColor,
+                        borderColor: newColor,
+                        data: dataset['Voltages'][i]['Reading'],
+                        fill: false,
+                        hidden: false
+                    };
+                }
+            }
+            else{
+                newDataset = {
                     label: dataset['Voltages'][i]['Name'],
                     backgroundColor: newColor,
                     borderColor: newColor,
                     data: dataset['Voltages'][i]['Reading'],
                     fill: false
                 };
+            }
             config_voltages.data.datasets.push(newDataset);
         }
 
@@ -87,7 +114,6 @@
             var ctx_voltages = document.getElementById('canvas_voltages').getContext('2d');
             window.myLine = new Chart(ctx_voltages, config_voltages);
             
-            var skip = "{{skip}}";//A signal that allows the script to skip submitting a min or max
             if(skip == "no" && t_min != 'undefined' ){
                 var t_min = "{{ t_min }}";
                 var t_max = "{{ t_max }}"; 

@@ -255,8 +255,8 @@ def find_fans(bmc_ip):
 
     # fans
     for i in range(len(data_entry[0]['Fans'])):
-        #dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name'], 'Speed': []})
-        dataset['Fans'].append({'Name': 'Fan'+str(i+1), 'Speed': []})
+        dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name'], 'Speed': []})
+        #dataset['Fans'].append({'Name': 'Fan'+str(i+1), 'Speed': []})
 
     # get dataset
     for x in data_entry:
