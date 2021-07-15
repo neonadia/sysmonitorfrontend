@@ -10,6 +10,26 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+
+    <style>
+      .dropdown-menu li {
+          position: relative;
+      }
+      .dropdown-menu .dropdown-submenu {
+          display: none;
+          position: absolute;
+          left: 100%;
+          top: -7px;
+      }
+      .scrollable-menu {
+            height: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+      .dropdown-menu > li:hover > .dropdown-submenu {
+          display: block;
+      }
+    </style>  
 </head>
 <body>
 
@@ -21,30 +41,94 @@
             <i class="fas fa-home"></i>
         </a>
     </li>
-    <li class="dropdown">
-        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Sensors
-        </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" href="chart_cputemperatures/{{ ip }}" target="_blank">Processors Temp</a>
-                <a class="dropdown-item" href="chart_vrmtemperatures/{{ ip }}" target="_blank">VRM Temp</a>
-                <a class="dropdown-item" href="chart_dimmctemperatures/{{ ip }}" target="_blank">DIMM Temp</a>
-                <a class="dropdown-item" href="chart_othertemperatures/{{ ip }}" target="_blank">Others Temp</a>
-                <a class="dropdown-item" href="chart_fans/{{ ip }}"  target="_blank">Fan Speed</a>
-                <a class="dropdown-item" href="chart_powercontrol/{{ ip }}" target="_blank">Power Consumption</a>
-                <a class="dropdown-item" href="chart_powersuppliespower/{{ ip }}" target="_blank">Power Supplies Power</a>
-                <a class="dropdown-item" href="chart_powersuppliesvoltage/{{ ip }}" target="_blank">Power Supplies Voltage</a>
-                <a class="dropdown-item" href="chart_voltages/{{ ip }}"  target="_blank">System Voltages</a>
-                <a class="dropdown-item" href="min_max_temperatures_chart/{{ ip }}" target="_blank">Min/Max Temp</a>
-                <a class="dropdown-item" href="min_max_fans_chart/{{ ip }}" target="_blank">Min/Max Fan Speed</a>
-                <a class="dropdown-item" href="min_max_voltages_chart/{{ ip }}" target="_blank">Min/Max Voltages</a>
-                <!--
-                <a class="dropdown-item" href="min_max_temperatures/{{ ip }}" target="_blank">Min/Max Temp Text</a>
-                <a class="dropdown-item" href="min_max_fans/{{ ip }}" target="_blank">Min/Max Fan Speed Text</a>
-                <a class="dropdown-item" href="min_max_voltages/{{ ip }}" target="_blank">Min/Max Fan Speed Text</a>
-                -->
-            </div>
-    </li>
+    <div class="dropdown">
+      <button
+        class="btn btn-primary dropdown-toggle btn-lg mr-1"
+        type="button"
+        id="dropdownMenuButton"
+        data-toggle="dropdown"
+        aria-expanded="false"
+      >
+        Sensors
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">
+            CPU Temperatures &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+              {% for cpu in cpu_temps %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ cpu}}" target="_self">{{cpu}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_self">
+            VRM Temperatures &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+              {% for vrm in vrm_temps %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ vrm}}">{{vrm}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_self">
+            DIMM Temperatures &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu"> 
+              {% for dimm in dimm_temps %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ dimm}}">{{dimm}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_self">
+            System Temperatures &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+              {% for systemps in sys_temps %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ systemps}}">{{systemps}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}"  target="_self">
+            Fans &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+              {% for sys_fans in sensor_fans %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ sys_fans}}">{{sys_fans}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_self">
+            System Voltages &Rang;
+          </a>
+          <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+              {% for sys_voltages in sensor_voltages %}
+                  <li>
+                      <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+        </li>
+        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_self">Power Consumption</a> </li>
+        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}" target="_self">Power Supplies Power</a></li>
+        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}" target="_self">Power Supplies Voltage</a></li>
+      </ul>
+    </div>
     
     <!--
     <li class="dropdown">
@@ -85,7 +169,7 @@
         </div>
     </li>
     {% include "documentationButton.html" %}
-</ul>
+  </ul> 
 </nav>
 
 <div id="accordion">

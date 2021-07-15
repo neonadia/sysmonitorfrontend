@@ -46,6 +46,26 @@
         .table td {
         text-align: center;
         }
+        .dropdown-menu li {
+          position: relative;
+        }
+        .dropdown-menu .dropdown-submenu {
+            display: none;
+            position: absolute;
+            right: 100%;
+            top: -7px;
+        }
+        .scrollable-menu {
+            height: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .dropdown-menu > li:hover > .dropdown-submenu {
+            display: block;
+        }
+        body {
+            padding-bottom: 300px;
+        }
     </style>
 </head>
 <body>
@@ -188,24 +208,102 @@
             <td class="align-middle font-weight-bold text-success" >{{ row[15] }}</td>             
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle">
-                <div class="dropdown" style="align-middle">  
-                    <a class="fas fa-chart-bar text-primary" style="font-size: 24px"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <div class="dropdown dropleft">
+                <a
+                    class="fas fa-chart-line text-primary"
+                    id="dropdownMenuButton3"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                    style = "font-size: 24px"
+                    aria-haspopup="true"
+                    href= ""
+                ></a>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                    <li class= "dropdown-item">{{row[0]}} Sensors </li>
+                    <div class="dropdown-divider"></div>
+
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0]}}" target="_self">
+                        &#x226A; CPU Temperatures
                     </a>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0] }}" target="_blank">Processors Temps</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0] }}" target="_blank">VRM Temps</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}" target="_blank">DIMM Temps</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0] }}" target="_blank">Others Temps</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}"  target="_blank">Fan Speeds</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ row[0] }}" target="_blank">Power Consumption</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ row[0] }}" target="_blank">Power Supplies Power</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ row[0] }}" target="_blank">Power Supplies Voltages</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}"  target="_blank">System Voltages</a>
-                    </div>
+                   
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                        {% for cpu in cpu_temps[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0] }}?name={{ cpu}}" target="_self">{{cpu}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0]}}" target="_self">
+                        &#x226A; VRM Temperatures
+                    </a>
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                        {% for vrm in vrm_temps[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0] }}?name={{ vrm}}">{{vrm}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}" target="_self">
+                        &#x226A; DIMM Temperatures
+                    </a>
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu"> 
+                        {% for dimm in dimm_temps[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}?name={{ dimm}}">{{dimm}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0] }}" target="_self">
+                        &#x226A; System Temperatures
+                    </a>
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                        {% for systemps in sys_temps[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0]}}?name={{ systemps}}">{{systemps}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}"  target="_self">
+                        &#x226A; Fans
+                    </a>
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                        {% for sys_fans in sys_fans[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}?name={{ sys_fans}}">{{sys_fans}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li>
+                    <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}"  target="_self">
+                        &#x226A; System Voltages
+                    </a>
+                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                        {% for sys_voltages in sys_voltages[loop.index-1] %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    </li>
+                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ row[0]}}" target="_self">Power Consumption</a> </li>
+                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ row[0] }}" target="_self">Power Supplies Power</a></li>
+                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ row[0] }}" target="_self">Power Supplies Voltage</a></li>
+                </ul>
                 </div>
             </td>
             <td class="align-middle">
-                <div class="dropdown" style="align-middle">  
+                <div class="dropdown dropleft" style="align-middle">  
                     <a class="fas fa-chart-bar text-primary" style="font-size: 24px"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -219,6 +317,7 @@
             </tr>
         {% endfor %}
     </tbody>
+
 </table>
 </div>
 
