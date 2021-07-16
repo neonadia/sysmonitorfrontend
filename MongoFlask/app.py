@@ -1536,6 +1536,47 @@ def min_max_fans_chart(bmc_ip):
 ################################################################################   
     return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
 
+
+@app.route('/min_max_power_chart/<bmc_ip>')
+def min_max_power_chart(bmc_ip):
+    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"PowerControl", "PowerConsumedWatts", 9999)
+    messages.insert(0,'Numerical Results: (Units: W)')    
+    chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "Sensor Names": sensorNames})
+    df_min = pd.DataFrame({"Power Consumption (W)":min_vals, "Sensor Names": sensorNames})
+    sns.set_theme(style="whitegrid")
+    fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
+    custom_palette = ["green"]
+    sns_plot = sns.barplot(y="Sensor Names", x="Power Consumption (W)", palette = custom_palette,data=df_max, ax=ax)
+    #ax.set_xticks(range(0,int(max(max_vals))+1,1000))
+    ax.xaxis.label.set_color('black')
+    ax.yaxis.label.set_color('black')
+    ax.tick_params(labelcolor='black')
+    ax2 = ax.twinx()
+    custom_palette2 = ["white"]
+    sns.barplot(y="Sensor Names", x="Power Consumption (W)", palette = custom_palette2,alpha=0.9,data=df_min,ax=ax2)
+    ax2.set_yticklabels([])
+    ax2.set_yticks([])
+    ax2.set_ylabel('')
+    for p in ax.patches:
+        _x = (p.get_x() + p.get_width()) * 1.001
+        _y = p.get_y() + p.get_height() - 0.13
+        value = int(p.get_width())
+        ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom')   
+    plt.tight_layout()
+    imagepath = "min_max_power_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
+    fig.savefig("/app/static/images/" + imagepath)
+    imageheight = (len(df_min)/4+1)*1500/10
+    cpu_temps = get_temp_names(bmc_ip)[0]
+    vrm_temps = get_temp_names(bmc_ip)[1]
+    dimm_temps = get_temp_names(bmc_ip)[2]
+    sys_temps = get_temp_names(bmc_ip)[3]
+    sensor_fans = get_fan_names(bmc_ip)
+    sensor_voltages = get_voltages(bmc_ip)
+    while not os.path.isfile("/app/static/images/" + imagepath):
+        time.sleep(1)
+    return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power")
+
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
     ip_list = getIPlist()
@@ -1614,6 +1655,7 @@ def min_max_allpower_chart():
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     return render_template('imageOutputRack.html',chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):

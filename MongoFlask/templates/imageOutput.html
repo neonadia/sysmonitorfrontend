@@ -165,7 +165,8 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ bmc_ip }}" target="_self">Min/Max Temp</a>
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ bmc_ip }}" target="_self">Min/Max Fan Speed</a>
-                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_self">Min/Max Voltages</a>   
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_self">Min/Max Voltages</a> 
+                        <a class="dropdown-item" href="{{ url_for('index') }}min_max_power_chart/{{ bmc_ip }}" target="_self">Min/Max Power</a>     
                     </div>
             </li>
             <li class="dropdown">
@@ -228,6 +229,8 @@
                         {% endif %} 
                     {% elif 'FAN' in sensorNames %}
                         <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ sensorNames}}" target="_self">{{sensorNames}}</a>
+                    {% elif 'System Power' in sensorNames %}
+                        <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_self">{{sensorNames}}</a>
                     {% else %}
                         <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ sensorNames}}"  target="_self">{{sensorNames}}</a>
                     {% endif %}
@@ -248,13 +251,15 @@
                             {% endif %} 
                         {% elif 'FAN' in sensorNames %}
                             <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?t={{ min_dates}}&name={{ sensorNames}}" target="_self">{{ min_dates }}</a>
+                        {% elif 'System Power' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}?t={{min_dates}}&name={{sensorNames}}" target="_self">{{min_dates}}</a>
                         {% else %}
                             <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?t={{ min_dates}}&name={{ sensorNames}}"  target="_self">{{ min_dates }}</a>
                         {% endif %}
                     </h4>
                 </td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ max_vals }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" >
+                <td class="align-middle font-weight-bold text-primary ">
                     <h4>
                         {% if 'Temp' in sensorNames %}
                             {% if 'DIMM' in sensorNames %}
@@ -268,6 +273,8 @@
                             {% endif %} 
                         {% elif 'FAN' in sensorNames %}
                             <a href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?t={{  max_dates }}&name={{ sensorNames}}" target="_self">{{ max_dates }}</a>
+                        {% elif 'System Power' in sensorNames %}
+                            <a href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}?t={{max_dates}}&name={{sensorNames}}" target="_self">{{max_dates}}</a>
                         {% else %}
                             <a href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?t={{  max_dates }}&name={{ sensorNames}}"  target="_self">{{ max_dates }}</a>
                         {% endif %}
