@@ -20,6 +20,7 @@
             -moz-user-select: none;
             -webkit-user-select: none;
             -ms-user-select: none;
+            
         }
         .dropdown-menu li {
             position: relative;
@@ -38,6 +39,15 @@
         .dropdown-menu > li:hover > .dropdown-submenu {
             display: block;
         }
+        #overlay {
+
+            position:fixed;
+            display: block;
+            top: 14%; right: 5%;
+            text-align: left;
+            
+        }
+
     </style>
 </head>
 
@@ -210,7 +220,6 @@
             </div>
         </div>
     </nav>
-
     <div style="width:90%;text-align: center;">
         {% block canvas %}
         {# canvas name #}
@@ -219,10 +228,19 @@
     </div>
 
     <script>
+        // Power is power reading from app.py: For exemption handling, we set empty string or assign it appropriately///
+        var power = "{{reading}}";
+        if(power == "ERROR"){
+            power = "";
+        }
+        else{
+            power = "| Current Reading: " + power; 
+        }
+        console.log("Reading: " + power);
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         var dataset = {{ dataset|tojson }};
-
         var skip = "{{skip}}";//A signal that allows the script to skip submitting a min or max
-
         //Event listener for Enter key
         var start_range = document.getElementById("start"); 
         start_range.addEventListener("keyup",function(event){
@@ -354,7 +372,9 @@
             return i;
         }
         startTime();
+        
 */
+        
     </script>
 </body>
 

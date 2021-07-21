@@ -1521,7 +1521,7 @@ def min_max_fans_chart(bmc_ip):
         ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom', size='x-small')  
     plt.tight_layout()
     imagepath = "min_max_fansspeed_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
-    fig.savefig("/app/static/images/" + imagepath)
+    fig.savefig("/app/static/images/" + imagepath, bbox_inches = "tight", pad_inches = 0.01)
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
@@ -1565,7 +1565,7 @@ def min_max_power_chart(bmc_ip):
         ax.text(_x, _y, value, horizontalalignment='left', verticalalignment='bottom')   
     plt.tight_layout()
     imagepath = "min_max_power_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
-    fig.savefig("/app/static/images/" + imagepath)
+    fig.savefig("/app/static/images/" + imagepath, bbox_inches = "tight", pad_inches = 0.01)
     imageheight = (len(df_min)/4+1)*1500/10
     cpu_temps = get_temp_names(bmc_ip)[0]
     vrm_temps = get_temp_names(bmc_ip)[1]
@@ -1665,6 +1665,26 @@ def chart_powercontrol(bmc_ip):
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
     sensor_voltages = get_voltages(bmc_ip)
+
+######## For Displaying Current Reading in realtime ##############################################
+    try:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
+        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' dcmi power reading', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout , stderr = response.communicate(timeout=1)
+    except:
+        reading = "ERROR"
+        printf('No dcmi power reading!')
+    else:
+        if stderr.decode('utf-8') == '':
+            output = stdout.decode("utf-8").split('\n')
+            inst_power = output[1].split(':')
+            reading = inst_power[1].lstrip()
+        else:
+            reading = "ERROR"
+#######  Returns reading as a number or a ERROR string for exception handling or a response from stderr ####################
+
+
     data = get_data.find_powercontrol(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1673,10 +1693,10 @@ def chart_powercontrol(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_powercontrol.html', title='Power Control', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+        return render_template('chart_powercontrol.html', reading= reading, title='Power Control', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
     else:
         name = request.args.get('name')
-        return render_template('chart_powercontrol.html', title='Power Control',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+        return render_template('chart_powercontrol.html',reading = reading,title='Power Control',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
 
 @app.route('/chart_voltages/<bmc_ip>')
 def chart_voltages(bmc_ip):

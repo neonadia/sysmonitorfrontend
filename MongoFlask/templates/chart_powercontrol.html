@@ -15,7 +15,8 @@
                 responsive: true,
                 title: {
                     display: true,
-                    text: dataset.RACK + ' | ' + dataset.bmc_ip + ' | System Power Consumption',
+                    ///Add power string to  end of text: Is empty if error from app.py
+                    text: dataset.RACK + ' | ' + dataset.bmc_ip + ' | System Power Consumption ' + power,
                     fontSize: 30
                 },
                 tooltips: {
