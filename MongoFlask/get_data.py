@@ -394,7 +394,19 @@ def find_min_max(bmc_ip, api1, api2, boundry):
             min_dates.append(min_date)
             avg_vals.append(avg_val)
             sensorNames.append(sensorName)
-            messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)        
+            messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)
+    if not min_vals:
+        dummy = -9999
+        max_vals.append(dummy)
+        min_vals.append(dummy)
+        #max_dates.append(dummy)
+        #min_dates.append(dummy)
+        avg_vals.append(dummy)
+        good_count.append(dummy)
+        zero_count.append(dummy)
+        sensorNames.append("N/A")
+        messages.append(sensorName + ": MIN=" + str(min_temp) + " " + min_date + " MAX=" + str(max_temp) + " " + max_date)
+    
     return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count, last_date
 
 
