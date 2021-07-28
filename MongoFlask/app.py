@@ -107,7 +107,6 @@ def indexHelper(bmc_ip):
 
 @app.route('/')
 def index():
-    
     bmc_ip = []
     timestamp = []
     serialNumber = []
@@ -142,6 +141,8 @@ def index():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+
+
     
     with Pool() as p:
         output = p.map(indexHelper, bmc_ip)
@@ -166,15 +167,29 @@ def index():
         sys_temps.append(i[9])
         sys_fans.append(i[10])
         sys_voltages.append(i[11])
-            
+              
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
-
-
-        
     udp_msg = getMessage(json_path, mac_list)
-    data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus)
+    show_names = 'true' # default
+    try:
+        df_names = pd.read_csv(os.environ['NODENAMES'])
+    except Exception as e:
+        printf(e)
+        show_names = 'false'
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus)
+    else:
+        node_names = df_names['name'].tolist()
+        for i in range(len(node_names)):
+            if 'no_name' in node_names[i]:
+                show_names = 'false'
+                break
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,node_names)
+  
+
+
+   
     rackobserverurl = 'http://' + get_ip() + ':' +  os.environ['RACKPORT']
-    return render_template('index.html', rackname = rackname, x=data, rackobserverurl = rackobserverurl,cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages)
+    return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl,cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages)
 
 def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

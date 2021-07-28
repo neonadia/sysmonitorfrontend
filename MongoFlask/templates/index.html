@@ -126,7 +126,12 @@
 <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
     <thead class="thead-dark" >
         <th class="align-middle" >ID</th>
-        <th class="align-middle" >IKVM</th>
+        {%if 'false' in show_names %}
+            <th class="align-middle" >IKVM</th>
+        {%else%}
+            <th class="align-middle" >Name</th>
+            <th class="align-middle" >IKVM</th>
+        {%endif%}
         <th class="align-middle" >OS IP</th>
         <th class="align-middle" >IPMI PWD</th>
         <th class="align-middle" >BMC MAC Address</th>
@@ -149,7 +154,12 @@
             <tr>
             <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
             {% set ikvm = 'https://' +  row[9] %}
-            <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
+            {% if 'false' in show_names%}
+                <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
+            {%else%}
+                <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
+                <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
+            {%endif%}
             <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
             <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[1] }}</td>
@@ -350,6 +360,7 @@
 </footer>
 <!-- Footer -->
 <script>
+        console.log("{{show_names}}")
         function startTime() {
             var today = new Date()
             //today.setHours(today.getHours() + 7) // adjust time
