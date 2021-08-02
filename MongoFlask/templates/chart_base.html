@@ -60,7 +60,7 @@
                 </a>
             </div>
             <div class="col col-auto">
-                <i class="fas fa-history text-white"></i>
+                <button type="button" class="btn btn-primary fas fa-history text-white " id = "history"></button>
             </div>
             <div class="col col-auto">
                 <input type="text" id="start" class="form-control" style="font-size:18px;" value="">
@@ -237,7 +237,22 @@
             power = "| Current Reading: " + power; 
         }
         console.log("Reading: " + power);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////// History Feature /////////////////////////////////////////////////////////////////////////////////////////////////
+        //// Feature variables consists of two arrays, two empty variables to hold the value pushed, two empty value t_1 and t_2//
+        //// to hold the previous value, and one i value for iteration for debugging purposes ////////////////////////////////////
+         var history_start = [];
+        var history_end = [];
+        var enable_history = 1;
+        var h_start;
+        var h_end;
+        var t_1;
+        var t_2;
+        var i;
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
         var dataset = {{ dataset|tojson }};
         var skip = "{{skip}}";//A signal that allows the script to skip submitting a min or max
@@ -248,6 +263,7 @@
                 event.preventDefault();
                 document.getElementById("submit").click();
             }
+
         });
         //Event listener for Enter key
         var end_range = document.getElementById("end");
@@ -256,7 +272,10 @@
                 event.preventDefault();
                 document.getElementById("submit").click();
             }
+
         });
+        
+
 
         //If skip ==  no then input custom range in fields
         if(skip == "no" && t_min != 'undefined' ){
@@ -269,7 +288,6 @@
             console.log("Parsing through custom range " + t_min + " " + t_max)
         }
         else{
-            console.log("Showing defaultTime")
             var start = dataset.datetime[0];
             var end = dataset.datetime[dataset.datetime.length - 1];
             document.getElementById("start").value = start;
@@ -295,7 +313,6 @@
                     break;
                 } else if (data[i] == end) {
                     result[1] = i;
-                    console.log("Changed end time" + data[i])
                     break;
                     
                 }
@@ -345,7 +362,112 @@
         document.getElementById('oneDay').addEventListener('click', function() { 
             settimerange(24)
         });
-        
+        document.getElementById('history').addEventListener('click',function(){
+            
+
+            
+            console.log("History button pressed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            console.log("Checking if identical value shown...........");
+            h_start = history_start[history_start.length-1];/// Set variables to the latest value in arrays///
+            h_end = history_end[history_end.length-1];/// Set variables to the latest value in arrays///
+
+            if ((h_start == document.getElementById('start').value && h_end == document.getElementById('end').value)){ /// Check if latest value is the same that is loaded
+                console.log("Identical value shown, checking if array is bigger than 1");
+                if(history_start.length > 1){
+                    h_end = history_end[history_end.length-2];
+                    h_start = history_start[history_start.length-2];
+                    enable_history = 0;
+                    console.log("Array bigger than one passing in second to last value");
+                    console.log("History end array:---------------------------- ");
+                    for(i = 0; i < history_end.length; i++){
+                        if(i == history_end.length-1){
+                            console.log(history_end[i]);
+                            console.log("Finished array Array size = " + history_end.length+ " ------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                    console.log("History start array:------------------------- ");
+                    for(i = 0; i < history_start.length; i++){
+                        if(i == history_start.length-1){
+                            console.log(history_start[i]);
+                            console.log("Finished array Array size = " + history_start.length + "------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                    history_end.pop();
+                    history_start.pop();
+                    console.log(t_1 + " == " + h_start);
+                    console.log(t_2 + " == " + h_end);
+                    console.log("Passing " + t_1+ " and " + t_2) 
+                    rearange(t_1,t_2);
+                    t_2 = history_end[history_end.length-2];
+                    t_1 = history_start[history_start.length-2];
+                    console.log("Changing t_2 to : " + t_2);
+                    console.log("Changing t_1 to : " + t_1);
+
+                }
+                else{
+                    console.log("History end array:---------------------------- ");
+                    for(i = 0; i < history_end.length; i++){
+                        if(i == history_end.length-1){
+                            console.log(history_end[i]);
+                            console.log("Finished array Array size = " + history_end.length+ " ------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                    console.log("History start array:------------------------- ");
+                    for(i = 0; i < history_start.length; i++){
+                        if(i == history_start.length-1){
+                            console.log(history_start[i]);
+                            console.log("Finished array Array size = " + history_start.length + "------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                    console.log("Array is smaller than one and identical value shown");
+
+                }
+                           
+            }
+            else{
+                enable_history = 0;
+                console.log("No identical value shown will pass latest values into rearrange");
+                console.log("History end array:---------------------------- ");
+                    for(i = 0; i < history_end.length; i++){
+                        if(i == history_end.length-1){
+                            console.log(history_end[i]);
+                            console.log("Finished array Array size = " + history_end.length+ " ------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                    console.log("History start array:------------------------- ");
+                    for(i = 0; i < history_start.length; i++){
+                        if(i == history_start.length-1){
+                            console.log(history_start[i]);
+                            console.log("Finished array Array size = " + history_start.length + "------------------------");
+                        }
+                        else{
+                            console.log(history_start[i]);
+                        }
+                    }
+                history_end.pop();
+                history_start.pop();
+                rearange(h_start,h_end);
+
+            }
+            
+            console.log("End of history button function -----------------------------------------------------------");
+        });
+
 
 
 /*      

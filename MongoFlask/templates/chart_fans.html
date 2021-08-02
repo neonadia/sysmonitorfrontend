@@ -142,10 +142,42 @@
 
             const regex = /[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01][0-9]|2[0-3]):[0-5]\d:[0-5]\d$/;
             
+            // If incorrect format
             if (regex.test(start) == false || regex.test(end) == false || start.localeCompare(end) == 1) {
                 document.getElementById('defaulttime').click();
             }
+            else{
+                console.log("Regex passed with: " + start + " " + end);
+                if(enable_history == 1){
+                    if(history_start[history_start.length -1] == start && history_end[history_end.length -1] == end){
+                        console.log("Identical value as previous will not enter this value")
+                    }
+                    else{
+                        console.log("Recording history with: start: " + start + "    end: " +  end );
+                        history_start.push(start);
+                        history_end.push(end);
+                        if(history_start.length < 2){
+                            t_1 = start;
+                            t_2 = end;
+                            console.log("T = the first value in array because array length is 1");
+                        }
+                        else{
+                            console.log("T = second to last value in array now");
+                            t_1 = history_start[history_start.length -2];
+                            t_2 = history_end[history_end.length -2 ];
+                        }
+                    }
 
+                }
+            }
+            if(!(Array.isArray(history_start) && history_start.length)){  ///If empty array push the value we popped.
+                history_start.push(start);
+                history_end.push(end);
+                console.log("Pushing values into array as a safety to not lose to first value");
+                t_1 = start;
+                t_2 = end;
+            }
+            
             var range = getRange(dataset.datetime, start, end);
             var n_labels = [];
             var i;
@@ -173,5 +205,8 @@
             // config_fan.data.datasets[0].data = n_data;
             window.myLine.resetZoom();
             window.myLine.update();
+            enable_history = 1;
+            console.log("T1= " + t_1);
+            console.log("T2= " + t_2);
         });
 {% endblock %}
