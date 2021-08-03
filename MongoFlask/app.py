@@ -1519,7 +1519,11 @@ def min_max_fans_chart(bmc_ip):
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
     sns_plot = sns.barplot(y="Sensor names", x="Fan Speed(rd/min)", palette = custom_palette,data=df_max, ax=ax)
-    ax.set_xticks(range(0,int(max(max_vals))+1,1000))
+    ranger = int(max(max_vals)/15000 + 0.5)*1000
+    if ranger == 0:
+        ranger = 1000
+    ax.set_xticks(range(0,int(max(max_vals))+1,ranger))
+    #ax.set_xticks(range(0,int(max(max_vals))+1,1000))
     ax.xaxis.label.set_color('black')
     ax.yaxis.label.set_color('black')
     ax.tick_params(labelcolor='black')
