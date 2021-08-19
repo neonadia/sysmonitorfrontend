@@ -44,6 +44,26 @@ def find_powercontrol(bmc_ip):
 
     return dataset
 
+def find_voltages_names(bmc_ip):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    collection = 'monitor'
+    entries = db[collection]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Voltages": 1})
+
+    # initial dataset
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'Voltages': []}
+
+    # voltages
+    for i in range(len(data_entry[0]['Voltages'])):
+        dataset['Voltages'].append({'Name': data_entry[0]['Voltages'][str(i + 1)]['Name']})
+
+    connect.close()
+
+    return dataset
+
+
+
 
 def find_voltages(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -162,6 +182,22 @@ def find_allpowercontrols(ip_list):
     dataset['PowerControl'].insert(0,{'Name': 'Total, Unit: kW', 'Reading': power_sum})
     return dataset
 
+def find_temperatures_names(bmc_ip):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    collection = 'monitor'
+    entries = db[collection]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1})
+
+    # initial dataset
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'Temperatures': []}
+
+    # temperatures
+    for i in range(len(data_entry[0]['Temperatures'])):
+        dataset['Temperatures'].append({'Name': data_entry[0]['Temperatures'][str(i + 1)]['Name']})
+    connect.close()
+
+    return dataset
 
 def find_temperatures(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -241,6 +277,25 @@ def find_alltemperatures(ip_list, sensor_id):
         else:
             print("Fetched " + bmc_ip, flush=True)
         dataset[sensor_name][i]['Reading'] = output[i][1]
+    return dataset
+
+
+def find_fans_names(bmc_ip):
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    collection = 'monitor'
+    entries = db[collection]
+    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1})
+
+    # initial dataset
+    dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'Fans': []}
+
+    # fans
+    for i in range(len(data_entry[0]['Fans'])):
+        dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name']})
+
+    connect.close()
+
     return dataset
 
 def find_fans(bmc_ip):

@@ -45,6 +45,38 @@ IPMIdict = {"#0x09": "| Inlet Temperature"} # add "|" if neccessary
 def printf(data):
     print(data, flush=True)
 
+def get_temp_names(bmc_ip):
+    dataset_Temps = get_data.find_temperatures_names(bmc_ip)
+    cpu_temps = []
+    vrm_temps = []
+    dimm_temps = []
+    sys_temps = []
+    for x in range(len(dataset_Temps["Temperatures"])):
+        if 'CPU' in dataset_Temps["Temperatures"][x]["Name"]:
+            cpu_temps.append(dataset_Temps["Temperatures"][x]["Name"])
+        elif 'DIMM' in dataset_Temps["Temperatures"][x]["Name"]:
+            dimm_temps.append(dataset_Temps["Temperatures"][x]["Name"])
+        elif 'VRM' in dataset_Temps["Temperatures"][x]["Name"]:
+            vrm_temps.append(dataset_Temps["Temperatures"][x]["Name"])
+        else:
+            sys_temps.append(dataset_Temps["Temperatures"][x]["Name"])
+
+    return cpu_temps,vrm_temps,dimm_temps,sys_temps
+
+def get_voltage_names(bmc_ip):
+    dataset_Voltages = get_data.find_voltages_names(bmc_ip)
+    sys_voltages = []
+    for x in range(len(dataset_Voltages["Voltages"])):
+        sys_voltages.append(dataset_Voltages["Voltages"][x]["Name"])    
+    return sys_voltages
+
+def get_fan_names(bmc_ip):
+    dataset_Fans = get_data.find_fans_names(bmc_ip)
+    sys_fans = []
+    for x in range(len(dataset_Fans["Fans"])):
+        sys_fans.append(dataset_Fans["Fans"][x]["Name"])
+    return sys_fans
+
 def indexHelper(bmc_ip):
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id":0, "Event":1}).sort("_id",-1):
         details = i['Event']
@@ -100,7 +132,7 @@ def indexHelper(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     vrm_temps = get_temp_names(bmc_ip)[3]
     sys_fans = get_fan_names(bmc_ip)
-    sys_voltages = get_voltages(bmc_ip)
+    sys_voltages = get_voltage_names(bmc_ip)
 
     
     return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,sys_temps,dimm_temps,vrm_temps,sys_fans,sys_voltages]
@@ -229,7 +261,7 @@ def details():
     dimm_temps = get_temp_names(ip)[2]
     sys_temps = get_temp_names(ip)[3]
     sensor_fans = get_fan_names(ip)
-    sensor_voltages = get_voltages(ip)
+    sensor_voltages = get_voltage_names(ip)
 
     details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1, "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1, "UpdateService.SmcFirmwareInventory.2.Version":1}  )
     details2 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.CPU":1})
@@ -403,37 +435,7 @@ def systemresetstatus():
         data = ['Not Started Yet']
     return render_template('systemresetstatus.html',data=data)
 
-def get_temp_names(bmc_ip):
-    dataset_Temps = get_data.find_temperatures(bmc_ip)
-    cpu_temps = []
-    vrm_temps = []
-    dimm_temps = []
-    sys_temps = []
-    for x in range(len(dataset_Temps["Temperatures"])):
-        if 'CPU' in dataset_Temps["Temperatures"][x]["Name"]:
-            cpu_temps.append(dataset_Temps["Temperatures"][x]["Name"])
-        elif 'DIMM' in dataset_Temps["Temperatures"][x]["Name"]:
-            dimm_temps.append(dataset_Temps["Temperatures"][x]["Name"])
-        elif 'VRM' in dataset_Temps["Temperatures"][x]["Name"]:
-            vrm_temps.append(dataset_Temps["Temperatures"][x]["Name"])
-        else:
-            sys_temps.append(dataset_Temps["Temperatures"][x]["Name"])
 
-    return cpu_temps,vrm_temps,dimm_temps,sys_temps
-
-def get_voltages(bmc_ip):
-    dataset_Voltages = get_data.find_voltages(bmc_ip)
-    sys_voltages = []
-    for x in range(len(dataset_Voltages["Voltages"])):
-        sys_voltages.append(dataset_Voltages["Voltages"][x]["Name"])    
-    return sys_voltages
-
-def get_fan_names(bmc_ip):
-    dataset_Fans = get_data.find_fans(bmc_ip)
-    sys_fans = []
-    for x in range(len(dataset_Fans["Fans"])):
-        sys_fans.append(dataset_Fans["Fans"][x]["Name"])
-    return sys_fans
 
 def systemresetone(data_list):
     rstatuspath = os.environ['RESETSTATUSPATH']
@@ -1438,7 +1440,7 @@ def min_max_temperatures_chart(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
 
 ################################################################################
     for p in ax.patches:
@@ -1498,7 +1500,7 @@ def min_max_voltages_chart(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
 
 ################################################################################
     return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
@@ -1550,7 +1552,7 @@ def min_max_fans_chart(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
 
 ################################################################################   
     return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
@@ -1591,7 +1593,7 @@ def min_max_power_chart(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power")
@@ -1683,7 +1685,7 @@ def chart_powercontrol(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
 
 ######## For Displaying Current Reading in realtime ##############################################
     try:
@@ -1724,7 +1726,7 @@ def chart_voltages(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     data = get_data.find_voltages(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1747,7 +1749,7 @@ def chart_powersuppliesvoltage(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     data = get_data.find_powersupplies(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1768,7 +1770,7 @@ def chart_powersuppliespower(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     data = get_data.find_powersupplies(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1814,7 +1816,7 @@ def chart_fans(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     data = get_data.find_fans(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1838,7 +1840,7 @@ def chart_cputemperatures(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     data = get_data.find_temperatures(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
@@ -1869,7 +1871,7 @@ def chart_vrmtemperatures(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1891,7 +1893,7 @@ def chart_dimmctemperatures(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1913,7 +1915,7 @@ def chart_othertemperatures(bmc_ip):
     dimm_temps = get_temp_names(bmc_ip)[2]
     sys_temps = get_temp_names(bmc_ip)[3]
     sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltages(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
