@@ -292,8 +292,12 @@ def find_fans_names(bmc_ip):
 
     # fans
     for i in range(len(data_entry[0]['Fans'])):
-        dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name']})
-
+        try:
+            dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name']})
+        except:
+            print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
+            dataset['Fans'].append({'Name': 'FAN'+str(i+1), 'Speed': []})
+            
     connect.close()
 
     return dataset
@@ -310,8 +314,11 @@ def find_fans(bmc_ip):
 
     # fans
     for i in range(len(data_entry[0]['Fans'])):
-        dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name'], 'Speed': []})
-        #dataset['Fans'].append({'Name': 'Fan'+str(i+1), 'Speed': []})
+        try:
+            dataset['Fans'].append({'Name': data_entry[0]['Fans'][str(i+1)]['Name'], 'Speed': []})
+        except:
+            print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
+            dataset['Fans'].append({'Name': 'FAN'+str(i+1), 'Speed': []})
 
     # get dataset
     for x in data_entry:
@@ -349,7 +356,11 @@ def find_allfans(ip_list, sensor_id):
         data_entries.append(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Fans": 1}))
         break    
     for j in data_entries[0]:
-        sensor_name = j['Fans'][sensor_id]['Name']
+        try:
+            sensor_name = j['Fans'][sensor_id]['Name']
+        except:
+            print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
+            sensor_name = "FAN" + sensor_id
         break
     
     # get data
@@ -388,7 +399,15 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     all_vals = {}
     all_dates = []
     for sensorID in all_readings[0][api1]:
-        all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
+        try:
+            all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
+        except:
+            print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
+            if api1 == "Fans":
+                all_vals[sensorID] = ["Fan"+sensorID]
+            else:
+                all_vals[sensorID] = ["NaN"+sensorID]
+            
     for i in range(len(all_readings)):
         all_dates.append(all_readings[i]["Datetime"])
         for sensorID in all_vals:
