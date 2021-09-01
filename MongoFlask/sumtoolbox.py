@@ -96,7 +96,12 @@ def sumCompBiosSettings():
                 contents_str = []
                 for content in contents:
                     contents_str.append(content.replace('"',''))
-                jsonlist[-1]["|".join(contents_str[0:-2])] = contents_str[-2]
+                try:
+                    jsonlist[-1]["|".join(contents_str[0:-2])] = contents_str[-2]
+                except:
+                    printf("------------This line does not contains enough information--------")
+                    printf(contents_str)
+                    printf("------------------------------------------------------------------")
     output['allsettings'] = jsonlist
     # find out number of different nodes
     numdifflist = []
