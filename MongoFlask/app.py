@@ -173,7 +173,7 @@ def index():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
-
+    
 
     
     with Pool() as p:
@@ -205,16 +205,19 @@ def index():
     show_names = 'true' # default
     try:
         df_names = pd.read_csv(os.environ['NODENAMES'])
+        df_pwd['name'] = list(df_names['name'])
+        node_names = []
     except Exception as e:
         printf(e)
         show_names = 'false'
         data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus)
     else:
-        node_names = df_names['name'].tolist()
-        for i in range(len(node_names)):
-            if 'no_name' in node_names[i]:
-                show_names = 'false'
-                break
+        for i in bmc_ip:
+            node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
+            
+        if df_pwd['name'].isnull().sum() == len(bmc_ip):
+            show_names = 'false'
+        
         data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,node_names)
   
 
