@@ -1165,6 +1165,9 @@ def pwdoutput():
 @app.route('/event')
 def event():
     ip = request.args.get('var')
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    pwd = df_pwd.loc[df_pwd['ip'] == ip,'pwd'].iloc[0]
+    date_time = get_data.get_time(ip,pwd)
     for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).sort("_id",-1):
         events = i['Event']
         break
@@ -1172,7 +1175,7 @@ def event():
         for key in IPMIdict.keys():
             if key in events[i]:
                 events[i] = events[i].replace(key,IPMIdict[key]) + " | Note the error number '" + key + "' has been replaced by '" + IPMIdict[key] + "'!"
-    return render_template('event.html', data=events)
+    return render_template('event.html', date_time=date_time, data=events)
 
 @app.route('/udpserverupload',methods=["GET","POST"])
 def udpserverupload():

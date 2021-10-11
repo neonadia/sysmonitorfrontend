@@ -22,6 +22,17 @@
         </a>
     </li>
     {% include "documentationButton.html" %}
+    {% if 'no_time' not in date_time%}
+        <li class='dropdown'>
+            <!-- <a class="btn pull-right btn-primary btn-lg mr-1 text-white" id="clock"><a> -->
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{date_time}}
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item">This is the last timestamp from this bmc_ip. Please refresh this page to ensure to get an up-to-date time.</a> 
+                </div>
+        </li>
+    {%endif%}
 </ul>
 </nav>
 

@@ -1,7 +1,9 @@
+from sys import stderr
 import pymongo
 import datetime
 from app import mongoport, rackname
 from multiprocessing import Pool
+from subprocess import Popen, PIPE
 
 def find_ikvm(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -61,6 +63,23 @@ def find_voltages_names(bmc_ip):
     connect.close()
 
     return dataset
+    
+def get_time(bmc_ip,pwd): # datetime for IPMI
+    try:
+        ipmi_response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' +  pwd + ' sel time get ', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout,stderr = ipmi_response.communicate(timeout=1)
+    except:
+        print('No response, please check the IPMI IP and password.', flush=True)
+        date_time = 'no_time'
+    else:
+        if stderr.decode('utf-8') == '':
+            date_time = stdout.decode("utf-8")
+            date_time = date_time.replace('\n','')
+            print(stdout, flush=True)
+        else:
+            date_time = 'no_time'
+            print(stderr, flush=True)
+    return date_time
 
 
 
