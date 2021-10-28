@@ -99,7 +99,9 @@ def indexHelper(bmc_ip):
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
     if os.environ['POWERDISP'] == "ON":
-        if powerState(bmc_ip,current_auth):
+        if powerState(bmc_ip,current_auth) == -1:
+            current_state = "D/C"
+        elif powerState(bmc_ip,current_auth):
             current_state = "ON"
         else:
             current_state = "OFF"
