@@ -1139,7 +1139,7 @@ def sumbiossettingschangeoutput():
 def bioscomparisonoutput():
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
-        sleep(1)
+        time.sleep(1)
     df_auth = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     data_bioscomp = compareBiosSettings(df_auth)['compResult']
     return render_template('bioscomparisonoutput.html', data_bioscomp = data_bioscomp)
@@ -1148,7 +1148,7 @@ def bioscomparisonoutput():
 def bootorderoutput():
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
-        sleep(1)
+        time.sleep(1)
     df_auth = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     df_bootorder = bootOrderOutput(df_auth)
     df_bootorder.to_excel(os.environ['BOOTORDERPATH'],index=None)
