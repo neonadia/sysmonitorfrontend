@@ -69,7 +69,7 @@ def get_time(bmc_ip,pwd): # datetime for IPMI
         ipmi_response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' +  pwd + ' sel time get ', shell = 1, stdout  = PIPE, stderr = PIPE)
         stdout,stderr = ipmi_response.communicate(timeout=1)
     except:
-        print('No response, please check the IPMI IP and password.', flush=True)
+        print('<ipmitool set time get> got no response, please check the password and network connection.', flush=True)
         date_time = 'no_time'
     else:
         if stderr.decode('utf-8') == '':
