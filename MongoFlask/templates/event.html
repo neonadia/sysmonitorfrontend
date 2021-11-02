@@ -30,6 +30,9 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item">BMC TimeZone: {{ ntp_server }}</a> 
+                    <a class="dropdown-item">Enable/Disable NTP: {{ ntp_on_off }}</a> 
+                    <a class="dropdown-item">Daylight Savings Enable/Disable: {{ daylight }}</a> 
+                    <a class="dropdown-item">Modulation: {{ modulation }}</a> 
                 </div>
         </li>
     {%endif%}

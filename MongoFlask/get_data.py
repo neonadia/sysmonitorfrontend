@@ -98,6 +98,28 @@ def get_ntp_server(bmc_ip,pwd):
             ntp_server = 'no response'
             print(stderr, flush=True)
     return ntp_server
+ 
+def get_ntp_status(bmc_ip,pwd):
+    try:
+        ipmi_response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' +  pwd + ' raw 0x30 0x68 0x01 0x0 0x0 ', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout,stderr = ipmi_response.communicate(timeout=1)
+    except:
+        print('<ipmitool raw 0x30 0x68 0x01 0x0 0x0> got no response, please check the password and network connection.', flush=True)
+        return ['no response','no response','no response']
+    else:
+        if stderr.decode('utf-8') == '':
+            ntp_status = stdout.decode("utf-8")
+            ntp_status = ntp_status.replace('\n','')
+            if len(ntp_status) >= 8:
+                p0 = ntp_status[:2]
+                p1 = ntp_status[3:-3]
+                p2 = ntp_status[-2:]
+                p1 = bytes.fromhex(p1).decode('utf-8')
+                print('Enable/disable NTP: ' + p0 + '\n' + 'Daylight Savings enable/disable: ' + p2 + '\n' + 'Modulation: ' + p1 , flush=True)
+                return [p0,p2,p1]
+        else:
+            print(stderr, flush=True)
+            return [stderr,stderr,stderr]
 
 
 def find_voltages(bmc_ip):
