@@ -81,7 +81,23 @@ def get_time(bmc_ip,pwd): # datetime for IPMI
             print(stderr, flush=True)
     return date_time
 
-
+def get_ntp_server(bmc_ip,pwd):
+    try:
+        ipmi_response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' +  pwd + ' raw 0x30 0x68 0x01 0x0 0x1 ', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout,stderr = ipmi_response.communicate(timeout=1)
+    except:
+        print('<ipmitool raw 0x30 0x68 0x01 0x0 0x1> got no response, please check the password and network connection.', flush=True)
+        ntp_server = 'no response'
+    else:
+        if stderr.decode('utf-8') == '':
+            ntp_server = stdout.decode("utf-8")
+            ntp_server = ntp_server.replace('\n','')
+            ntp_server = bytes.fromhex(ntp_server).decode('utf-8')
+            print(stdout, flush=True)
+        else:
+            ntp_server = 'no response'
+            print(stderr, flush=True)
+    return ntp_server
 
 
 def find_voltages(bmc_ip):
