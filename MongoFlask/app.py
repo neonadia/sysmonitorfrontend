@@ -130,14 +130,14 @@ def indexHelper(bmc_ip):
     
 
     cpu_temps = get_temp_names(bmc_ip)[0]
-    sys_temps = get_temp_names(bmc_ip)[1]
+    vrm_temps = get_temp_names(bmc_ip)[1]
     dimm_temps = get_temp_names(bmc_ip)[2]
-    vrm_temps = get_temp_names(bmc_ip)[3]
+    sys_temps = get_temp_names(bmc_ip)[3]
     sys_fans = get_fan_names(bmc_ip)
     sys_voltages = get_voltage_names(bmc_ip)
 
     
-    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,sys_temps,dimm_temps,vrm_temps,sys_fans,sys_voltages]
+    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
 def index():
@@ -182,9 +182,9 @@ def index():
         output = p.map(indexHelper, bmc_ip)
     
     cpu_temps = []
-    sys_temps = []
-    dimm_temps = []
     vrm_temps = []
+    dimm_temps = []
+    sys_temps = []
     sys_fans = []
     sys_voltages = []
         
