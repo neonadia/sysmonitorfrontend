@@ -119,14 +119,6 @@
             </div>
     </li>
 -->
-    <li class='dropdown'>
-            <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="host_time" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                {{cur_time}}
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item">Container TimeZone: {{time_zone}}</a> 
-            </div>
-    </li>
 
 </ul>
 </nav>
@@ -238,8 +230,11 @@
                     href= ""
                 ></a>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-                    <li class= "dropdown-item">{{row[0]}} Sensors </li>
+                    {% if 'false' in show_names or 'No Value' in row[16] %}
+                        <li class= "dropdown-item align-items-center" >{{row[0]}} Sensors </li>
+                    {%else%}
+                        <li class= "dropdown-item align-items-center"> {{row[16]}} - {{row[0]}} Sensors </li>
+                    {%endif%}
                     <div class="dropdown-divider"></div>
 
                     <li>

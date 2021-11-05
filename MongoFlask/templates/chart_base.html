@@ -14,7 +14,7 @@
     <script src="../static/Chart.min.js"></script>
     <script src="../static/utils.js"></script>
     <script src="../static/chartjs-plugin-zoom.js"></script>
-    <script src="../static/hammer.min.js"></script>
+    <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
     <style>
         canvas{
             -moz-user-select: none;
@@ -209,11 +209,21 @@
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Nodes
                 </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    {%if 'false' in show_names %}
                         {% for ip in ip_list %}
-                        <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                            <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
                         {% endfor %}
-                    </div>
+                    {%else%}
+                        {% for ip,name in ip_list %}
+                            {%if 'No Value' in name%}
+                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                            {%else%}
+                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}"> {{name}} - {{ip}} </a>
+                            {%endif%}
+                        {% endfor %}   
+                    {%endif%}                   
+                </div>
             </div>
             <div class="col col-auto ">
                 <button class="btn btn-danger btn-lg mr-1" onclick="self.close()">Close</button>

@@ -126,17 +126,7 @@ def indexHelper(bmc_ip):
         monitor_status = "UNKOWN " + current_state   
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
-
-    
-
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sys_fans = get_fan_names(bmc_ip)
-    sys_voltages = get_voltage_names(bmc_ip)
-
-    
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip) 
     return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
@@ -1444,18 +1434,6 @@ def min_max_temperatures_chart(bmc_ip):
     ax2.set_yticklabels([])
     ax2.set_yticks([])
     ax2.set_ylabel('')
-
-    
-#################################################################################### Function to add functionality for nav bar drop down.
-    
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
-
-################################################################################
     for p in ax.patches:
         _x = p.get_x() + p.get_width() + 0.3
         _y = p.get_y() + p.get_height()
@@ -1467,8 +1445,15 @@ def min_max_temperatures_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    
-    return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'   
+    if show_names == 'true':
+        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures")
+    else:
+        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
@@ -1506,17 +1491,16 @@ def min_max_voltages_chart(bmc_ip):
     fig.savefig("/app/static/images/" + imagepath)
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
-        time.sleep(1)
-#################################################################################### Function to add functionality for nav bar drop down.
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
-
-################################################################################
-    return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+        time.sleep(1)    
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
+    if show_names == 'true':
+        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages")    
+    else:
+        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
@@ -1559,16 +1543,16 @@ def min_max_fans_chart(bmc_ip):
     imageheight = (len(df_min)/4+1)*1500/10
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
- #################################################################################### Function to add functionality for nav bar drop down.
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
-
-################################################################################   
-    return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+    ############################## Sensor data and node names for header ########################
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'    
+    if show_names == 'true':
+        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans")
+    else:
+        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
 
 
 @app.route('/min_max_power_chart/<bmc_ip>')
@@ -1601,15 +1585,18 @@ def min_max_power_chart(bmc_ip):
     imagepath = "min_max_power_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".png"
     fig.savefig("/app/static/images/" + imagepath, bbox_inches = "tight", pad_inches = 0.01)
     imageheight = (len(df_min)/4+1)*1500/10
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power")
+    ############################## Sensor data and node names for header ########################
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
+    if show_names == 'true':
+        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power")   
+    else:
+        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power")
 
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
@@ -1693,14 +1680,14 @@ def min_max_allpower_chart():
 
 @app.route('/chart_powercontrol/<bmc_ip>')
 def chart_powercontrol(bmc_ip):
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
-
-######## For Displaying Current Reading in realtime ##############################################
+    ###################### Get Data ###################################################
+    data = get_data.find_powercontrol(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
+    ######## For Displaying Current Reading in realtime ##############################################
     try:
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
@@ -1716,10 +1703,8 @@ def chart_powercontrol(bmc_ip):
             reading = inst_power[1].lstrip()
         else:
             reading = "ERROR"
-#######  Returns reading as a number or a ERROR string for exception handling or a response from stderr ####################
+    #######  Returns reading as a number or a ERROR string for exception handling or a response from stderr ####################
 
-
-    data = get_data.find_powercontrol(bmc_ip)
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1727,20 +1712,26 @@ def chart_powercontrol(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_powercontrol.html', reading= reading, title='Power Control', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+        if show_names == 'true':
+            return render_template('chart_powercontrol.html', reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol")        
+        else:
+            return render_template('chart_powercontrol.html', reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
     else:
         name = request.args.get('name')
-        return render_template('chart_powercontrol.html',reading = reading,title='Power Control',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+        if show_names == 'true':
+            return render_template('chart_powercontrol.html',reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol")
+        else:
+            return render_template('chart_powercontrol.html',reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
 
 @app.route('/chart_voltages/<bmc_ip>')
 def chart_voltages(bmc_ip):
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    ###################### Get Data ###################################################
     data = get_data.find_voltages(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1748,22 +1739,28 @@ def chart_voltages(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_voltages.html', title='Voltages', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+        if show_names == 'true':
+            return render_template('chart_voltages.html', title='Voltages', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages")
+        else:
+            return render_template('chart_voltages.html', title='Voltages', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
 
     else:
         name = request.args.get('name')
-        return render_template('chart_voltages.html', title='Voltages',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+        if show_names == 'true':
+            return render_template('chart_voltages.html', title='Voltages',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages")
+        else:
+            return render_template('chart_voltages.html', title='Voltages',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
    
 
 @app.route('/chart_powersuppliesvoltage/<bmc_ip>')
 def chart_powersuppliesvoltage(bmc_ip):
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    ###################### Get Data ###################################################
     data = get_data.find_powersupplies(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1771,20 +1768,26 @@ def chart_powersuppliesvoltage(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+        if show_names == 'true':
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage")
+        else:
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
     else:
         name = request.args.get('name')
-        return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
-
+        if show_names == 'true':
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage")        
+        else:
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+     
 @app.route('/chart_powersuppliespower/<bmc_ip>')
 def chart_powersuppliespower(bmc_ip):
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    ###################### Get Data ###################################################
     data = get_data.find_powersupplies(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1792,12 +1795,18 @@ def chart_powersuppliespower(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_powersuppliespower.html', title='Power Supplies Power', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+        if show_names == 'true':
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower")
+        else: 
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
 
     else:
         name = request.args.get('name')
-        return render_template('chart_powersuppliespower.html', title='Power Supplies Power', cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
-   
+        if show_names == 'true':
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower")        
+        else:
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+  
 @app.route('/chart_allpowercontrols')
 def chart_allpowercontrols():
     ip_list = getIPlist()
@@ -1824,13 +1833,13 @@ def chart_allfans():
 
 @app.route('/chart_fans/<bmc_ip>')
 def chart_fans(bmc_ip):
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    ###################### Get Data ###################################################
     data = get_data.find_fans(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')    
@@ -1838,23 +1847,28 @@ def chart_fans(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_fans.html', title='Fans', dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+        if show_names == 'true':
+            return render_template('chart_fans.html', title='Fans', show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans")
+        else:
+            return render_template('chart_fans.html', title='Fans', show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
 
     else:
         name = request.args.get('name')
-        return render_template('chart_fans.html', title='Fans',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+        if show_names == 'true':
+            return render_template('chart_fans.html', title='Fans',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans")        
+        else:
+            return render_template('chart_fans.html', title='Fans',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
 
 
 @app.route('/chart_cputemperatures/<bmc_ip>')
 def chart_cputemperatures(bmc_ip):
-      #Format 2021-07-01 22:22:28
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    ###################### Get Data ###################################################
     data = get_data.find_temperatures(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1862,11 +1876,17 @@ def chart_cputemperatures(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_cputemperatures.html', title='CPU Temperatures',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+        if show_names == 'true':
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures")
+        else:
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
     else:
         name = request.args.get('name')
-        return render_template('chart_cputemperatures.html', title='CPU Temperatures',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
-    #Format 2021-07-01 22:22:28
+        if show_names == 'true':
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures")
+        else:
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+
 
 
 """
@@ -1878,13 +1898,13 @@ def chart_systemtemperatures(bmc_ip):
 
 @app.route('/chart_vrmtemperatures/<bmc_ip>')
 def chart_vrmtemperatures(bmc_ip):
+    ###################### Get Data ###################################################
     data = get_data.find_temperatures(bmc_ip)
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1892,21 +1912,27 @@ def chart_vrmtemperatures(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")
+        if show_names == 'true':
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures")
+        else:
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")
     else:
         name = request.args.get('name')
-        return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")     
+        if show_names == 'true':
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures")     
+        else:
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")     
 
 
 @app.route('/chart_dimmctemperatures/<bmc_ip>')
 def chart_dimmctemperatures(bmc_ip):
+    ###################### Get Data ###################################################
     data = get_data.find_temperatures(bmc_ip)
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1914,21 +1940,30 @@ def chart_dimmctemperatures(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+        if show_names == 'true':
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures")
+
+        else:
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
 
     else:
         name = request.args.get('name')
-        return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+        if show_names == 'true':
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures")
+
+        else:
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
 
 @app.route('/chart_othertemperatures/<bmc_ip>')
 def chart_othertemperatures(bmc_ip):
+    ###################### Get Data ###################################################
     data = get_data.find_temperatures(bmc_ip)
-    cpu_temps = get_temp_names(bmc_ip)[0]
-    vrm_temps = get_temp_names(bmc_ip)[1]
-    dimm_temps = get_temp_names(bmc_ip)[2]
-    sys_temps = get_temp_names(bmc_ip)[3]
-    sensor_fans = get_fan_names(bmc_ip)
-    sensor_voltages = get_voltage_names(bmc_ip)
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
+
     if "t=" in request.url:
         t_min_max = request.args.get('t')
         name = request.args.get('name')
@@ -1936,11 +1971,46 @@ def chart_othertemperatures(bmc_ip):
         t_min = (date_time_obj - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
-        return render_template('chart_othertemperatures.html', title='Other Temperatures',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
-
+        if show_names == 'true':
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures")
+        else:
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
     else:
         name = request.args.get('name')
-        return render_template('chart_othertemperatures.html', title='Other Temperatures',cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+        if show_names == 'true':
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures")
+        else:
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+
+def get_sensor_names(bmc_ip): #Sensor names only for header in html - return a various lists
+    cpu_temps,vrm_temps,dimm_temps,sys_temps = get_temp_names(bmc_ip)
+    sensor_fans = get_fan_names(bmc_ip)
+    sensor_voltages = get_voltage_names(bmc_ip)
+    return cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages
+
+def get_node_names(): #Gather node names from node_names file. Return a boolean if failed or no names in all, else a list tuple list  of (ipmi ip - nodename)
+    ##################### Try Catch block for accepting a nodenames values in nodes list
+    try:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        df_names = pd.read_csv(os.environ['NODENAMES']) #Global variable file for container
+        df_pwd['name'] = list(df_names['name'])
+    except Exception as e:
+        show_names = False
+        printf("Failed to get node names with error message:" + str(e))
+        return show_names
+    else:
+        node_names = []
+        ips = []
+        for i in list(df_pwd['ip']):
+            node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
+            ips.append(i)
+        if df_pwd['name'].isnull().sum() == len(list(df_pwd['ip'])):
+            show_names = False
+            return show_names
+        else:
+            ips_names = zip(ips,node_names) #zip for easy reading in html
+            return ips_names
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -1971,7 +2041,7 @@ def downloadClusterReport():
     try:
         os.remove("cluster_report.pdf")
     except Exception as e:
-        print(e)
+        printf(e)
     try:
         subprocess.check_call("python3 cluster_report.py",shell=True)
     except Exception as e:

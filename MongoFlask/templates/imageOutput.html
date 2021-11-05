@@ -173,11 +173,21 @@
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Nodes
                 </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    {%if 'false' in show_names %}
                         {% for ip in ip_list %}
-                        <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}_chart/{{ ip }}">{{ ip }}</a>
+                            <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}_chart/{{ ip }}">{{ ip }}</a>
                         {% endfor %}
-                    </div>
+                    {%else%}
+                        {% for ip,name in ip_list %}
+                            {%if 'No Value' in name%}
+                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}_chart/{{ ip }}">{{ ip }}</a>
+                            {%else%}
+                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}_chart/{{ ip }}">{{ name }} - {{ip}}</a>
+                            {%endif%}
+                        {% endfor %}   
+                    {%endif%}                   
+                </div>
             </li>
 
             <!--
