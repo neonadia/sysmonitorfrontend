@@ -417,6 +417,61 @@ def systemreset():
     return redirect(url_for('systemresetupload'))
 
 
+def checkipmisensor_one(bmc_ip):
+    try:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
+        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sdr list full', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout , stderr = response.communicate(timeout=2)
+    except:
+        printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
+        return []
+    else:
+        if stderr.decode('utf-8') == '':
+            output = stdout.decode("utf-8").split('\n')
+            if output[-1] == '': # remove last empty item
+                output.pop()
+            #printf(output)
+        else:
+            printf('IPMI command on ' + bmc_ip + ' got following error:')
+            printf(stderr.decode('utf-8'))
+            return []
+    return output # output = ["CPU1 Temp        | 59 degrees C      | ok","CPU2 Temp        | 62 degrees C      | ok",.....]
+
+
+@app.route('/checkipmisensor')
+def checkipmisensor():
+    ip_list = getIPlist()
+    sn_list = []
+    pwd_list = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    for ip in ip_list:
+        sn_list.append(getSerialNumber(ip))
+        pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
+    # Check how many working sensors
+    with Pool() as p:
+        output = p.map(checkipmisensor_one, ip_list) # output = [[bmc1 output],[bmc2 output],....]
+    num_all = []
+    num_workable = []
+    num_nonworkable = []
+    num_unknown = []
+    for sensors in output: # sensors are all sensors of one bmc ["CPU1 Temp        | 59 degrees C      | ok","CPU2 Temp        | 62 degrees C      | ok",.....]
+        cur_num_workable = 0
+        cur_num_nonworkable = 0
+        cur_num_unknown = 0
+        for sensor in sensors:
+            if "ok"  in sensor:
+                cur_num_workable += 1
+            elif "ns" in sensor:
+                cur_num_nonworkable += 1
+            else:
+                cur_num_unknown += 1
+        num_all.append(len(sensors))
+        num_workable.append(cur_num_workable) # sensor show ok
+        num_nonworkable.append(cur_num_nonworkable) # sensor show ns
+        num_unknown.append(cur_num_unknown) # other situations
+    return render_template('checkipmisensor.html',data=zip(ip_list,pwd_list,sn_list,num_all,num_workable,num_nonworkable,num_unknown))
+
 @app.route('/systemresetstatus')
 def systemresetstatus():
     rstatuspath = os.environ['RESETSTATUSPATH']
