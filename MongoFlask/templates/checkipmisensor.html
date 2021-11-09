@@ -103,9 +103,10 @@
         <th class="align-middle" >Number of Working Sensors</th>
         <th class="align-middle" >Number of Non-working Sensors</th>
         <th class="align-middle" >Number of Unknown Sensors</th>
+        <th class="align-middle" >Problem Node</th>
     </thead>
     <tbody>
-        {% for ipmi, pwd, sn, num_sensor, num_w_sensor, num_n_sensor, num_u_sensor in data %}
+        {% for ipmi, pwd, sn, num_sensor, num_w_sensor, num_n_sensor, num_u_sensor, flag in data %}
                 <tr>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ ipmi }}</h4></td>
                 <td class="align-middle font-weight-bold text-primary" ><h4>{{ pwd}}</h4></td>
@@ -114,6 +115,11 @@
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ num_w_sensor }}</h4></td>
                 <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_n_sensor }}</h4></td>
                 <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_u_sensor }}</h4></td>
+                {% if flag == 1 %}
+                    <td class="align-middle font-weight-bold text-danger" ><h4>Yes</h4></td>
+                {% else %}
+                    <td class="align-middle font-weight-bold text-success" ><h4>No</h4></td>
+                {% endif %}
                 </tr>
         {% endfor %}
     </tbody>

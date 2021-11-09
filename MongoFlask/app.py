@@ -465,6 +465,7 @@ def checkipmisensor():
     num_workable = []
     num_nonworkable = []
     num_unknown = []
+    prob_flags = []
     for sensors in output: # sensors are all sensors of one bmc ["CPU1 Temp        | 59 degrees C      | ok","CPU2 Temp        | 62 degrees C      | ok",.....]
         cur_num_workable = 0
         cur_num_nonworkable = 0
@@ -480,7 +481,13 @@ def checkipmisensor():
         num_workable.append(cur_num_workable) # sensor show ok
         num_nonworkable.append(cur_num_nonworkable) # sensor show ns
         num_unknown.append(cur_num_unknown) # other situations
-    return render_template('checkipmisensor.html',data=zip(ip_list,pwd_list,sn_list,num_all,num_workable,num_nonworkable,num_unknown))
+        
+    for a, w, n, u in zip(num_all, num_workable, num_nonworkable, num_unknown):
+        if a < max(num_all) or w < max(num_workable):
+            prob_flags.append(1)
+        else:
+            prob_flags.append(0)
+    return render_template('checkipmisensor.html',data=zip(ip_list,pwd_list,sn_list,num_all,num_workable,num_nonworkable,num_unknown,prob_flags))
 
 @app.route('/systemresetstatus')
 def systemresetstatus():
