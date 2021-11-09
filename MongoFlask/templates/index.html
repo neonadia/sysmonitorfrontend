@@ -142,6 +142,7 @@
         <th class="align-middle" >System Serial #</th>
         <th class="align-middle" >BIOS Version</th>
         <th class="align-middle" >BMC Version</th>
+        <th class="align-middle" >CPLD Version</th>
         <th class="align-middle" >DATETIME</th>
         <th class="align-middle" >BMC Status</th>
         <th class="align-middle" >Status</th>
@@ -159,7 +160,7 @@
             {% if 'false' in show_names%}
                 <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
             {%else%}
-                <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
+                <td class="align-middle font-weight-bold" >{{ row[17] }}</td>
                 <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
             {%endif%}
             <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
@@ -170,6 +171,7 @@
             <td class="align-middle font-weight-bold" >{{ row[3] }}</td> 
             <td class="align-middle font-weight-bold" >{{ row[4] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[5] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
             <td style="text-align:center">
                 <div class="dropdown">

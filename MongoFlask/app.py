@@ -109,6 +109,14 @@ def indexHelper(bmc_ip):
         current_state = "N/A"
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
+        cpld_version = 'N/A' #set CPLD version to default value
+        firmwares = get_data.get_Firmware(bmc_ip,current_auth[0],current_auth[1]) #Obtain cpld firmware version from function. 
+        if isinstance(firmwares,bool) == False: ## Check for boolean, as per the functions description.
+            for i in firmwares: ### If CPLD in list split, retrieve second item from split as per the format (CPLD : xx.xx.xx)
+                if 'CPLD' in i:
+                    cpld_version = i.split(':')[1]
+        else:
+            printf("SMCIPMITool did not retrieve CPLD version for " + bmc_ip) 
     else:
         uid_state = "N/A"
     current_flag = read_flag()
@@ -127,7 +135,7 @@ def indexHelper(bmc_ip):
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip) 
-    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
+    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages,cpld_version]
 
 @app.route('/')
 def index():
@@ -146,6 +154,7 @@ def index():
     pwd =[]
     mac_list = []
     os_ip = []
+    cpld_version = []                 
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
@@ -191,6 +200,7 @@ def index():
         sys_temps.append(i[9])
         sys_fans.append(i[10])
         sys_voltages.append(i[11])
+        cpld_version.append(i[12])
               
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
@@ -202,7 +212,7 @@ def index():
     except Exception as e:
         printf(e)
         show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version)
     else:
         for i in bmc_ip:
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
@@ -210,7 +220,7 @@ def index():
         if df_pwd['name'].isnull().sum() == len(bmc_ip):
             show_names = 'false'
         
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,node_names)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
   
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
@@ -2198,5 +2208,6 @@ def downloadNodeReport_PDF(bmc_ip):
 ### Report Generation ####
 
 if __name__ == '__main__':
+    get_data.makeSmcipmiExcutable()
     printf("Frontend port number is " + str(frontport))
     app.run(host='0.0.0.0',port=frontport)

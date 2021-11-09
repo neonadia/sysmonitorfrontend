@@ -21,6 +21,30 @@ def find_ikvm(bmc_ip):
 
     return ikvm_addr
 
+
+def makeSmcipmiExcutable():
+    process = Popen('find SMCIPMITOOL -type f -iname "*" -exec chmod +x {} \;', shell=True, stdout=PIPE, stderr=PIPE)
+    process.communicate()
+    print("SMCIPMITool is excutable now")
+    return(0)
+
+
+def get_Firmware(bmc_ip,user,pwd): #Returns a list of firmware version. You must parse through the return list for the desired value. Will return a boolean if no output
+    r = Popen('./SMCIPMITOOL/SMCIPMITool ' + bmc_ip + ' ' + user + ' ' + pwd + ' ipmi oem summary',shell = 1, stdout = PIPE, stderr = PIPE)
+    try:
+        stdout,stderr = r.communicate(timeout=3)
+        data = stdout.decode()
+        err = stderr.decode()
+        if err != '':
+            print(err,flush=True)
+            return True
+        else:
+            data = data.split('\n')
+            return data
+    except Exception as e:
+        print(e,flush=True)
+        return True
+
 def find_powercontrol(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
     db = connect['redfish']
