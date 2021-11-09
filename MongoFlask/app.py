@@ -107,9 +107,9 @@ def indexHelper(bmc_ip):
             current_state = "OFF"
     else:
         current_state = "N/A"
+    cpld_version = 'N/A' #set CPLD version to default value
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
-        cpld_version = 'N/A' #set CPLD version to default value
         firmwares = get_data.get_Firmware(bmc_ip,current_auth[0],current_auth[1]) #Obtain cpld firmware version from function. 
         if isinstance(firmwares,bool) == False: ## Check for boolean, as per the functions description.
             for i in firmwares: ### If CPLD in list split, retrieve second item from split as per the format (CPLD : xx.xx.xx)
