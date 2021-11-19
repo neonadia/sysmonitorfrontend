@@ -27,6 +27,7 @@ import datetime
 from datetime import timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
+from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -110,13 +111,13 @@ def indexHelper(bmc_ip):
     cpld_version = 'N/A' #set CPLD version to default value
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
-        firmwares = get_data.get_Firmware(bmc_ip,current_auth[0],current_auth[1]) #Obtain cpld firmware version from function. 
-        if isinstance(firmwares,bool) == False: ## Check for boolean, as per the functions description.
-            for i in firmwares: ### If CPLD in list split, retrieve second item from split as per the format (CPLD : xx.xx.xx)
-                if 'CPLD' in i:
-                    cpld_version = i.split(':')[1]
-        else:
-            printf("SMCIPMITool did not retrieve CPLD version for " + bmc_ip) 
+        #firmwares = get_data.get_Firmware(bmc_ip,current_auth[0],current_auth[1]) #Obtain cpld firmware version from function. 
+        #if isinstance(firmwares,bool) == False: ## Check for boolean, as per the functions description.
+        #    for i in firmwares: ### If CPLD in list split, retrieve second item from split as per the format (CPLD : xx.xx.xx)
+        #        if 'CPLD' in i:
+        #            cpld_version = i.split(':')[1]
+        #else:
+        #    printf("SMCIPMITool did not retrieve CPLD version for " + bmc_ip) 
     else:
         uid_state = "N/A"
     current_flag = read_flag()
@@ -2217,4 +2218,12 @@ def downloadNodeReport_PDF(bmc_ip):
 if __name__ == '__main__':
     get_data.makeSmcipmiExcutable()
     printf("Frontend port number is " + str(frontport))
-    app.run(host='0.0.0.0',port=frontport)
+    if os.environ['DEBUG_MODE'] == 'True':
+        printf('Debug Mode is True')
+        app.debug =True
+        app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+        toolbar = DebugToolbarExtension(app)
+        app.run(host='0.0.0.0',port=frontport, debug=True)
+    else:
+        printf('Debug Mode is False')
+        app.run(host='0.0.0.0',port=frontport)

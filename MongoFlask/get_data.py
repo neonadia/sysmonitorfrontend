@@ -25,7 +25,7 @@ def find_ikvm(bmc_ip):
 def makeSmcipmiExcutable():
     process = Popen('find SMCIPMITOOL -type f -iname "*" -exec chmod +x {} \;', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
-    print("SMCIPMITool is excutable now")
+    print("SMCIPMITool is excutable now", flush=True)
     return(0)
 
 
