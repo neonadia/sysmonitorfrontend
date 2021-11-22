@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE
 import re
+from time import sleep
 from jsondiff import diff
 import pandas as pd
 import os
@@ -8,6 +9,7 @@ from os.path import isfile, join
 from json2html import *
 import urllib3
 import glob
+import time
 
 urllib3.disable_warnings()
 
@@ -16,15 +18,30 @@ logFolder = os.environ['UPLOADPATH']
 def printf(data):
     print(data, flush=True)
 
+def insert_flag(flag):
+    flag_path = os.environ['FLAGPATH']
+    with open(flag_path, 'a') as flag_file:
+        flag_file.write(str(flag) + ',' + time.ctime()  + '\n')  
+
+def read_flag():
+    with open(os.environ['FLAGPATH'], 'r') as flag_file:
+        flag = int(flag_file.readlines()[-1].split(',')[0])
+    return flag
+
 def makeSumExcutable():
     process = Popen('chmod 777 sum', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
-    printf("sum is excutable now")
+    # printf("sum is excutable now")
     return(0)
 
 def sumRunCustomProcess(CMD):
+    flag = read_flag()
+    while(flag == 1):
+        flag = read_flag()
+    insert_flag(5)
     process = Popen(CMD, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
+    insert_flag(0)
     return(0)
 
 def sumLogOutput():
@@ -40,24 +57,44 @@ def sumLogOutput():
         return(LogFileList[0])
         
 def sumBiosUpdate(inputpath,filepath):
+    flag = read_flag()
+    while(flag == 1):
+        flag = read_flag()
+    insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c UpdateBios --file ' + filepath, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
+    insert_flag(0)
     return(0)
 
 def sumBMCUpdate(inputpath,filepath):
+    flag = read_flag()
+    while(flag == 1):
+        flag = read_flag()
+    insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c UpdateBmc --file ' + filepath, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
+    insert_flag(0)
     return(0)
 
 def sumGetBiosSettings(inputpath):
+    flag = read_flag()
+    while(flag == 1):
+        flag = read_flag()
+    insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c GetCurrentBiosCfg --file htmlBios --overwrite', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
+    insert_flag(0)
     return(0)
     
 
 def sumChangeBiosSettings(inputpath,filepath):
+    flag = read_flag()
+    while(flag == 1):
+        flag = read_flag()
+    insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c ChangeBiosCfg --file ' + filepath + ' --skip_unknown', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
+    insert_flag(0)
     return(0)
     
 '''

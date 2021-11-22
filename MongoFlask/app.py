@@ -28,6 +28,7 @@ from datetime import timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
 from flask_debugtoolbar import DebugToolbarExtension
+import concurrent.futures
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -108,16 +109,8 @@ def indexHelper(bmc_ip):
             current_state = "OFF"
     else:
         current_state = "N/A"
-    cpld_version = 'N/A' #set CPLD version to default value
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
-        #firmwares = get_data.get_Firmware(bmc_ip,current_auth[0],current_auth[1]) #Obtain cpld firmware version from function. 
-        #if isinstance(firmwares,bool) == False: ## Check for boolean, as per the functions description.
-        #    for i in firmwares: ### If CPLD in list split, retrieve second item from split as per the format (CPLD : xx.xx.xx)
-        #        if 'CPLD' in i:
-        #            cpld_version = i.split(':')[1]
-        #else:
-        #    printf("SMCIPMITool did not retrieve CPLD version for " + bmc_ip) 
     else:
         uid_state = "N/A"
     current_flag = read_flag()
@@ -131,12 +124,14 @@ def indexHelper(bmc_ip):
         monitor_status = "REBOOTING " + current_state
     elif current_flag == 4:
         monitor_status = "REBOOT DONE " + current_state
+    elif current_flag == 5:
+        monitor_status = "SUMTOOL in use" + current_state
     else:
         monitor_status = "UNKOWN " + current_state   
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip) 
-    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages,cpld_version]
+    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
 def index():
@@ -155,14 +150,21 @@ def index():
     pwd =[]
     mac_list = []
     os_ip = []
-    cpld_version = []                 
-    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "_id":0})#.limit(50)
+    cpld_version = []
+    cpu_temps = []
+    vrm_temps = []
+    dimm_temps = []
+    sys_temps = []
+    sys_fans = []
+    sys_voltages = []                 
+    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
         bmcMacAddress.append(i['UUID'][24:])
         serialNumber.append(i['Systems']['1']['SerialNumber'])
         modelNumber.append(i['Systems']['1']['Model'])
+        cpld_version.append(i['CPLDVersion'])
         try:
             bmcVersion.append(i['UpdateService']['SmcFirmwareInventory']['1']['Version'])
         except:
@@ -176,18 +178,9 @@ def index():
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
     
-
-    
-    with Pool() as p:
+    with concurrent.futures.ProcessPoolExecutor() as p:
         output = p.map(indexHelper, bmc_ip)
-    
-    cpu_temps = []
-    vrm_temps = []
-    dimm_temps = []
-    sys_temps = []
-    sys_fans = []
-    sys_voltages = []
-        
+         
     for i in output:
         bmc_event.append(i[0])
         bmc_details.append(i[1])
@@ -201,7 +194,6 @@ def index():
         sys_temps.append(i[9])
         sys_fans.append(i[10])
         sys_voltages.append(i[11])
-        cpld_version.append(i[12])
               
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
