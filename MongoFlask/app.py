@@ -164,7 +164,10 @@ def index():
         bmcMacAddress.append(i['UUID'][24:])
         serialNumber.append(i['Systems']['1']['SerialNumber'])
         modelNumber.append(i['Systems']['1']['Model'])
-        cpld_version.append(i['CPLDVersion'])
+        try:
+            cpld_version.append(i['CPLDVersion'])
+        except:
+            cpld_version.append("N/A") # Archive MongoDB might not contain CPLD
         try:
             bmcVersion.append(i['UpdateService']['SmcFirmwareInventory']['1']['Version'])
         except:
