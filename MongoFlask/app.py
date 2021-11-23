@@ -207,12 +207,13 @@ def index():
         show_names = 'false'
         data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version)
     else:
+        no_name_count = 0
         for i in bmc_ip:
+            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'no_name':
+                no_name_count += 1
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
-            
-        if df_pwd['name'].isnull().sum() == len(bmc_ip):
+        if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        
         data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
   
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
@@ -1480,7 +1481,6 @@ def min_max_temperatures(bmc_ip):
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
-    
     messages.insert(0,'Numerical Results: (Units: Celsius)')
     chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
@@ -1516,9 +1516,9 @@ def min_max_temperatures_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'   
     if show_names == 'true':
-        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures")
+        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures")
     else:
-        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
@@ -1563,9 +1563,9 @@ def min_max_voltages_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
     if show_names == 'true':
-        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages")    
+        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages")    
     else:
-        return render_template('imageOutput.html',chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
@@ -2066,10 +2066,13 @@ def get_node_names(): #Gather node names from node_names file. Return a boolean 
     else:
         node_names = []
         ips = []
+        no_name_count = 0
         for i in list(df_pwd['ip']):
+            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'no_name':
+                no_name_count += 1
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
             ips.append(i)
-        if df_pwd['name'].isnull().sum() == len(list(df_pwd['ip'])):
+        if df_pwd['name'].isnull().sum() == len(list(df_pwd['ip']))  or no_name_count == len(list(df_pwd['ip'])):
             show_names = False
             return show_names
         else:
