@@ -14,6 +14,7 @@
     
     
     
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script> -->
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
@@ -226,8 +227,20 @@
             {% else %}
                 <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
             {% endif %}
-            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td>     
-            <td class="align-middle font-weight-bold text-success" >{{ row[15] }}</td>             
+            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td> 
+            {% if "OFF" in row[15]%}
+                <td class="col col-auto">
+                    <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" style="width: 120px"  id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                </td>  
+            {% elif "BLINKING" in row[15]%}    
+                <td class="col col-auto">
+                    <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                </td>      
+            {%else%}
+                <td class="col col-auto">
+                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                </td>  
+            {%endif%}
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle">
                 <div class="dropdown dropleft">
@@ -375,7 +388,63 @@
 </footer>
 <!-- Footer -->
 <script>
-        console.log("{{show_names}}")
+    function writeValue(val1,val2){ //Javascript function for retrieving parameters, and passing to ajax.
+        console.log(val1 + " " + val2);
+        $.myjQuery(val1,val2);  
+    };
+    // AJAX Function for UID...
+    $.myjQuery = function(val1,val2){
+        $.ajax({
+            url: '/uid_onoff',
+            data:{ ip: val2, uid_state: val1 },
+            dataType: "JSON",
+            timeout: 5000,
+            type: 'GET',
+            tryCount : 0,
+            retryLimit : 3,
+            beforeSend: function(){ ///Write executing to button while sending and retrieving data.
+                console.log("Executing...");
+                document.getElementById(val2).innerHTML = "Loading";
+            },
+            success: function(result){
+                console.log(result);
+                var data = result;
+                for(var key in data){
+                    document.getElementById(val2).innerHTML = data[key]; ///Replace text in button with return value from python script
+                    if (data[key] == "BLINKING"){ ////Assign color for button accordingly
+                        document.getElementById(val2).classList.replace("btn-info","btn-success");
+                    }
+                    else if(data[key] == "OFF"){
+                        document.getElementById(val2).classList.replace("btn-success","btn-info");
+                    }
+                    else{
+                        document.getElementById(val2).classList.remove("btn-info");
+                        document.getElementById(val2).classList.remove("btn-success");
+                        document.getElementById(val2).classList.add("btn-danger");
+                    }
+                }
+
+            },
+            error: function(xhr,textStatus){
+                if (textStatus == 'timeout') {
+                    this.tryCount++;
+                    if (this.tryCount <= this.retryLimit) {
+                        //try again
+                        $.ajax(this);
+                        return;
+                    }            
+                    return;
+                }
+                else{
+                    console.log("Error on ajax function with " +  val1 + " & " + val2);
+                    document.getElementById(val2).innerHTML = "N/A";
+                    document.getElementById(val2).style.backgroundColor = "#FF0000";
+                }
+            }
+
+        });
+    };
+        
 /*
         function startTime() {
             var today = new Date()

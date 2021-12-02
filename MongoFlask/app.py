@@ -47,6 +47,33 @@ IPMIdict = {"#0x09": "| Inlet Temperature"} # add "|" if neccessary
 def printf(data):
     print(data, flush=True)
 
+@app.route('/uid_onoff')
+def uid_onoff():# Returns BLINKING, OFF, N/A
+    bmc_ip = request.args.get('ip')
+    uid_state = request.args.get('uid_state')
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
+    if uid_state == "N/A":
+        result = {'Status' : "N/A"}
+    elif uid_state == "OFF":
+        process = Popen('ipmitool -H ' +  bmc_ip + ' -U ' + 'ADMIN' + ' -P ' + current_auth[1] + ' chassis identify force', shell=True, stdout=PIPE, stderr=PIPE)
+        try:
+            stdout, stderr = process.communicate()
+            result = {'Status' : "BLINKING"}
+        except:
+            printf("No ipmi connection!!!")
+            result = {'Status' : "N/A"}
+    else:
+        process = Popen('ipmitool -H ' +  bmc_ip + ' -U ' + 'ADMIN' + ' -P ' + current_auth[1] + ' chassis identify 0', shell=True, stdout=PIPE, stderr=PIPE)
+        try:
+            stdout, stderr = process.communicate()
+            result = {'Status' : "OFF"}
+        except:
+            printf("No ipmi connection!!!")
+            result = {'Status' : "N/A"}
+    data = json.dumps(result)
+    return data
+
 def get_temp_names(bmc_ip):
     dataset_Temps = get_data.find_temperatures_names(bmc_ip)
     cpu_temps = []
