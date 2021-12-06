@@ -35,10 +35,10 @@ def makeSumExcutable():
     return(0)
 
 def sumRunCustomProcess(CMD):
-    flag = read_flag()
-    while(flag == 1):
-        flag = read_flag()
-    insert_flag(5)
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
     process = Popen(CMD, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
     insert_flag(0)
@@ -57,30 +57,30 @@ def sumLogOutput():
         return(LogFileList[0])
         
 def sumBiosUpdate(inputpath,filepath):
-    flag = read_flag()
-    while(flag == 1):
-        flag = read_flag()
-    insert_flag(5)
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c UpdateBios --file ' + filepath, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
     insert_flag(0)
     return(0)
 
 def sumBMCUpdate(inputpath,filepath):
-    flag = read_flag()
-    while(flag == 1):
-        flag = read_flag()
-    insert_flag(5)
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c UpdateBmc --file ' + filepath, shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
     insert_flag(0)
     return(0)
 
 def sumGetBiosSettings(inputpath):
-    flag = read_flag()
-    while(flag == 1):
-        flag = read_flag()
-    insert_flag(5)
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c GetCurrentBiosCfg --file htmlBios --overwrite', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
     insert_flag(0)
@@ -88,10 +88,10 @@ def sumGetBiosSettings(inputpath):
     
 
 def sumChangeBiosSettings(inputpath,filepath):
-    flag = read_flag()
-    while(flag == 1):
-        flag = read_flag()
-    insert_flag(5)
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c ChangeBiosCfg --file ' + filepath + ' --skip_unknown', shell=True, stdout=PIPE, stderr=PIPE)
     process.communicate()
     insert_flag(0)
