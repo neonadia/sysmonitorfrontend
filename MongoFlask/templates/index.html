@@ -236,11 +236,11 @@
                 <td class="col col-auto">
                     <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
                 </td>      
-            {%else%}
+            {% else %}
                 <td class="col col-auto">
                     <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
                 </td>  
-            {%endif%}
+            {% endif %}
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle">
                 <div class="dropdown dropleft">

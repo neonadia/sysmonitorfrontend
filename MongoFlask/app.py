@@ -1695,7 +1695,23 @@ def min_max_power_chart(bmc_ip):
 
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
-    ip_list = getIPlist()
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        ip_list = getIPlist()
+        names = ["" for a in range(len(ip_list))]
+        node_names = ip_list
+    else:
+        node_names = []
+        names = []
+        ip_list = []
+        for cur_ip, cur_name in ips_names:
+            if cur_name == "No Value":
+                node_names.append(cur_ip)
+                names.append("")
+            else:
+                node_names.append(cur_ip + " (" + cur_name + ")" )
+                names.append("(" + cur_name + ")")
+            ip_list.append(cur_ip)
     sn_list = []
     for ip in ip_list:
         sn_list.append(getSerialNumber(ip))   
@@ -1703,8 +1719,8 @@ def min_max_alltemperatures_chart():
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
     chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
-    df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "BMC IPs": ip_list})
-    df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "BMC IPs": ip_list})
+    df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "BMC IPs": node_names})
+    df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "BMC IPs": node_names})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
@@ -1731,11 +1747,27 @@ def min_max_alltemperatures_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html', sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html', sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 @app.route('/min_max_allpower_chart')
 def min_max_allpower_chart():
-    ip_list = getIPlist()
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        ip_list = getIPlist()
+        names = ["" for a in range(len(ip_list))]
+        node_names = ip_list
+    else:
+        node_names = []
+        names = []
+        ip_list = []
+        for cur_ip,cur_name in ips_names:
+            if cur_name == "No Value":
+                node_names.append(cur_ip)
+                names.append("")
+            else:
+                node_names.append(cur_ip + " (" + cur_name + ")" )
+                names.append("(" + cur_name + ")")
+            ip_list.append(cur_ip)
     sn_list = []
     for ip in ip_list:
         sn_list.append(getSerialNumber(ip))   
@@ -1743,8 +1775,8 @@ def min_max_allpower_chart():
     sensor_id = str(sensor_id)
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
     chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
-    df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "BMC IPs": ip_list})
-    df_min = pd.DataFrame({"Power Consumption (W)":min_vals, "BMC IPs": ip_list})
+    df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "BMC IPs": node_names})
+    df_min = pd.DataFrame({"Power Consumption (W)":min_vals, "BMC IPs": node_names})
     sns.set_theme(style="whitegrid")
     fig, ax =plt.subplots(1,1,figsize=(10,len(df_max)/4+1))
     custom_palette = ["green"]
@@ -1770,7 +1802,7 @@ def min_max_allpower_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
 
 
 @app.route('/chart_powercontrol/<bmc_ip>')
@@ -1905,7 +1937,15 @@ def chart_powersuppliespower(bmc_ip):
 @app.route('/chart_allpowercontrols')
 def chart_allpowercontrols():
     ip_list = getIPlist()
+    node_names = get_node_names()
     data = get_data.find_allpowercontrols(ip_list)
+    if isinstance(node_names,bool) != True:
+        node_names = list(node_names)
+        for i in data.get("PowerControl"):
+            for cur_ip,cur_name in node_names:
+                if cur_ip == i.get("Name").split(",")[0].strip(" ") and cur_name != "No Value":
+                    i.update({"Name": cur_name + " (" + cur_ip + "), Unit: W"})
+                    break
     return render_template('chart_allpowercontrols.html', title='All Power Controls', dataset=data, chart_name = "chart_allpowercontrols")
 
 @app.route('/chart_alltemperatures')
@@ -1914,7 +1954,15 @@ def chart_alltemperatures():
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     data = get_data.find_alltemperatures(ip_list, sensor_id)
-    sensor_name = list(data.keys())[-1]
+    sensor_name = list(data.keys())[-1] # sensoranme is the last key
+    node_names = get_node_names()
+    if isinstance(node_names,bool) != True:
+        node_names = list(node_names)
+        for i in data.get(sensor_name): # ip = data[sensor_name]["Name"]
+            for cur_ip,cur_name in node_names:
+                if cur_ip == i.get("Name").split(",")[0] and cur_name != "No Value": # 
+                    i.update({"Name": cur_name + " (" + cur_ip + ")"})
+                    break
     return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures")
 
 @app.route('/chart_allfans')
@@ -1923,7 +1971,15 @@ def chart_allfans():
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
     data = get_data.find_allfans(ip_list, sensor_id)
-    sensor_name = list(data.keys())[-1]
+    sensor_name = list(data.keys())[-1] # sensoranme is the last key
+    node_names = get_node_names()
+    if isinstance(node_names,bool) != True:
+        node_names = list(node_names)
+        for i in data.get(sensor_name): # ip = data[sensor_name]["Name"]
+            for cur_ip,cur_name in node_names:
+                if cur_ip == i.get("Name") and cur_name != "No Value":
+                    i.update({"Name": cur_name + " (" + cur_ip + ")"})
+                    break
     return render_template('chart_allfans.html', title='All Fans ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_allfans")     
 
 @app.route('/chart_fans/<bmc_ip>')
