@@ -99,6 +99,9 @@
         <th class="align-middle" >IPMI</th>
         <th class="align-middle" >IPMI Password</th>
         <th class="align-middle" >Serial Number</th>
+        <th class="align-middle" >BMC Version</th>
+        <th class="align-middle" >BIOS Version</th>
+        <th class="align-middle" >CPLD Version</th>
         <th class="align-middle" >Number of Sensors</th>
         <th class="align-middle" >Number of Working Sensors</th>
         <th class="align-middle" >Number of Non-working Sensors</th>
@@ -106,16 +109,19 @@
         <th class="align-middle" >Notes</th>
     </thead>
     <tbody>
-        {% for ipmi, pwd, sn, num_sensor, num_w_sensor, num_n_sensor, num_u_sensor, flag in data %}
+        {% for name, ipmi, pwd, sn, bmc, bios, cpld, num_sensor, num_w_sensor, num_n_sensor, num_u_sensor, flag in data %}
                 <tr>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ ipmi }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ pwd}}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ sn }}</h4></td>
+                <td class="align-middle font-weight-bold text-primary" ><a href="https://{{ ipmi }}" target="_blank"><h4>{{ name }}</h4></a></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ pwd}}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ sn }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ bmc }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ bios }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ cpld }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ num_sensor }}</h4></td>
                 <td class="align-middle font-weight-bold text-success" ><h4>{{ num_w_sensor }}</h4></td>
                 <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_n_sensor }}</h4></td>
                 <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_u_sensor }}</h4></td>
-                <td class="align-middle font-weight-bold text-primary" ><h4>{{ flag }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4>{{ flag }}</h4></td>
                 </tr>
         {% endfor %}
     </tbody>

@@ -483,13 +483,46 @@ def checkipmisensor_one(bmc_ip):
 
 @app.route('/checkipmisensor')
 def checkipmisensor():
-    ip_list = getIPlist()
+    #ip_list = getIPlist()
+    ips_names = get_node_names()
+    ip_list = []
+    name_list = []
     sn_list = []
     pwd_list = []
-    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
-    for ip in ip_list:
-        sn_list.append(getSerialNumber(ip))
-        pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
+    bios_version = []
+    bmc_version = []
+    cpld_version = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])    
+    if isinstance(ips_names,bool) != True:
+        for ip, name in ips_names:
+            if name != "No Value" and len(name) > 0:
+                name_list.append(name + ' - ' + ip)
+            else:
+                name_list.append(ip)
+            ip_list.append(ip)
+            sn_list.append(getSerialNumber(ip))
+            pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
+            cur_list = list(collection.find({"BMC_IP":ip},{"UpdateService.SmcFirmwareInventory.1.Version": 1,\
+            "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1}))
+            try:
+                bmc_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['1']['Version'])
+            except:
+                bmc_version.append("N/A")
+            try:
+                bios_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['2']['Version'])
+            except:
+                bios_version.append("N/A")
+            try:
+                cpld_version.append(cur_list[0]['CPLDVersion'])
+            except:
+                cpld_version.append("N/A")
+            
+    else:
+        ip_list = getIPlist()
+        name_list = ip_list
+        for ip in ip_list:
+            sn_list.append(getSerialNumber(ip))
+            pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
     # Check how many working sensors
     with Pool() as p:
         output = p.map(checkipmisensor_one, ip_list) # output = [[bmc1 output],[bmc2 output],....]
@@ -519,7 +552,7 @@ def checkipmisensor():
             prob_flags.append(1)
         else:
             prob_flags.append(0)
-    return render_template('checkipmisensor.html',data=zip(ip_list,pwd_list,sn_list,num_all,num_workable,num_nonworkable,num_unknown,prob_flags))
+    return render_template('checkipmisensor.html',data=zip(name_list,ip_list,pwd_list,sn_list,bmc_version,bios_version,cpld_version,num_all,num_workable,num_nonworkable,num_unknown,prob_flags))
 
 @app.route('/systemresetstatus')
 def systemresetstatus():
