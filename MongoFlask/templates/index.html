@@ -398,47 +398,42 @@
             url: '/uid_onoff',
             data:{ ip: val2, uid_state: val1 },
             dataType: "JSON",
-            timeout: 5000,
+            timeout: 1000,
             type: 'GET',
-            tryCount : 0,
-            retryLimit : 3,
             beforeSend: function(){ ///Write executing to button while sending and retrieving data.
                 console.log("Executing...");
                 document.getElementById(val2).innerHTML = "Loading";
             },
             success: function(result){
-                console.log(result);
                 var data = result;
+                var button = document.getElementById(val2);
                 for(var key in data){
                     document.getElementById(val2).innerHTML = data[key]; ///Replace text in button with return value from python script
-                    if (data[key] == "BLINKING"){ ////Assign color for button accordingly
-                        document.getElementById(val2).classList.replace("btn-info","btn-success");
+                    if (data[key] == "BLINKING") { ////Assign color for button accordingly
+                        if (!button.classList.replace("btn-info","btn-success")) {
+                            button.classList.replace("btn-danger", "btn-success");
+                        }
                     }
-                    else if(data[key] == "OFF"){
-                        document.getElementById(val2).classList.replace("btn-success","btn-info");
+                    else if (data[key] == "OFF"){
+                        if(!button.classList.replace("btn-success","btn-info")) {
+                            button.classList.replace("btn-danger", "btn-info");
+                        }
                     }
-                    else{
-                        document.getElementById(val2).classList.remove("btn-info");
-                        document.getElementById(val2).classList.remove("btn-success");
-                        document.getElementById(val2).classList.add("btn-danger");
+                    else {
+                        console.log("Got N/A...");
+                        if (!button.classList.replace("btn-info", "btn-danger")) {
+                            button.replace("btn-success", "btn-danger");
+                        }
                     }
                 }
 
             },
-            error: function(xhr,textStatus){
-                if (textStatus == 'timeout') {
-                    this.tryCount++;
-                    if (this.tryCount <= this.retryLimit) {
-                        //try again
-                        $.ajax(this);
-                        return;
-                    }            
-                    return;
-                }
-                else{
-                    console.log("Error on ajax function with " +  val1 + " & " + val2);
-                    document.getElementById(val2).innerHTML = "N/A";
-                    document.getElementById(val2).style.backgroundColor = "#FF0000";
+            error: function (xhr, textStatus) {
+                console.log("Error on ajax function with " + val1 + " & " + val2);
+                var button = document.getElementById(val2);
+                button.innerHTML = "N/A";
+                if (!button.classList.replace("btn-info","btn-danger")) {
+                    button.classList.replace("btn-success", "btn-danger");
                 }
             }
 

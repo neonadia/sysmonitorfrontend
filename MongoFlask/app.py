@@ -55,6 +55,14 @@ def uid_onoff():# Returns BLINKING, OFF, N/A
     current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
     if uid_state == "N/A":
         result = {'Status' : "N/A"}
+        process = Popen('ipmitool -H ' +  bmc_ip + ' -U ' + 'ADMIN' + ' -P ' + current_auth[1] + ' chassis identify force', shell=True, stdout=PIPE, stderr=PIPE)
+        try:
+            stdout, stderr = process.communicate()
+            result = {'Status' : "BLINKING"}
+        except:
+            printf("No ipmi connection!!!")
+            result = {'Status' : "N/A"}
+
     elif uid_state == "OFF":
         process = Popen('ipmitool -H ' +  bmc_ip + ' -U ' + 'ADMIN' + ' -P ' + current_auth[1] + ' chassis identify force', shell=True, stdout=PIPE, stderr=PIPE)
         try:
