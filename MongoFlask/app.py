@@ -464,7 +464,7 @@ def checkipmisensor_one(bmc_ip):
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
         response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sdr list full', shell = 1, stdout  = PIPE, stderr = PIPE)
-        stdout , stderr = response.communicate(timeout=2)
+        stdout , stderr = response.communicate()
     except:
         printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
         return []
