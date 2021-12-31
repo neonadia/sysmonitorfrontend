@@ -247,7 +247,7 @@ def index():
     else:
         no_name_count = 0
         for i in bmc_ip:
-            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'no_name':
+            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'No Value':
                 no_name_count += 1
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
@@ -464,7 +464,7 @@ def checkipmisensor_one(bmc_ip):
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
         response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sdr list full', shell = 1, stdout  = PIPE, stderr = PIPE)
-        stdout , stderr = response.communicate()
+        stdout , stderr = response.communicate(timeout=2)
     except:
         printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
         return []
@@ -2195,7 +2195,7 @@ def get_node_names(): #Gather node names from node_names file. Return a boolean 
         ips = []
         no_name_count = 0
         for i in list(df_pwd['ip']):
-            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'no_name':
+            if df_pwd[df_pwd['ip'] == i]['name'].values[0] == 'No Value':
                 no_name_count += 1
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
             ips.append(i)
