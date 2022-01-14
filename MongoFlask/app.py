@@ -143,7 +143,7 @@ def indexHelper(bmc_ip):
         else:
             current_state = "OFF"
     else:
-        current_state = "N/A"
+        current_state = "PwrDisp: OFF" ### IF POWERDISP variable set to off in auto.env file
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
     else:
