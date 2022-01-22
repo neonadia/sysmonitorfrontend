@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="60">
+    <meta http-equiv="refresh" content="300">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Redfish Program</title>
@@ -46,6 +46,7 @@
         }
         .table td {
         text-align: center;
+        vertical-align:middle;
         }
         .dropdown-menu li {
           position: relative;
@@ -122,12 +123,11 @@
     </li>
 -->
     <li class='dropdown'>
-            <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="host_time" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                {{cur_time}}
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item">Container TimeZone: {{time_zone}}</a> 
-            </div>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="clockstopper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
+        </div>
     </li>
 
 </ul>
@@ -164,13 +164,17 @@
     <tbody>
         {% for row in x %}
             <tr>
-            <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
+            <td class="col col-auto">{{ loop.index }}</td>
             {% set ikvm = 'https://' +  row[9] %}
             {% if 'false' in show_names%}
-                <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
+                <td class="align-middle font-weight-bold">
+                    <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')">{{ row[0] }}</a>
+                </td>
             {%else%}
                 <td class="align-middle font-weight-bold" >{{ row[17] }}</td>
-                <td class="align-middle font-weight-bold" ><a href="{{ ikvm }}" target = "_blank">{{ row[0] }}</a></td>
+                <td class="align-middle font-weight-bold" >
+                      <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')" >{{ row[0] }}</a>
+                </td>
             {%endif%}
             <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
             <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td>
@@ -223,9 +227,9 @@
                 </div>
             </td>
             {% if "OFF" in row[10] %}
-                <td class="align-middle font-weight-bold text-danger" >{{ row[10] }} </td>
+                <td class="align-middle font-weight-bold text-danger">{{ row[10] }} </td>
             {% else %}
-                <td class="align-middle font-weight-bold text-success" >{{ row[10] }} </td>
+                <td class="align-middle font-weight-bold text-success">{{ row[10] }} </td>
             {% endif %}
             <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td> 
             {% if "OFF" in row[15]%}
@@ -238,7 +242,7 @@
                 </td>      
             {% else %}
                 <td class="col col-auto">
-                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold " style="width: 120px " id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
                 </td>  
             {% endif %}
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
@@ -388,6 +392,25 @@
 </footer>
 <!-- Footer -->
 <script>
+    function get_ikvm(val1){
+        $.ikvm(val1);
+    }
+    $.ikvm = function(val1){
+        $.ajax({
+            url: '/ajax_get_ikvm',
+            data: {ip: val1},
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                var ikvm_id = "ikvm_url:" + val1
+                for(var key in data){
+                    ikvm_url = "https://" + data[key]; ///Replace text in button with return value from python script
+                }
+                window.open(ikvm_url, '_blank');
+            }
+        });
+    }
     function writeValue(val1,val2){ //Javascript function for retrieving parameters, and passing to ajax.
         console.log(val1 + " " + val2);
         $.myjQuery(val1,val2);  
@@ -439,6 +462,24 @@
 
         });
     };
+    function get_time(){
+        $.TimejQuery();
+    };
+    $.TimejQuery = function(){
+        $.ajax({
+            url: '/get_container_time',
+            dataType: "JSON",
+            timeout: 1000,
+            type: 'GET',
+            success: function(result){
+                var data = result;
+                var clock = document.getElementById('clockstopper');
+                for(var key in data){
+                    clock.innerHTML = data[key]; ///Replace text in button with return value from python script
+                }
+            }
+        });
+    };
         
 /*
         function startTime() {
@@ -478,6 +519,9 @@
     } );
     
     $('body .dropdown-toggle').dropdown(); 
+
+    get_time();
+    setInterval(get_time, 1000);
 </script>
 
 </body>

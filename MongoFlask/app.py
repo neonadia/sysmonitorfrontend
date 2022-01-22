@@ -47,6 +47,35 @@ IPMIdict = {"#0x09": "| Inlet Temperature"} # add "|" if neccessary
 def printf(data):
     print(data, flush=True)
 
+@app.route('/ajax_get_ikvm')
+def get_ikvm():
+    bmc_ip = request.args.get('ip')
+    ikvm = get_data.find_ikvm(bmc_ip)
+    data = {"ikvm": ikvm }
+    data = json.dumps(data)
+    return data
+
+
+
+@app.route('/get_container_time')
+def get_container_time():
+    cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+    time = {'Time' : cur_time}
+    data = json.dumps(time)
+    return data
+
+@app.route('/get_node_time')
+def get_node_time():
+    bmc_ip = request.args.get('ip')
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    pwd = df_pwd.loc[df_pwd['ip'] == bmc_ip,'pwd'].iloc[0]
+    date_time = get_data.get_time(bmc_ip,pwd)
+    time = {'Time' : date_time}
+    data = json.dumps(time)
+    return data
+
+
+
 @app.route('/uid_onoff')
 def uid_onoff():# Returns BLINKING, OFF, N/A
     bmc_ip = request.args.get('ip')
@@ -1309,7 +1338,7 @@ def event():
         for key in IPMIdict.keys():
             if key in events[i]:
                 events[i] = events[i].replace(key,IPMIdict[key]) + " | Note the error number '" + key + "' has been replaced by '" + IPMIdict[key] + "'!"
-    return render_template('event.html', date_time=date_time, ntp_server=ntp_server, data=events, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2])
+    return render_template('event.html', date_time=date_time, ntp_server=ntp_server, data=events, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip)
 
 @app.route('/udpserverupload',methods=["GET","POST"])
 def udpserverupload():
