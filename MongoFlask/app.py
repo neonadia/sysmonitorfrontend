@@ -529,29 +529,27 @@ def checkipmisensor():
             else:
                 name_list.append(ip)
             ip_list.append(ip)
-            sn_list.append(getSerialNumber(ip))
-            pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
-            cur_list = list(collection.find({"BMC_IP":ip},{"UpdateService.SmcFirmwareInventory.1.Version": 1,\
-            "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1}))
-            try:
-                bmc_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['1']['Version'])
-            except:
-                bmc_version.append("N/A")
-            try:
-                bios_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['2']['Version'])
-            except:
-                bios_version.append("N/A")
-            try:
-                cpld_version.append(cur_list[0]['CPLDVersion'])
-            except:
-                cpld_version.append("N/A")
             
     else:
         ip_list = getIPlist()
         name_list = ip_list
-        for ip in ip_list:
-            sn_list.append(getSerialNumber(ip))
-            pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
+    for ip in ip_list:
+        sn_list.append(getSerialNumber(ip))
+        pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
+        cur_list = list(collection.find({"BMC_IP":ip},{"UpdateService.SmcFirmwareInventory.1.Version": 1,\
+        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1}))
+        try:
+            bmc_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['1']['Version'])
+        except:
+            bmc_version.append("N/A")
+        try:
+            bios_version.append(cur_list[0]['UpdateService']['SmcFirmwareInventory']['2']['Version'])
+        except:
+            bios_version.append("N/A")
+        try:
+            cpld_version.append(cur_list[0]['CPLDVersion'])
+        except:
+            cpld_version.append("N/A")   
     # Check how many working sensors
     with Pool() as p:
         output = p.map(checkipmisensor_one, ip_list) # output = [[bmc1 output],[bmc2 output],....]
