@@ -1,3 +1,4 @@
+from this import d
 from flask import Flask, render_template, request, url_for, jsonify, redirect, send_file, send_from_directory
 from flask_weasyprint import HTML, render_pdf
 import json
@@ -42,7 +43,7 @@ udp_collection = db.udp
 udp_deleted_collection = db.udpdel
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
-IPMIdict = {"#0x09": "| Inlet Temperature"} # add "|" if neccessary
+IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
 
 def printf(data):
     print(data, flush=True)
@@ -54,8 +55,6 @@ def get_ikvm():
     data = {"ikvm": ikvm }
     data = json.dumps(data)
     return data
-
-
 
 @app.route('/get_container_time')
 def get_container_time():
@@ -150,13 +149,15 @@ def indexHelper(bmc_ip):
     details.reverse() # begin from latest
     bmc_details = []
     for i in range(len(details)):
-        cur_detail = details[i]
+        if "|||" in details[i]: #Split redfish and ipmitool log
+            cur_detail = details[i].split("|||")[1]
+        else:
+            cur_detail = details[i]
         for key in IPMIdict.keys():
             if key in cur_detail:
                 cur_detail = cur_detail.replace(key,IPMIdict[key])
         bmc_details.append(cur_detail)
-    ikvm = get_data.find_ikvm(bmc_ip)
-    if details == ['']:
+    if details == [''] or bmc_details == ['']:
         bmc_event = "OK"
     elif any(w in " ".join(str(x) for x in details) for w in err_list):
         bmc_event = "ERROR"
@@ -195,7 +196,7 @@ def indexHelper(bmc_ip):
     for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip) 
-    return [bmc_event, bmc_details, ikvm, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
+    return [bmc_event, bmc_details, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
 def index():
@@ -251,16 +252,15 @@ def index():
     for i in output:
         bmc_event.append(i[0])
         bmc_details.append(i[1])
-        ikvm.append(i[2])
-        monitorStatus.append(i[3])
-        timestamp.append(i[4])
-        uidStatus.append(i[5])
-        cpu_temps.append(i[6])
-        vrm_temps.append(i[7])
-        dimm_temps.append(i[8])
-        sys_temps.append(i[9])
-        sys_fans.append(i[10])
-        sys_voltages.append(i[11])
+        monitorStatus.append(i[2])
+        timestamp.append(i[3])
+        uidStatus.append(i[4])
+        cpu_temps.append(i[5])
+        vrm_temps.append(i[6])
+        dimm_temps.append(i[7])
+        sys_temps.append(i[8])
+        sys_fans.append(i[9])
+        sys_voltages.append(i[10])
               
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
@@ -281,7 +281,7 @@ def index():
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
   
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
@@ -1317,9 +1317,20 @@ def pwdoutput():
     df_pwd[['ip','user','pwd']].to_csv(new_path,header=None,index=None,sep=' ')
     return send_file(new_path, as_attachment=True, cache_timeout=0)
 
+
+def list_helper(input_list,list_index):
+    if list_index < len(input_list):
+        return(input_list[list_index])
+    else:
+        return("N/A")
+
 @app.route('/event')
 def event():
     ip = request.args.get('var')
+    show_names = 'true' # Default value to pass to html to enable a list of nodenames
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     pwd = df_pwd.loc[df_pwd['ip'] == ip,'pwd'].iloc[0]
     date_time = get_data.get_time(ip,pwd)
@@ -1336,7 +1347,61 @@ def event():
         for key in IPMIdict.keys():
             if key in events[i]:
                 events[i] = events[i].replace(key,IPMIdict[key]) + " | Note the error number '" + key + "' has been replaced by '" + IPMIdict[key] + "'!"
-    return render_template('event.html', date_time=date_time, ntp_server=ntp_server, data=events, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip)
+    sel_id = []
+    dates = []
+    severity = []
+    action = []
+    sensor = []
+    redfish_msg = []
+    ipmitool_msg = []
+
+    if  events[0] != "Error: the number of events are not the same between Redfish and IPMITOOL." :
+        if "|||" in events[0]:
+            for i in events:
+                temp_event = i.split("|")
+                sel_id.append(list_helper(temp_event,0))
+                dates.append(list_helper(temp_event,1))
+                severity.append(list_helper(temp_event,2))
+                action.append(list_helper(temp_event,3))
+                sensor.append(list_helper(temp_event,4))
+                redfish_msg.append(list_helper(temp_event,5))
+                ipmitool_msg.append(list_helper(temp_event,11) + " | " + list_helper(temp_event,13))
+        elif "|||" not in events[0] and "only redfish sel log" in events[0]:
+            events.remove("only redfish sel log")
+            for i in events:
+                temp_event = i.split("|")
+                sel_id.append(list_helper(temp_event,0))
+                dates.append(list_helper(temp_event,1))
+                severity.append(list_helper(temp_event,2))
+                action.append(list_helper(temp_event,3))
+                sensor.append(list_helper(temp_event,4))
+                redfish_msg.append(list_helper(temp_event,5))
+                ipmitool_msg.append("N/A")
+        else:
+            if "only ipmitool sel log" in events:
+                events.remove("only ipmitool sel log")
+            for i in events:
+                temp_event = i.split("|")
+                sel_id.append(list_helper(temp_event,0))
+                dates.append(list_helper(temp_event,1) + " : " + list_helper(temp_event,2))
+                severity.append("N/A")
+                action.append(list_helper(temp_event,5))
+                sensor.append("N/A")
+                redfish_msg.append("N/A")
+                ipmitool_msg.append(list_helper(temp_event,3))
+    else:
+        sel_id.append("N/A")
+        dates.append("N/A")
+        severity.append("N/A")
+        action.append("N/A")
+        sensor.append("N/A")
+        redfish_msg.append("N/A")
+        ipmitool_msg.append("N/A")
+    data = zip(sel_id,dates,severity,action,sensor,redfish_msg,ipmitool_msg)
+    if show_names == "true":
+        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = ips_names)
+    else:
+        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist())
 
 @app.route('/udpserverupload',methods=["GET","POST"])
 def udpserverupload():

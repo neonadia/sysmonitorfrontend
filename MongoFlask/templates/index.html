@@ -126,7 +126,7 @@
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="clockstopper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
+             <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
         </div>
     </li>
 
@@ -165,26 +165,25 @@
         {% for row in x %}
             <tr>
             <td class="col col-auto">{{ loop.index }}</td>
-            {% set ikvm = 'https://' +  row[9] %}
             {% if 'false' in show_names%}
                 <td class="align-middle font-weight-bold">
                     <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')">{{ row[0] }}</a>
                 </td>
             {%else%}
-                <td class="align-middle font-weight-bold" >{{ row[17] }}</td>
+                <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
                 <td class="align-middle font-weight-bold" >
                       <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')" >{{ row[0] }}</a>
                 </td>
             {%endif%}
-            <td class="align-middle font-weight-bold text-info" >{{ row[13] }}</td>
-            <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td>
+            <td class="align-middle font-weight-bold text-info" >{{ row[12] }}</td>
+            <td class="align-middle font-weight-bold text-success" >{{ row[10] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[1] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[14] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[13] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[2] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[3] }}</td> 
             <td class="align-middle font-weight-bold" >{{ row[4] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[5] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
+            <td class="align-middle font-weight-bold" >{{ row[15] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
             <td style="text-align:center">
                 <div class="dropdown">
@@ -226,23 +225,23 @@
                     {% endif %}
                 </div>
             </td>
-            {% if "OFF" in row[10] %}
-                <td class="align-middle font-weight-bold text-danger">{{ row[10] }} </td>
+            {% if "OFF" in row[9] %}
+                <td class="align-middle font-weight-bold text-danger">{{ row[9] }} </td>
             {% else %}
-                <td class="align-middle font-weight-bold text-success">{{ row[10] }} </td>
+                <td class="align-middle font-weight-bold text-success">{{ row[9] }} </td>
             {% endif %}
-            <td class="align-middle font-weight-bold text-success" >{{ row[12] }}</td> 
-            {% if "OFF" in row[15]%}
+            <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td> 
+            {% if "OFF" in row[14]%}
                 <td class="col col-auto">
-                    <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" style="width: 120px"  id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                    <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" style="width: 120px"  id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>  
-            {% elif "BLINKING" in row[15]%}    
+            {% elif "BLINKING" in row[14]%}    
                 <td class="col col-auto">
-                    <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                    <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>      
             {% else %}
                 <td class="col col-auto">
-                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold " style="width: 120px " id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[15]}}</button>
+                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold " style="width: 120px " id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>  
             {% endif %}
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
@@ -258,10 +257,10 @@
                     href= ""
                 ></a>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% if 'false' in show_names or 'No Value' in row[17] %}
+                    {% if 'false' in show_names or 'No Value' in row[16] %}
                         <li class= "dropdown-item align-items-center" >{{row[0]}} Sensors </li>
                     {%else%}
-                        <li class= "dropdown-item align-items-center"> {{row[17]}} - {{row[0]}} Sensors </li>
+                        <li class= "dropdown-item align-items-center"> {{row[16]}} - {{row[0]}} Sensors </li>
                     {%endif%}
                     <div class="dropdown-divider"></div>
 
@@ -462,6 +461,7 @@
 
         });
     };
+
     function get_time(){
         $.TimejQuery();
     };
@@ -480,32 +480,7 @@
             }
         });
     };
-        
-/*
-        function startTime() {
-            var today = new Date()
-            //today.setHours(today.getHours() + 7) // adjust time
-            var year = today.getYear() + 1900;
-            var month = today.getMonth() + 1;
-            var day = today.getDate();
-            var h = today.getHours();
-            var m = today.getMinutes();
-            var s = today.getSeconds();
-            year = checkTime(year);
-            month = checkTime(month);
-            day = checkTime(day);
-            h = checkTime(h);
-            m = checkTime(m);
-            s = checkTime(s);
-            document.getElementById('clock').innerHTML = year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s;
-            var t = setTimeout(startTime, 500);
-        }
-        function checkTime(i) {
-            if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
-            return i;
-        }
-        startTime();
-*/        
+
     $(document).ready(function() {
         $('#indexpage').DataTable( {
             "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],

@@ -5,13 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>SystemInfo</title>
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+    
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script> -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
-    
+    <style>
+        table,
+        thead,
+        tr,
+        tbody,
+        th,
+        td {
+        text-align: center;
+        }
+        .table td {
+        text-align: center;
+        }
+        .dropdown-menu li {
+          position: relative;
+        }
+        .dropdown-menu .dropdown-submenu {
+            display: none;
+            position: absolute;
+            right: 100%;
+            top: -7px;
+        }
+        .scrollable-menu {
+            height: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .dropdown-menu > li:hover > .dropdown-submenu {
+            display: block;
+        }
+        body {
+            padding-bottom: 300px;
+        }
+    </style>
 </head>
 <body>
 
@@ -38,18 +78,75 @@
                 </div>
         </li>
     {%endif%}
+    <li class="dropdown">
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Nodes
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {%if 'false' in show_names %}
+                {% for ip in ip_list %}
+                    {% if ip == bmc_ip %}
+                    <a class="dropdown-item font-weight-bold text-primary" href="{{ url_for('index') }}event?var={{ ip }}">{{ ip }}</a>
+                    {% else %}
+                    <a class="dropdown-item" href="{{ url_for('index') }}event?var={{ ip }}">{{ ip }}</a>
+                    {% endif %}
+                {% endfor %}
+            {%else%}
+                {% for ip,name in ip_list %}
+                    {%if 'No Value' in name%}
+                        {% if ip == bmc_ip %}
+                        <a class="dropdown-item font-weight-bold text-primary" href="{{ url_for('index') }}event?var={{ ip }}">{{ ip }}</a>
+                        {% else %}
+                        <a class="dropdown-item" href="{{ url_for('index') }}event?var={{ ip }}">{{ ip }}</a>
+                        {% endif %}
+                    {%else%}
+                        {% if ip == bmc_ip %}
+                        <a class="dropdown-item font-weight-bold text-primary" href="{{ url_for('index') }}event?var={{ ip }}">{{ name }} - {{ip}}</a>
+                        {% else %}
+                        <a class="dropdown-item" href="{{ url_for('index') }}event?var={{ ip }}">{{ name }} - {{ip}}</a>
+                        {% endif %}
+                    {%endif%}
+                {% endfor %}   
+            {%endif%}                   
+        </div>
+    </li>
 </ul>
 </nav>
-
-<div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
-    <h1>BMC Events LOG</h1>
-    <p></p>
-    {% for e in data %}
-    <p>
-        {{ e }}
-    </p>
-    {% endfor %}
+<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
+    <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
+        <thead class="thead-dark" >
+            <th class="align-middle" >Id</th>
+            <th class="align-middle" >Date</th>
+            <th class="align-middle" >Severity</th>
+            <th class="align-middle" >Action</th>
+            <th class="align-middle" >Sensor Id</th>
+            <th class="align-middle" >Redfish Msg</th>
+            <th class="align-middle" >IPMI Tool Msg</th>
+        </thead>
+        <tbody>
+            {% for id, date, severity, action, sensor, redfish_msg, ipmitool_msg in data %}
+                    <tr>
+                    <td class="align-middle font-weight-bold text-primary" ><h4>{{ id }}</h4></td>
+                    <td class="align-middle font-weight-bold text-info" ><h4>{{ date }}</h4></td>
+                    {% if 'Warning'  in severity %}
+                    <td class="align-middle font-weight-bold text-warning" ><h4>{{ severity }}</h4></td>
+                    {% elif 'Critical' in severity %}
+                    <td class="align-middle font-weight-bold text-danger" ><h4>{{ severity }}</h4></td>
+                    {% elif 'OK' in severity %}
+                    <td class="align-middle font-weight-bold text-success" ><h4>{{ severity }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>{{ severity }}</h4></td>
+                    {% endif %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>{{ action }}</h4></td>
+                    <td class="align-middle font-weight-bold text-info" ><h4>{{ sensor }}</h4></td>
+                    <td class="align-middle font-weight-bold text-info" ><h4>{{ redfish_msg }}</h4></td>
+                    <td class="align-middle font-weight-bold text-success" ><h4>{{ ipmitool_msg }}</h4></td>
+                    </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
 
 <!-- Footer -->
 <footer class="page-footer font-small teal pt-4 bg-primary text-white">
@@ -78,6 +175,20 @@
 </footer>
 <!-- Footer -->
 <script>
+     $(document).ready(function() {
+        $('#indexpage').DataTable( {
+            "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
+            "pageLength" : -1,
+            dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
+            stateSave: true,
+            buttons: [
+                       'colvis'
+            ],
+        } );
+    } );
+    
+    $('body .dropdown-toggle').dropdown(); 
+
     $.TimejQuery = function(bmc_ip){
         $.ajax({
             url: '/get_node_time',
