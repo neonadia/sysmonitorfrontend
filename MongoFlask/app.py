@@ -1494,7 +1494,7 @@ def udpserverinitialize():
     if fileEmpty(savepath + "udpserveruploadip.txt"):
         return render_template('error.html',error="No input IP found!")
     if request.method == "POST":
-        insertUdpevent('m',"request_h",savepath+"udpserveruploadip.txt")
+        insertUdpevent('m',"request_h",savepath+"udpserveruploadip.txt") # request_h means requst client to send h back to initilize the json file
         time.sleep(1)
         messages = []
         messages.append("Initilize message has been sent to clients.")

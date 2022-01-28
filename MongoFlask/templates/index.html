@@ -51,11 +51,20 @@
         .dropdown-menu li {
           position: relative;
         }
-        .dropdown-menu .dropdown-submenu {
+        .dropdown-submenu {
             display: none;
             position: absolute;
             right: 100%;
             top: -7px;
+        }
+        .dropright .dropdown-menu{
+            width: min-content;
+            height: min-content;
+            text-align: center;
+            margin: 0%;
+        }
+        .dropdown-menu{
+            min-width: 0rem;
         }
         .scrollable-menu {
             height: auto;
@@ -166,13 +175,40 @@
             <tr>
             <td class="col col-auto">{{ loop.index }}</td>
             {% if 'false' in show_names%}
-                <td class="align-middle font-weight-bold">
-                    <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')">{{ row[0] }}</a>
+                <td class="align-middle">
+                    <div class="dropdown dropright">  
+                        <a class="font-weight-bold"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{row[0]}}
+                        </a>
+                        <u1 class="dropdown-menu" aria-labelledby="dropdownMenuButton" x-placement="right-start" style="right:0px" >
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold" href="https://{{ row[0] }}" target="_blank">IPMI</a>
+                            </li>
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold" href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')"> IKVM </a>    
+                            </li>
+                        </u1>
+                    </div>
                 </td>
+                <!-- <td class="align-middle font-weight-bold">
+                    <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')">{{ row[0] }}</a>
+                </td> -->
             {%else%}
                 <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
-                <td class="align-middle font-weight-bold" >
-                      <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')" >{{ row[0] }}</a>
+                <td class="align-middle">
+                    <div class="dropdown dropright">  
+                        <a class="font-weight-bold"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
+                            {{row[0]}}
+                        </a>
+                        <u1 class="dropdown-menu" aria-labelledby="dropdownMenuButton" x-placement="right-start" style="right:0px" >
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold" href="https://{{ row[0] }}" target="_blank">IPMI</a>
+                            </li>
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold" href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')"> IKVM </a>    
+                            </li>
+                        </u1>
+                    </div>
                 </td>
             {%endif%}
             <td class="align-middle font-weight-bold text-info" >{{ row[12] }}</td>
@@ -496,7 +532,7 @@
     $('body .dropdown-toggle').dropdown(); 
 
     get_time();
-    setInterval(get_time, 1000);
+    // setInterval(get_time, 1000);
 </script>
 
 </body>
