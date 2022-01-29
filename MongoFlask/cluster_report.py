@@ -44,7 +44,8 @@ rackname = os.environ['RACKNAME'].upper()
 client = MongoClient('localhost', mongoport) # using in jupyter: change localhost to 172.27.28.15
 db = client.redfish
 collection = db.servers
-collection2 = client.redfish.udp
+collection2 = db.udp
+collection3 = db.monitor
 bmc_ip = []
 timestamp = []
 serialNumber = []
@@ -179,14 +180,58 @@ res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, bmc_ip, bi
 res2 = [list(j) for j in zip(serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount)]
 
 try:
-    max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name  = find_min_max_rack("1", "PowerControl", "PowerConsumedWatts", 9999, bmc_ip)
+    max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name  =\
+    find_min_max_rack("1", "PowerControl", "PowerConsumedWatts", 9999, bmc_ip)
     df_power = pd.DataFrame({"Serial Number":serialNumber,"Max":max_vals,"Min":min_vals})
     unit = 'W'
     Title = 'PowerConsumedWatts'
 except Exception as e:
     df_power = -1
     print('Failed to find Power Consumption in the database: ' + str(e), flush=True)
-	
+
+if 'N/A' not in bmc_ip:
+    temp_id = ["1","2","3","4","5","6"] # first 6 temp sensor
+    temp_keys = ["CPU","Inlet","System","Peripheral","GPU","FPGA","ASIC"] # other sensors FPGA and ASIC are intel habana GPU
+    # get temperature  data
+    data_entries = []
+    for i in bmc_ip:
+        data_entries.append(collection3.find({"BMC_IP": i}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1}))
+
+    # find temperature sensor name with id
+    temp_sensor_name = []
+    temp_id_sort = [] 
+    for j in data_entries[0]: # one bmc ip data 
+        for k in j['Temperatures'].keys(): # one datetime data
+            for cid in temp_id: # seach through all id:
+                if k == cid and k not in temp_id_sort:
+                    temp_sensor_name.append(j['Temperatures'][k]['Name'])
+                    temp_id_sort.append(cid)
+                    break
+                else:
+                    for temp_key in temp_keys: 
+                        if temp_key in j['Temperatures'][k]['Name'] and k not in temp_id_sort: # if not match cid, search from temp_keys
+                            temp_sensor_name.append(j['Temperatures'][k]['Name'])
+                            temp_id_sort.append(k)
+                            break
+        break # one bmc ip's data is enough 
+    printf(temp_sensor_name)
+    printf(temp_id_sort)
+    # create a dataframe list for temp sensors
+    df_temp_list = []
+    unit_list = []
+    sensor_name_list = []
+    for sensor_id, sensor_name in zip(temp_id_sort, temp_sensor_name):
+        unit_list.append('Celsius')
+        sensor_name_list.append(sensor_name)
+        try:
+            max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name =\
+            find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, bmc_ip)
+            df_temp_list.append(pd.DataFrame({"Serial Number":serialNumber,"Max":max_vals,"Min":min_vals}))
+            printf(df_temp_list[-1])
+        except Exception as e:
+            df_temp_list.append(-1)
+            printf('Failed to find ' + sensor_name + ' in the database: ' + str(e))
+
 class Test(object):
     """"""
 
@@ -291,6 +336,7 @@ class Test(object):
         warning = ParagraphStyle(name="normal",fontSize=12, textColor="red",leftIndent=40)
         bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="green",leftIndent=0)
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        sn_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         for text in text_data:
             ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
             p = Paragraph(ptext, centered)
@@ -370,22 +416,33 @@ class Test(object):
         self.story.append(table2)
         
         #Sensor reading charts/tables
-        self.story.append(spacer)
+        self.story.append(PageBreak())
         ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12">Sensor Reading Report</font>"""
         sr_title = Paragraph(ptext_sr, centered)
         sr_title.keepWithNext = True
         self.story.append(sr_title)
         self.story.append(p)
         
+        ptext_sn_intro = """
+        The plots below show the maximum and minimum readings for selective sensors:<br />
+        1. <font color="red">Red bar</font> denotes the maximum reading.<br />
+        2. <font color="blue">Blue bar</font> denotes the minimum reading.<br />
+        3. For more Min/Max readings, please check out the LCM pages.<br />
+        """
+        sensor_reading_intro = Paragraph(ptext_sn_intro, sn_intro)
+        sensor_reading_intro.keepWithNext = True
+        self.story.append(sensor_reading_intro)
+        
+        
         #power consumption chart
-        pData = []
-        pNode = list(df_power['Serial Number'])
-        pMin = list(df_power['Min'])
-        pMax = list(df_power['Max'])
-        pData.append(tuple(pMin))
-        pData.append(tuple(pMax))
-
-        if pData != 'N/A':
+        if type(df_power) != int:
+            pData = []
+            pNode = list(df_power['Serial Number'])
+            pMin = list(df_power['Min'])
+            pMax = list(df_power['Max'])
+            pData.append(tuple(pMin))
+            pData.append(tuple(pMax))
+            
             drawing = Drawing(600,200)
             bc = VerticalBarChart()
             bc.x = 0
@@ -393,13 +450,18 @@ class Test(object):
             bc.height = 150
             bc.width = 500
             bc.valueAxis.valueMin = 0
-            #bar.valueAxis.valueMax = max(max(pData)) * 1.2
+            bc.valueAxis.valueMax = max(df_power['Max']) * 1.15
             bc.strokeColor = colors.black
             bc.bars[0].fillColor = colors.blue
             bc.bars[1].fillColor = colors.red
             bc.categoryAxis.labels.angle = 20
             bc.categoryAxis.labels.dx = -35
             bc.categoryAxis.labels.dy = -10
+            # change fontsize if too many nodes
+            if len(df_power['Min']) > 12:
+                xlabel_fz = 10 * 12 / len(df_power['Min'])
+                bc.categoryAxis.labels.setProperties(propDict={'fontSize':xlabel_fz}) 
+                bc.categoryAxis.labels.dx = -35 * 12 / len(df_power['Min'])
             bc.data = pData
             bc.categoryAxis.categoryNames = pNode
             lab = Label()
@@ -415,8 +477,59 @@ class Test(object):
             drawing.add(bc)
             drawing.add(lab)
             drawing.add(lab2)
-            self.story.append(KeepTogether([drawing,spacer]))
-       
+            # only if power reading is making sense, the plot will be made
+            if min(df_power['Min']) > 0 and min(df_power['Max']) > 0:
+                self.story.append(KeepTogether([drawing,spacer]))
+        
+        # min/max temp charts
+        for df_cur, unit_cur, name_cur in zip(df_temp_list,unit_list, sensor_name_list):
+            if type(df_cur) != int:
+                pData = []
+                pNode = list(df_cur['Serial Number'])
+                pData.append(tuple(df_cur['Min']))
+                pData.append(tuple(df_cur['Max']))
+                printf('pData is:')
+                printf(pData)
+                drawing = Drawing(600,200)
+                bc = VerticalBarChart()
+                bc.x = 0
+                bc.y = 0
+                bc.height = 150
+                bc.width = 500
+                bc.valueAxis.valueMin = 0
+                bc.valueAxis.valueMax = max(df_cur['Max']) * 1.15
+                bc.strokeColor = colors.black
+                bc.bars[0].fillColor = colors.blue
+                bc.bars[1].fillColor = colors.red
+                bc.categoryAxis.labels.angle = 20
+                bc.categoryAxis.labels.dx = -35
+                bc.categoryAxis.labels.dy = -10
+                # change fontsize if too many nodes
+                if len(df_cur['Min']) > 12:
+                    xlabel_fz = 10 * 12 / len(df_cur['Min'])
+                    bc.categoryAxis.labels.setProperties(propDict={'fontSize':xlabel_fz})       
+                    bc.categoryAxis.labels.dx = -35 * 12 / len(df_cur['Min'])
+                bc.data = pData
+                bc.categoryAxis.categoryNames = pNode
+                lab = Label()
+                lab2 = Label()
+                lab.x = 0
+                lab.y = 160
+                lab2.x = 225
+                lab2.y = 175
+                lab.fontSize = 12
+                lab2.fontSize = 16
+                lab.setText(unit_cur)
+                lab2.setText("Min and Max " + name_cur)
+                drawing.add(bc)
+                drawing.add(lab)
+                drawing.add(lab2)
+                # only if temp reading is making sense, the plot will be made
+                if min(df_cur['Min']) > 0 and min(df_cur['Min']) < 500 and max(df_cur['Max']) < 500 and min(df_cur['Max'])> 0:
+                    self.story.append(KeepTogether([drawing,spacer]))
+        
+        
+        
         self.story.append(PageBreak())
         #benchmark charts and tables
         ptext_bm = """<a name="BM_TITLE"/><font color="black" size="12">Benchmark Report</font>"""
@@ -425,7 +538,7 @@ class Test(object):
         
         
         ptext_bm_intro = """
-        Benchmarks includes but not limited to:<br />
+        Benchmarks include but not limited to:<br />
         1. <b>STRESS-NG</b>: designed to exercise various physical subsystems of a computer.<br />
         2. <b>STRESSAPPTEST</b>: memory test, maximize randomized traffic to memory from processor and I/O.<br />
         3. <b>HPCG</b>: intended to model the data access patterns of real-world applications.<br />
@@ -475,7 +588,14 @@ class Test(object):
                 bar.width = 500
                 #bar.valueAxis.valueMin = min(min(data)) * 0.9
                 bar.valueAxis.valueMin = 0 
-                bar.valueAxis.valueMax = max(max(data)) * 1.15
+                printf('Benchmark Data is:')
+                printf(data)
+                max_result = data[0][0]
+                # get max benchmark results for the plot 
+                for t in data:
+                    if max_result < max(t):
+                        max_result = max(t)                
+                bar.valueAxis.valueMax = max_result * 1.15
                 #bar.valueAxis.valueMax = 250000
                 #bar.valueAxis.valueStep = 50000
                 bar.strokeColor = colors.black
