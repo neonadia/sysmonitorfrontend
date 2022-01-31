@@ -18,6 +18,12 @@ import math
 import datetime
 import pymongo
 
+class ConditionalSpacer(Spacer):
+
+    def wrap(self, availWidth, availHeight):
+        height = min(self.height, availHeight-1e-8)
+        return (availWidth, height)
+
 def printf(data):
     print(data, flush=True)
 
@@ -259,7 +265,7 @@ class Test(object):
         self.doc = SimpleDocTemplate("cluster_report.pdf")
         #logo = "logo.jpg"
         #im = Image(logo, 1.5*inch, 1*inch)
-        self.story = [Spacer(1, 0.5*inch)]
+        self.story = [ConditionalSpacer(width=1, height=12.7)]
         #self.story.append(im)
         self.createLineItems()
         self.doc.build(self.story, onFirstPage=self.myFirstPage, onLaterPages=self.createDocument)
@@ -323,8 +329,8 @@ class Test(object):
         """
         Create the line items
         """
-        spacer = Spacer(width=0, height=35)
-        spacer_tiny = Spacer(0, inch * 0.1)
+        spacer = ConditionalSpacer(width=0, height=35)
+        spacer_tiny = ConditionalSpacer(width=0, height=2.5)
         #Summary and Hardware Tables
         text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Timestamp"]
         text_data2 = ["Serial Number", "CPU Model", "CPU Count", "Memory (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
@@ -566,7 +572,7 @@ class Test(object):
             benchmarks_nocontent1.keepWithNext = True
             benchmarks_nocontent2.keepWithNext = True
             benchmarks_nocontent3.keepWithNext = True
-            self.story.append(Spacer(1, inch * 0.1))
+            self.story.append(ConditionalSpacer(width=1, height=2.5))
             self.story.append(benchmarks_nocontent1)
             self.story.append(benchmarks_nocontent2)
             self.story.append(benchmarks_nocontent3)
