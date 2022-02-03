@@ -54,13 +54,13 @@
     </li>
     
     <li class='nav-item'>
-        <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="{{ url_for('downloadClusterReport') }}"" role="button">
+        <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="{{ url_for('downloadClusterReport') }}" role="button">
         CLUSTER REPORT
         </a>
     </li>
     
     <li class='nav-item'>
-        <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="{{ url_for('udpautostar') }}" role="button">
+        <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="javascript:void(0)" role="button" onclick="auto_select()">
         AUTO-SELECT
         </a>
     </li>
@@ -71,8 +71,8 @@
             UNSELECT
         </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" href="{{ url_for('udpunstarallobject') }}" target="_blank">UNSELECT ALL</a>
-                <a class="dropdown-item" href="{{ url_for('udpunstarfailedobject') }}" target="_blank">UNSELECT FAILED</a>
+                <a class="dropdown-item" href="javascript:void(0)"  onclick="unselect_all()">UNSELECT ALL</a>
+                <a class="dropdown-item" href="javascript:void(0)"  onclick="unselect_failed()">UNSELECT ALL FAILED</a>
             </div>
     </li>
     
@@ -109,10 +109,10 @@
             
             <td class="align-middle font-weight-bold" >
             {% if star == 1 %}
-            <a class="fas fa-star" href="{{ url_for('udpstarobject') }}?var={{ id }}" style="font-size:25px; color:red; text-decoration:none">
+            <a class="fas fa-star" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; color:red; text-decoration:none" onclick="toggle_star('{{id}}')">
             </a>
             {% else %}
-            <a class="fas fa-star" href="{{ url_for('udpstarobject') }}?var={{ id }}" style="font-size:25px; color:white; text-decoration:none">
+            <a class="fas fa-star" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; color:white; text-decoration:none" onclick="toggle_star('{{id}}')">
             </a>
             {% endif %}
             </td>
@@ -214,7 +214,110 @@
         } );
     } );
     
+    var ids = {{ids | tojson}};
+    console.log(ids);
     $('body .dropdown-toggle').dropdown(); 
+    function auto_select(){
+        $.auto_star();
+    }
+    $.auto_star = function(){
+        $.ajax({
+            url: '/udpunautostar',
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "FAILED"){
+                        for(var i = 0; i < ids.length; i++){
+                            document.getElementById(ids[i]).style.color = "yellow";
+                        }
+                    }
+                    else{
+                        document.getElementById(data[key]).style.color = "red";
+                    } 
+                }
+            }
+        });
+    }
+    function unselect_failed(){
+        $.unstar_failed();
+    }
+    $.unstar_failed = function(){
+        $.ajax({
+            url: '/udpunstarfailedobject',
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "FAILED"){
+                        for(var i = 0; i < ids.length; i++){
+                            document.getElementById(ids[i]).style.color = "yellow";
+                        }
+                    }
+                    else{
+                        document.getElementById(data[key]).style.color = "white";
+                    } 
+                }
+            }
+        });
+    }
+    function unselect_all(){
+        $.unstar_all();
+    }
+    $.unstar_all = function(){
+        $.ajax({
+            url: '/udpunstarallobject',
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "success"){
+                        
+                        for(var i = 0; i < ids.length; i++){
+                            console.log(ids[i]);
+                            document.getElementById(ids[i]).style.color = "white";
+                        }
+                    }
+                    else{
+                        for(var i = 0; i < ids.length(); i++){
+                            document.getElementById(ids[i]).style.color = "yellow";
+                        }
+                    } 
+                }
+            }
+        });
+    }
+    function toggle_star(id){
+        $.toggle_os(id);
+    }
+    $.toggle_os = function(id){
+        $.ajax({
+            url: '/udpstarobject',
+            data: {id: id},
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                for(var key in data){
+                    if(data[key] == 1){
+                        document.getElementById(id).style.color = "red";
+                    } 
+                    else if(data[key] == -1){
+                        document.getElementById(id).style.color = "white";
+                    }
+                    else{
+                        document.getElementById(id).style.color = "yellow";
+                    }
+                }
+            }
+        });
+    }
 </script>
 
 </body>

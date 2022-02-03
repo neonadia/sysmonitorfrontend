@@ -52,6 +52,7 @@ db = client.redfish
 collection = db.servers
 collection2 = db.udp
 collection3 = db.monitor
+list_of_collections = db.list_collection_names()
 bmc_ip = []
 timestamp = []
 serialNumber = []
@@ -59,6 +60,7 @@ modelNumber = []
 bmcVersion = []
 biosVersion = []
 bmc_event = []
+MacAddress = []
 bmcMacAddress = []
 benchmark_node = []
 benchmark_data = []
@@ -185,6 +187,12 @@ for j in collection.find({}):
 res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, bmc_ip, biosVersion, bmcVersion, timestamp)]
 res2 = [list(j) for j in zip(serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount)]
 
+for ip in bmc_ip:
+    if 'N/A' not in bmc_ip:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        MacAddress.append(df_pwd[df_pwd['ip'] == ip]['mac'].values[0])
+    else:
+        MacAddress.append('N/A')
 try:
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name  =\
     find_min_max_rack("1", "PowerControl", "PowerConsumedWatts", 9999, bmc_ip)
@@ -237,6 +245,157 @@ if 'N/A' not in bmc_ip:
         except Exception as e:
             df_temp_list.append(-1)
             printf('Failed to find ' + sensor_name + ' in the database: ' + str(e))
+
+#### Code to fetch OS LEVEL hardware data from database
+all_hw_data = []
+if 'hw_data' in list_of_collections:
+    for item in db.hw_data.find({}):
+        all_hw_data.append(item)
+
+parsed_data = []
+template_data = {'bmc_ip':'N/A','mac':'N/A',\
+                 'cpu_model':'N/A','cpu_num':'0','cpu_note':'N/A',\
+                 'mem_model':'N/A','mem_num':'0','mem_note':'N/A',\
+                 'gpu_model':'N/A','gpu_num':'0','gpu_note':'N/A',\
+                 'hd_model':'N/A','hd_num':'0','hd_note':'N/A',\
+                 'nic_model':'N/A','nic_num':'0','nic_note':'N/A',\
+                 'power_model':'N/A','power_num':'0','power_note':'N/A',\
+                 'fan_model':'N/A','fan_num':'0','fan_note':'N/A'\
+                }
+
+#parsed_data = [template_data for i in range(len(all_hw_data))]
+for item in all_hw_data:
+    #print(item['Hostname'])
+    parsed_data.append(template_data.copy()) # if not using copy(), all the dicts are the same reference
+    if 'Hostname' in item:
+        parsed_data[-1]['mac'] = item['Hostname'].replace('-','').replace(':','')
+    if 'bmc_ip' in item:
+        parsed_data[-1]['bmc_ip'] = item['bmc_ip']
+    if 'CPU' in item:
+        if 'Model name' in item['CPU']:
+            parsed_data[-1]['cpu_model'] = item['CPU']['Model name']
+        if 'Socket(s)' in item['CPU']:
+            parsed_data[-1]['cpu_num'] = item['CPU']['Socket(s)']
+        if 'Core(s) per socket' in item['CPU']:
+            parsed_data[-1]['cpu_note'] = parsed_data[-1]['cpu_note'].replace('N/A','')
+            parsed_data[-1]['cpu_note'] += item['CPU']['Core(s) per socket'] + ' Cores '
+        if 'Thread(s) per core' in item['CPU']:
+            parsed_data[-1]['cpu_note'] = parsed_data[-1]['cpu_note'].replace('N/A','')
+            parsed_data[-1]['cpu_note'] += item['CPU']['Thread(s) per core'] + ' Threads '
+        parsed_data[-1]['cpu_note'] = parsed_data[-1]['cpu_note'].strip()
+        
+    if 'Storage' in item:
+        cur_storage = {}
+        for hd_index in item['Storage']:
+            hd = item['Storage'][hd_index]
+            if 'ModelNumber' in hd:
+                # Initilize for the model
+                if hd['ModelNumber'] not in cur_storage:
+                    cur_storage[hd['ModelNumber']] = [1,'N/A']
+                    if 'PhysicalSize' in hd:
+                        cur_storage[hd['ModelNumber']][1] = hd['PhysicalSize']
+                # Count the model
+                else:
+                    cur_storage[hd['ModelNumber']][0] += 1
+        # cur_storage sample
+        # {'Micron_9200_MTFDHAL3T8TCT': [2, 3840755982336], 'Micron_9100_MTFDHAL3T8TCT': [1, 3840755982336]}
+        #print(cur_storage)
+        parsed_data[-1]['hd_model'] = '<br/>'.join(cur_storage.keys())
+        for key in cur_storage:
+            #print(cur_storage[key][1])
+            parsed_data[-1]['hd_num'] = parsed_data[-1]['hd_num'].replace('0','')
+            parsed_data[-1]['hd_note'] = parsed_data[-1]['hd_note'].replace('N/A','')
+            parsed_data[-1]['hd_num'] += str(cur_storage[key][0]) + '<br/>'
+            parsed_data[-1]['hd_note'] += str(round(int(cur_storage[key][1])/1099500000000,2)) + ' TB<br/>'
+        parsed_data[-1]['hd_note'] = parsed_data[-1]['hd_note'].strip()
+        parsed_data[-1]['hd_num'] = parsed_data[-1]['hd_num'].strip()
+        
+    if 'Graphics' in item:
+        if 'Number of GPUs' in item['Graphics']:
+            parsed_data[-1]['gpu_num'] = item['Graphics']['Number of GPUs']
+        if 'Driver Version' in item['Graphics']:
+            parsed_data[-1]['gpu_note'] = 'Driver: ' + item['Graphics']['Driver Version']
+        if 'GPU' in item['Graphics']:
+            # verify the model name
+            cur_model = 'N/A'
+            for index_g in item['Graphics']['GPU']:
+                if cur_model == 'N/A' and 'Model' in item['Graphics']['GPU'][index_g]:
+                    cur_model = item['Graphics']['GPU'][index_g]['Model']
+                elif cur_model != 'N/A' and cur_model != item['Graphics']['GPU'][index_g]['Model']:
+                    cur_model = "Different models found!"
+            parsed_data[-1]['gpu_model'] = cur_model
+    
+    if 'NICS' in item:
+        cur_nic = {}
+        for index_n in item['NICS']:
+            nic = item['NICS'][index_n]
+            if 'Name' in nic:
+                # Initilize for the model
+                if nic['Name'] not in cur_nic:
+                    cur_nic[nic['Name']] = 1
+                # Count the model
+                else:
+                    cur_nic[nic['Name']] += 1
+                    
+        parsed_data[-1]['nic_model'] = '<br/>'.join(cur_nic.keys())
+        for key in cur_nic:
+            #print(cur_storage[key][1])
+            parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].replace('0','')
+            parsed_data[-1]['nic_num'] += str(cur_nic[key]) + '<br/>'
+        parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].strip()
+            
+    if 'PSU' in item:
+        cur_psu = {}
+        for index_p in item['PSU']:
+            psu = item['PSU'][index_p]
+            if type(psu) == int: # there is a key named "Number of PSUs"
+                continue
+            if 'Module No.' in psu:
+                # Initilize for the model
+                if psu['Module No.'] not in cur_psu:
+                    cur_psu[psu['Module No.']] = 1
+                # Count the model
+                else:
+                    cur_psu[psu['Module No.']] += 1
+                    
+        parsed_data[-1]['power_model'] = '<br/>'.join(cur_psu.keys())
+        for key in cur_psu:
+            #print(cur_storage[key][1])
+            parsed_data[-1]['power_num'] = parsed_data[-1]['power_num'].replace('0','')
+            parsed_data[-1]['power_num'] += str(cur_psu[key]) + '<br/>'
+        parsed_data[-1]['power_num'] = parsed_data[-1]['power_num'].strip()
+    
+    if 'FANS' in item:
+        num_fan = 0
+        parsed_data[-1]['fan_note'] = 'All Good'
+        for index_f in item['FANS']:
+            fan = item['FANS'][index_f]
+            if type(fan) == dict:
+                num_fan += 1
+                if fan.get('status') != 'ok':
+                    parsed_data[-1]['fan_note'] = 'Error'
+        parsed_data[-1]['fan_num'] = str(num_fan)
+    
+    if 'Memory' in item:
+        if 'DIMMS' in item['Memory']:
+            parsed_data[-1]['mem_num'] = item['Memory']['DIMMS']
+        if 'Total Memory' in item['Memory']:
+            parsed_data[-1]['mem_note'] = 'Total Size: ' + item['Memory']['Total Memory'] + ' MB'
+        if 'Slots' in item['Memory']:
+            all_manufactures = []
+            for dim in item['Memory']['Slots']:
+                if 'Manufacturer' in item['Memory']['Slots'][dim] and item['Memory']['Slots'][dim]['Manufacturer'] not in all_manufactures:
+                    all_manufactures.append(item['Memory']['Slots'][dim]['Manufacturer'])
+        #print(all_manufactures)
+        parsed_data[-1]['mem_model'] = '<br/>'.join(all_manufactures)
+#parsed_data[0]['mac'] = -1
+parsed_data_sort = []
+
+# sort the parsed data according to the bmc_ip list
+for ip in bmc_ip:
+    for item in parsed_data:
+        if item['bmc_ip'] == ip:
+            parsed_data_sort.append(item)
 
 class Test(object):
     """"""
@@ -332,8 +491,9 @@ class Test(object):
         spacer = ConditionalSpacer(width=0, height=35)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
         #Summary and Hardware Tables
-        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Timestamp"]
-        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "Memory (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
+        ## column names
+        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
+        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
 
         d = []
         d2 = []
@@ -342,13 +502,14 @@ class Test(object):
         warning = ParagraphStyle(name="normal",fontSize=12, textColor="red",leftIndent=40)
         bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="green",leftIndent=0)
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
-        sn_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        ## Create header with column names
         for text in text_data:
-            ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
+            ptext = "<font size=%s><b>%s</b></font>" % (font_size-2, text)
             p = Paragraph(ptext, centered)
             d.append(p)
         for text in text_data2:
-            ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
+            ptext = "<font size=%s><b>%s</b></font>" % (font_size-2, text)
             p = Paragraph(ptext, centered)
             d2.append(p)
 
@@ -362,7 +523,7 @@ class Test(object):
         for x in range(count):
             line_data = res[x]
             for item in line_data:
-                ptext = "<font size=%s>%s</font>" % (font_size-1, item)
+                ptext = "<font size=%s>%s</font>" % (font_size-2, item)
                 p = Paragraph(ptext, centered)
                 formatted_line_data.append(p)
             data.append(formatted_line_data)
@@ -372,29 +533,30 @@ class Test(object):
         for y in range(count):
             line_data2 = res2[y]
             for item in line_data2:
-                ptext = "<font size=%s>%s</font>" % (font_size-1, item)
+                ptext = "<font size=%s>%s</font>" % (font_size-2, item)
                 p = Paragraph(ptext, centered)
                 formatted_line_data.append(p)
             data2.append(formatted_line_data)
             formatted_line_data = []
             line_num2 += 1
 
-        table = Table(data, colWidths=[95, 90, 60, 75, 50, 50, 50, 65])
+        table = Table(data, colWidths=[95, 90, 60, 75, 80, 80, 50])
         table.setStyle(TableStyle([
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), (0xD0D0FF, 0xFFD0D0)),
             ("LINEBELOW", (0,0), (-1,-1), 1, colors.blue)
         ]))
-        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Summary Table</link> 
-/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">Hardware Table</link> 
-/ <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensor Readings</link> 
+        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Cluster Summary</link> 
+/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">Hardware Counts</link> 
+/ <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">Hardware Per Node</link> 
+/ <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
 / <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark Report</link>"""
         
-        ptext2 = """<a name="TABLE2"/><font color="black" size="12">Hardware Counts and Models</font>"""
+        ptext2 = """<a name="TABLE2"/><font color="black" size="12">Hardware Counts and Models """ + rackname + """</font>"""
         ptext1 = """<a name="TABLE1"/><font color="black" size="12">Cluster Summary for """ + rackname + """</font>"""
         p = Paragraph(ptext, centered)
-        table2 = Table(data2, colWidths=[95, 60, 50, 60, 70, 50, 70, 50])
+        table2 = Table(data2, colWidths=[95, 120, 40, 40, 70, 40, 70, 40])
         table2.setStyle(TableStyle([
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black), 
@@ -406,6 +568,7 @@ class Test(object):
         paragraph2 = Paragraph(ptext2, centered)
         paragraph1.keepWithNext = True
         paragraph2.keepWithNext = True
+        p.keepWithNext = True
         
         #start by appending a pagebreak to separate first page from rest of document
         self.story.append(PageBreak())
@@ -413,15 +576,169 @@ class Test(object):
         self.story.append(paragraph1)
         #Navigation bar
         self.story.append(p)
+        # Cluster Summary intro
+        ptext_cs_intro = """
+        Table below shows the hardware and firmware information for whole cluster:<br />
+        1. The information below are fetched from Redfish API.<br />
+        2. Serial Number is based on the information from csv file.<br />
+        3. Date (Timestamp) is the datetime when LCM boot up.<br />
+        """
+        cluster_summary_intro = Paragraph(ptext_cs_intro, other_intro)
+        cluster_summary_intro.keepWithNext = True
+        self.story.append(cluster_summary_intro)       
         #table1
         self.story.append(table)
+        self.story.append(PageBreak())
+        
+        
         #table2 title
         self.story.append(paragraph2)
+        #Navigation bar
+        #p.keepWithNext = True
         self.story.append(p)
+        # Hardware Counts intro
+        ptext_hc_intro = """
+        Table below shows the hardware counts and model names for whole cluster:<br />
+        1. The information below are fetched from Redfish API.<br />
+        2. GPU information is not supported by Redfish API.<br />
+        """
+        hardware_counts_intro = Paragraph(ptext_hc_intro, other_intro)
+        hardware_counts_intro.keepWithNext = True
+        self.story.append(hardware_counts_intro)          
         #table2
-        self.story.append(table2)
+        self.story.append(table2)     
         
-        #Sensor reading charts/tables
+        ########################################Node by Node Hardware summary##################################################
+        self.story.append(PageBreak())
+        ptext_hn = """<a name="TABLE3"/><font color="black" size="12">Detailed Hardware Information Per Node</font>"""
+        hn_title = Paragraph(ptext_hn, centered)
+        hn_title.keepWithNext = True
+        self.story.append(hn_title) 
+        self.story.append(p)
+
+        ptext_hn_intro = """
+        Table below shows the hardware information for each node:<br />
+        1. The information below are fetched from both OS level and Redfish API.<br />
+        2. MAC address is based on the information from csv file.<br />
+        3. To refresh the hardware config, please check out the UDP cotroller page.<br />
+        """
+        hardware_node_intro = Paragraph(ptext_hn_intro, other_intro)
+        hardware_node_intro.keepWithNext = True
+        self.story.append(hardware_node_intro)
+        
+        if 'hw_data' in list_of_collections and len(serialNumber) == len(MacAddress) and len(serialNumber) == len(parsed_data_sort):
+            for sn, mac, cur_hw in zip(serialNumber, MacAddress, parsed_data_sort):
+                ptext_hn_sub = """<a name="NH_TITLE"/><font color="black" size="12">Hardware List of SN: """ + sn + """ MAC: """ + mac +"""</font>"""
+                hn_title_sub = Paragraph(ptext_hn_sub, centered)
+                hn_title_sub.keepWithNext = True
+                self.story.append(hn_title_sub) 
+                self.story.append(ConditionalSpacer(width=1, height=2.5))     
+                ## Create header with column names
+                d3 = []
+                hn_columns = ["Item Name", "Model Name", "Quantity", "Notes"]
+                for text in hn_columns:
+                    ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
+                    p3 = Paragraph(ptext, centered)
+                    d3.append(p3)
+
+                data3 = [d3]
+
+                hn_rows_basic =  ['Processor','Memory','GPU','Hard Drive','NIC cards','Power Supply','Fans']
+                hn_rows = hn_rows_basic
+                hn_counts = len(hn_rows)
+                hw_details = [[0 for i in range(len(hn_columns))] for j in range(hn_counts) ]
+                # len(hw_details) = 7  which is number of rows
+                # check mac address
+                if cur_hw['mac'].strip().lower() != mac.replace('-','').replace(':','').strip().lower():
+                    print('Warning: Found unmatching MAC addressses between Database and CSV file.')
+                    print(cur_hw['mac'].strip().lower())
+                    print(mac.replace('-','').replace(':','').strip().lower())
+                
+                for i in range(hn_counts): # rows
+                    for j in range(len(hn_columns)): # columns
+                        if j == 0:
+                            hw_details[i][j] = hn_rows[i]
+                        elif 'Processor' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['cpu_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['cpu_num']
+                            else:
+                                hw_details[i][j] = cur_hw['cpu_note']
+                        elif 'Memory' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['mem_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['mem_num']
+                            else:
+                                hw_details[i][j] = cur_hw['mem_note']
+                        elif 'GPU' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['gpu_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['gpu_num']
+                            else:
+                                hw_details[i][j] = cur_hw['gpu_note']
+                        elif 'Hard Drive' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['hd_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['hd_num']
+                            else:
+                                hw_details[i][j] = cur_hw['hd_note']
+                        elif 'NIC cards' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['nic_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['nic_num']
+                            else:
+                                hw_details[i][j] = cur_hw['nic_note']
+                        elif 'Power Supply' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['power_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['power_num']
+                            else:
+                                hw_details[i][j] = cur_hw['power_note']
+                        elif 'Fans' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['fan_model']
+                            elif j == 2:
+                                hw_details[i][j] = cur_hw['fan_num']
+                            else:
+                                hw_details[i][j] = cur_hw['fan_note']
+
+                formatted_line_data = []
+                for x in range(hn_counts):
+                    line_data = hw_details[x]
+                    for item in line_data:
+                        ptext = "<font size=%s>%s</font>" % (font_size-2, item)
+                        p3 = Paragraph(ptext, centered)
+                        formatted_line_data.append(p3)
+                    data3.append(formatted_line_data)
+                    formatted_line_data = []
+                table3 = Table(data3, colWidths=[70, 170, 65, 170])
+                table3.setStyle(TableStyle([
+                    ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                    ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), (0xD0D0FF, 0xFFD0D0)),
+                    ("LINEBELOW", (0,0), (-1,-1), 1, colors.blue)
+                ]))
+                self.story.append(table3)
+        else:
+            ptext_hn_nodata = """
+            Warning: No OS level Hardware Data can be found in Database:<br />
+            1. Make sure the 'hw_data' is inside the input directory.<br />
+            2. Make sure the config file is inside the 'hw_data' directory.<br />
+            3. Check the MAC addresses are the same as the input files.<br />
+            4. Check if any nodes hw data missing.<br />
+            5. Go the UDP Controller page to reload the data.<br />
+            """
+            hardware_node_nodata = Paragraph(ptext_hn_nodata, warning)
+            self.story.append(hardware_node_nodata)
+#######################################################################        
+        
+        #Sensor reading charts
         self.story.append(PageBreak())
         ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12">Sensor Reading Report</font>"""
         sr_title = Paragraph(ptext_sr, centered)
@@ -435,7 +752,7 @@ class Test(object):
         2. <font color="blue">Blue bar</font> denotes the minimum reading.<br />
         3. For more Min/Max readings, please check out the LCM pages.<br />
         """
-        sensor_reading_intro = Paragraph(ptext_sn_intro, sn_intro)
+        sensor_reading_intro = Paragraph(ptext_sn_intro, other_intro)
         sensor_reading_intro.keepWithNext = True
         self.story.append(sensor_reading_intro)
         
@@ -557,9 +874,7 @@ class Test(object):
         
         
         self.story.append(benchmarks_title)
-        self.story.append(spacer_tiny)
         self.story.append(p)
-        self.story.append(spacer_tiny)
         self.story.append(benchmarks_intro)
         
         if len(benchmark_data) == 0:

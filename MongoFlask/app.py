@@ -1523,7 +1523,8 @@ def udpoutput():
         id.append(str(i['_id']))
         file_name.append(i['file_name'])
         conclusion.append(i['conclusion'])
-    return render_template('udpoutput.html',data=zip(star, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion))
+    return render_template('udpoutput.html',data=zip(star, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id)
+
 
 @app.route('/udpsendlogfile')
 def udpsendlogfile():
@@ -1553,7 +1554,7 @@ def udpdeleteobject():
 
 @app.route('/udpstarobject')
 def udpstarobject():
-    data = request.args.get('var')
+    data = request.args.get('id')
     try:        
         set_value = list(udp_collection.find({'_id':ObjectId(data)}))[0]['star'] * -1 # change the star to unstar or change the unstar to star
         os_ip = list(udp_collection.find({'_id':ObjectId(data)}))[0]['os_ip']
@@ -1562,32 +1563,49 @@ def udpstarobject():
         if set_value == 1:
             for cur_obj in list(udp_collection.find({'os_ip':os_ip, 'benchmark':benchmark})):
                 udp_collection.find_one_and_update({'_id':cur_obj['_id']},{'$set':{'star':-1}})
-        udp_collection.find_one_and_update({'_id':ObjectId(data)},{'$set':{'star':set_value}})        
+        udp_collection.find_one_and_update({'_id':ObjectId(data)},{'$set':{'star':set_value}})  
+        set_value = {'value':set_value}      
     except Exception as e:
-        return render_template('error.html',error=e)
-    return redirect(url_for('udpoutput'))
+        printf('Error msg:' + str(e))
+        set_value = {'value': 0}
+    data = json.dumps(set_value)
+    return data
 
 @app.route('/udpunstarallobject')
 def udpunstarallobject():
     try:
         for i in range(len(list(udp_collection.find({})))):
-            udp_collection.find_one_and_update({'star':1},{'$set':{'star':-1}})        
+            udp_collection.find_one_and_update({'star':1},{'$set':{'star':-1}})      
+        result = {'value':'success'}  
     except Exception as e:
-        return render_template('error.html',error=e)
-    return redirect(url_for('udpoutput'))
+        printf('Error msg:' + str(e))
+        result = {'value':'failed'}
+    data = json.dumps(result)
+    return data
 
 @app.route('/udpunstarfailedobject')
 def udpunstarfailedobject():
     try:
+        ids = []
         for i in range(len(list(udp_collection.find({})))):
-            udp_collection.find_one_and_update({'star':1,'conclusion':'FAILED'},{'$set':{'star':-1}})        
+            ids.append((udp_collection.find_one({'star':1,'conclusion':'FAILED'},{'_id':1})))
+            udp_collection.find_one_and_update({'star':1,'conclusion':'FAILED'},{'$set':{'star':-1}})
+        objects = {}
+        for index, i in enumerate(ids):
+            try:
+                objects[str(index)] = str(i.get('_id'))
+            except:
+                printf("item is Nonetype") # i could be None
+        objects = json.dumps(objects)
     except Exception as e:
-        return render_template('error.html',error=e)
-    return redirect(url_for('udpoutput'))
+        printf('Error msg:' + str(e))
+        objects = json.dumps({'0':'FAILED'})
+    return objects
 
 @app.route('/udpunautostar')
 def udpautostar():
     try:
+        ids = []
         # unstar all
         for i in range(len(list(udp_collection.find({})))):
             udp_collection.find_one_and_update({'star':1},{'$set':{'star':-1}})
@@ -1613,10 +1631,17 @@ def udpautostar():
         # star the latest results
         for bm in obj_autostar.keys():
             for ip in obj_autostar[bm].keys():
+                ids.append(str(obj_autostar[bm][ip][1]))
                 udp_collection.find_one_and_update({'_id':obj_autostar[bm][ip][1]},{'$set':{'star':1}})      
+        temp_dict = {}
+        for index, i in enumerate(ids):
+            temp_dict[str(index)] = i
+        data = json.dumps(temp_dict)
     except Exception as e:
-        return render_template('error.html',error=e)
-    return redirect(url_for('udpoutput'))    
+        printf('Error msg:' + str(e))
+        data = {'value':'failed'}
+        data = json.dumps(data)
+    return data
 
 def fileEmpty(filepath):
     if not os.path.isfile(filepath):
@@ -2265,6 +2290,37 @@ def chart_othertemperatures(bmc_ip):
             return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures")
         else:
             return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+
+
+@app.route('/hardware_parser')
+def hardware_parser():
+    os.system("chmod +wx hw_data_extractor.py")
+    get_hardware = Popen("python3 hw_data_extractor.py",shell=True,stdout=PIPE,stderr=PIPE)
+    stdout,stderr = get_hardware.communicate()
+    if stderr.decode() != '':
+        feedback = {"response" : stderr.decode()}
+        data = json.dumps(feedback)
+        return data
+    else:
+        hw_collection = db.hw_data
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        bmc_ips = list(df_pwd['ip'])
+        database_ips = hw_collection.find({},{"bmc_ip":1,"_id":0})
+        db_ips = list(database_ips)
+        if len(db_ips) == 0:
+            feedback = {"response" : "Error: no entries inserted"}
+        else:
+            feedback = True
+            db_ips = []
+            for i in database_ips:
+                if i['bmc_ip'] not in bmc_ips:
+                    feedback = False
+            if feedback == True:
+                feedback = {"response" : "OK"}
+            else:
+                feedback = {"response" : "Error: some data was not inserted"}
+        data = json.dumps(feedback)
+        return data
 
 def get_sensor_names(bmc_ip): #Sensor names only for header in html - return a various lists
     cpu_temps,vrm_temps,dimm_temps,sys_temps = get_temp_names(bmc_ip)
