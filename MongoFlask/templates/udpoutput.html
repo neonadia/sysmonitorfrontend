@@ -226,7 +226,10 @@
             dataType : "JSON",
             type : "GET",
             success: function(result){
-                var data = result;
+                var data = result; 
+                for(var i = 0; i < ids.length; i++){
+                    document.getElementById(ids[i]).style.color = "white";
+                }
                 for(var key in data){
                     console.log(data[key]);
                     if(data[key] == "FAILED"){
@@ -236,7 +239,8 @@
                     }
                     else{
                         document.getElementById(data[key]).style.color = "red";
-                    } 
+                    }
+
                 }
             }
         });

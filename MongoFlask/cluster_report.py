@@ -944,6 +944,9 @@ class Test(object):
                 draw.add(lab2)
                 for item in node, data:
                     if item is node:
+                        ptext = "<font size=%s>%s</font>" % (font_size-1, 'Serial Number')
+                        p1 = Paragraph(ptext, centered)
+                        formatted_line_data.append(p1)
                         for a in item:
                             ptext = "<font size=%s>%s</font>" % (font_size-1, a)
                             p1 = Paragraph(ptext, centered)
@@ -952,6 +955,9 @@ class Test(object):
                         formatted_line_data = []
                     if item is data:
                         for b_index, b in enumerate(item):
+                            ptext = "<font size=%s>%s</font>" % (font_size-1, 'Result No.' + str(b_index))
+                            p1 = Paragraph(ptext, centered)
+                            formatted_line_data.append(p1)
                             for c in b:
                                 ptext = "<font size=%s>%s</font>" % (font_size-1, str(c) + ' ' + cleanUnits(unit,b_index))
                                 p1 = Paragraph(ptext, centered)
