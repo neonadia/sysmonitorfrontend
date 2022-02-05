@@ -151,6 +151,8 @@ def indexHelper(bmc_ip):
     for i in range(len(details)):
         if "|||" in details[i]: #Split redfish and ipmitool log
             cur_detail = details[i].split("|||")[1]
+        elif "only redfish sel log" in details[i] or "only ipmitool sel log" in details[i]:      # remove flag lines
+            continue
         else:
             cur_detail = details[i]
         for key in IPMIdict.keys():
@@ -261,7 +263,7 @@ def index():
         sys_temps.append(i[8])
         sys_fans.append(i[9])
         sys_voltages.append(i[10])
-              
+    
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
     show_names = 'true' # default
@@ -1357,20 +1359,20 @@ def event():
 
     if  events[0] != "Error: the number of events are not the same between Redfish and IPMITOOL." :
         if "|||" in events[0]:
-            for i in events:
+            for event_index, i in enumerate(events):
                 temp_event = i.split("|")
-                sel_id.append(list_helper(temp_event,0))
+                sel_id.append(str(event_index+1))
                 dates.append(list_helper(temp_event,1))
                 severity.append(list_helper(temp_event,2))
                 action.append(list_helper(temp_event,3))
                 sensor.append(list_helper(temp_event,4))
                 redfish_msg.append(list_helper(temp_event,5))
-                ipmitool_msg.append(list_helper(temp_event,11) + " | " + list_helper(temp_event,13))
+                ipmitool_msg.append(list_helper(temp_event,11) + " | " + list_helper(temp_event,12))
         elif "|||" not in events[0] and "only redfish sel log" in events[0]:
             events.remove("only redfish sel log")
-            for i in events:
+            for event_index, i in enumerate(events):
                 temp_event = i.split("|")
-                sel_id.append(list_helper(temp_event,0))
+                sel_id.append(str(event_index+1))
                 dates.append(list_helper(temp_event,1))
                 severity.append(list_helper(temp_event,2))
                 action.append(list_helper(temp_event,3))
@@ -1380,15 +1382,15 @@ def event():
         else:
             if "only ipmitool sel log" in events:
                 events.remove("only ipmitool sel log")
-            for i in events:
+            for event_index, i in enumerate(events):
                 temp_event = i.split("|")
-                sel_id.append(list_helper(temp_event,0))
+                sel_id.append(str(event_index+1))
                 dates.append(list_helper(temp_event,1) + " : " + list_helper(temp_event,2))
                 severity.append("N/A")
                 action.append(list_helper(temp_event,5))
                 sensor.append("N/A")
                 redfish_msg.append("N/A")
-                ipmitool_msg.append(list_helper(temp_event,3))
+                ipmitool_msg.append(list_helper(temp_event,3) + " | " + list_helper(temp_event,4))
     else:
         sel_id.append("N/A")
         dates.append("N/A")
