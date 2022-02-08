@@ -10,6 +10,7 @@ from reportlab.lib.colors import PCMYKColor, HexColor, blue, red
 from reportlab.graphics.shapes import Drawing, Line
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.textlabels import Label
+from reportlab.platypus.flowables import HRFlowable
 from get_data import find_min_max_rack
 import os
 import pandas as pd
@@ -489,6 +490,7 @@ class Test(object):
         Create the line items
         """
         spacer = ConditionalSpacer(width=0, height=35)
+        spacer_median = ConditionalSpacer(width=0, height=10)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
         #Summary and Hardware Tables
         ## column names
@@ -499,8 +501,9 @@ class Test(object):
         d2 = []
         font_size = 10
         centered = ParagraphStyle(name="centered", alignment=TA_CENTER)
+        centered_bm = ParagraphStyle(name="centered_bm", fontSize=12, alignment=TA_CENTER)
         warning = ParagraphStyle(name="normal",fontSize=12, textColor="red",leftIndent=40)
-        bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="green",leftIndent=0)
+        bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="black",leftIndent=0)
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         ## Create header with column names
@@ -892,14 +895,33 @@ class Test(object):
             self.story.append(benchmarks_nocontent2)
             self.story.append(benchmarks_nocontent3)
         
-        ptext_chart = 'Benchmark Bar Plot are as shown below'
-        ptext_table = 'Benchmark Numerical Results are as below'
-        benchmarks_chartTitle = Paragraph(ptext_chart, bm_title)
-        benchmarks_tableTitle = Paragraph(ptext_table, bm_title)
+        ptext_chart = 'Restulst Bar Plot is as shown below'
+        ptext_table = 'Results Table is as shown below'
+        ptext_table_non_num = 'Non-Numerical Results Table is as shown below'
+        benchmark_number = 1
+        
+        hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         
         
         for data, unit, node, name in zip(benchmark_data,benchmark_unit,benchmark_node,list(benchmark_map.keys())):
-            if unit != 'N/A':
+            printf('Unit is:')
+            printf(unit)
+            
+            benchmarks_chartTitle = Paragraph(ptext_chart, bm_title)
+            benchmarks_tableTitle = Paragraph(ptext_table, bm_title)
+            benchmarks_tableTitle_non_num = Paragraph(ptext_table_non_num, bm_title)
+            
+            # check if result type is numerical
+            result_type = 0 # default is numerical 
+            for t in data:
+                for i in t:
+                    if isinstance(i, int) or isinstance(i, float):
+                        continue
+                    else:
+                        result_type = 1 # numerical result
+                        break
+                       
+            if result_type == 0:
                 data3 = []
                 draw = Drawing(600,200)
                 bar = VerticalBarChart()
@@ -942,6 +964,8 @@ class Test(object):
                 draw.add(bar, '')
                 draw.add(lab)
                 draw.add(lab2)
+                cur_content = "<font size=%s><b>%s</b></font>" % (font_size+2, name)
+                cur_benchmark_title = Paragraph(cur_content, centered_bm)
                 for item in node, data:
                     if item is node:
                         ptext = "<font size=%s>%s</font>" % (font_size-1, 'Serial Number')
@@ -971,7 +995,43 @@ class Test(object):
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), (colors.gold, colors.lightgrey))
                 ])
                 #self.story.append(KeepTogether([draw,spacer,t,spacer,p]))
-                self.story.append(KeepTogether([spacer,benchmarks_chartTitle,draw,spacer,spacer,benchmarks_tableTitle,spacer_tiny,t,spacer,p]))
+                self.story.append(KeepTogether([spacer,benchmarks_chartTitle,draw,spacer,spacer,benchmarks_tableTitle,spacer_median,cur_benchmark_title,spacer_median,t,spacer_median,hr_line,spacer]))
+                #self.story.append(PageBreak())
+            
+            else:
+                data3 = []
+                cur_content = "<font size=%s><b>%s</b></font>" % (font_size+2, name)
+                cur_benchmark_title = Paragraph(cur_content, centered_bm)
+                for item in node, data:
+                    if item is node:
+                        ptext = "<font size=%s>%s</font>" % (font_size-1, 'Serial Number')
+                        p1 = Paragraph(ptext, centered)
+                        formatted_line_data.append(p1)
+                        for a in item:
+                            ptext = "<font size=%s>%s</font>" % (font_size-1, a)
+                            p1 = Paragraph(ptext, centered)
+                            formatted_line_data.append(p1)
+                        data3.append(formatted_line_data)
+                        formatted_line_data = []
+                    if item is data:
+                        for b_index, b in enumerate(item):
+                            ptext = "<font size=%s>%s</font>" % (font_size-1, 'Result No.' + str(b_index))
+                            p1 = Paragraph(ptext, centered)
+                            formatted_line_data.append(p1)
+                            for c in b:
+                                ptext = "<font size=%s>%s</font>" % (font_size-1, str(c))
+                                p1 = Paragraph(ptext, centered)
+                                formatted_line_data.append(p1)
+                            data3.append(formatted_line_data)
+                            formatted_line_data = []
+
+                t = Table(data3, colWidths=90, rowHeights=40, style=[
+                    ('GRID',(0,0), (-1,-1),0.5,colors.black),
+                    ('ALIGN', (0,-1),(-1,-1), 'CENTER'),
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), (colors.gold, colors.lightgrey))
+                ])
+                #self.story.append(KeepTogether([draw,spacer,t,spacer,p]))
+                self.story.append(KeepTogether([benchmarks_tableTitle_non_num,spacer_median,cur_benchmark_title,spacer_median,t,spacer_median,hr_line,spacer]))
                 #self.story.append(PageBreak())
 #----------------------------------------------------------------------
 if __name__ == "__main__":
