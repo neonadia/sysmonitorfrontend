@@ -30,6 +30,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from flask_debugtoolbar import DebugToolbarExtension
 import concurrent.futures
+from benchmark_parser import parseInput, resultParser, clean_mac
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -2344,6 +2345,73 @@ def hardware_parser():
                 feedback = {"response" : "Error: some data was not inserted"}
         data = json.dumps(feedback)
         return data
+
+@app.route('/benchmark_result_parser')
+def benchmark_result_parser():
+    # inputs
+    output_path = os.environ['OUTPUTPATH']
+    inputdir = os.environ['UPLOADPATH'] + '/' + 'benchmark_logs'
+    configdir = os.environ['UPLOADPATH']  + '/'+ 'benchmark_configs'
+    # read config files
+    config_list = []
+    for root,dirs,files in os.walk(configdir):
+        for file in sorted(files):
+            if '.json' in file:
+                #print(file)
+                config_list.append(parseInput(configdir + '/' + file))
+    # Get mac addreess
+    mac_dict = {}
+    df_pwd = pd.read_csv(output_path,names=['ip','os_ip','mac','node','pwd'])
+    for os_ip, mac in zip(df_pwd['os_ip'],df_pwd['mac']):
+        mac_dict[clean_mac(mac)] = os_ip
+    dirname_list = []
+    messages = {'Insert Status':'success'}
+    try:
+        for dirname in os.listdir(inputdir):
+        # Check MAC address for each dir, only read mac address belongs to the rack
+            if os.path.isdir(inputdir + '/' + dirname) and clean_mac(dirname.split('_')[-1]) in mac_dict:
+                dirname_list.append(dirname)
+                cur_ip = mac_dict[clean_mac(dirname.split('_')[-1])]
+                print("###################################################### " + cur_ip + '||' + dirname + " #####################################################")
+                messages[cur_ip]  = dirname
+                for filename in os.listdir(inputdir + '/' + dirname):
+                    for config in config_list:
+                        # Only parse the log has config files
+                        if config['log'].lower() in filename.lower():
+                            print(filename)
+                            with open(inputdir + '/' + dirname + '/' + filename, 'r') as logfile:
+                                contents = logfile.read()
+                            conclusionAndResult = resultParser(contents, keywords=config['keywords'], addRow=config['addRow'], \
+                                               dfs=config['dfs'], index=config['index'], unit=config['unit'], \
+                                               criteriaType=config['criteriaType'], criteria=config['criteria'])
+                            print(conclusionAndResult.values())
+                            if conclusionAndResult['conclusion'] != 'N/A':
+                                file_data = {\
+                                        'os_ip':cur_ip,\
+                                        'file_name':filename,\
+                                        'start_date':"Self-inserted",\
+                                        'done_date':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),\
+                                        'content':contents,\
+                                        'result':conclusionAndResult['result'],\
+                                        'conclusion':conclusionAndResult['conclusion'],\
+                                        'category':config['category'],\
+                                        'config':config['config'],\
+                                        'cmd':config['prefix'] + " " + config['exe'] + " " + config['config'],\
+                                        'benchmark':config['exe'],\
+                                        'unit':config['unit'],\
+                                        'raw_result':conclusionAndResult['raw_result'],\
+                                        'star':-1}
+                                #print(file_data)
+                                udp_collection.insert(file_data)       
+        printf("Benchmark Data Insert Done!")
+        printf(messages)
+    except Exception as e:
+        messages['Insert Status'] = 'failed'
+        messages['Error Message'] = str(e)
+        printf("Error message: " + str(e))
+    data = json.dumps(messages)
+    return data
+    
 
 def get_sensor_names(bmc_ip): #Sensor names only for header in html - return a various lists
     cpu_temps,vrm_temps,dimm_temps,sys_temps = get_temp_names(bmc_ip)

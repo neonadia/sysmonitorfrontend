@@ -182,21 +182,31 @@
         
         <div class ="row">
             <div class="col">
-                <form action="/udpservercheckonline" method="POST" enctype="multipart/form-data" id = "fileform">
-                    <h3><u class="font-weight-bold text-primary">STEP X:</u> Check Connections</h3>
-                    <small id="help3" class="form-text text-muted">Check connections between server and client.</small>
-                    <br>
-                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">CHECK CONNECTIONS</button>
-                </form>
-            </div>
-            <div class="col">
-                <h3><u class="font-weight-bold text-primary">STEP X:</u> Upload Hardware Data</h3>
+                <h3><u class="font-weight-bold text-primary">STEP X:</u> Insert Hardware Data</h3>
                 <small id="help3" class="form-text text-muted">Insert hardware data from folder to Database</small>
                 <br>
                 <button id="parse_hardware" type="button" class="btn btn-primary" onclick="trigger_hw()">
                     INSERT DATA
-                </button>
-                
+                </button>               
+            </div>
+            <div class="col">
+                <h3><u class="font-weight-bold text-primary">STEP X:</u> Insert Benchmark Data</h3>
+                <small id="help4" class="form-text text-muted">Insert benchmark data from folder to Database</small>
+                <br>
+                <button id="parse_benchmark" type="button" class="btn btn-primary" onclick="trigger_bm()">
+                    INSERT DATA
+                </button>               
+            </div>
+        </div>
+        <hr class="solid">
+         <div class ="row">
+            <div class="col">
+                <form action="/udpservercheckonline" method="POST" enctype="multipart/form-data" id = "fileform">
+                    <h3><u class="font-weight-bold text-primary">STEP X:</u> Check Connections</h3>
+                    <small id="help5" class="form-text text-muted">Check connections between server and client.</small>
+                    <br>
+                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">CHECK CONNECTIONS</button>
+                </form>
             </div>
         </div>
         
@@ -241,7 +251,7 @@
                 beforeSend: function(){ ///Write executing to button while sending and retrieving data.
                     console.log("Executing...");
                     var button = document.getElementById("parse_hardware");
-                    document.getElementById("parse_hardware").innerHTML = "Loading";
+                    document.getElementById("parse_hardware").innerHTML = "Loading ...";
                     if(!button.classList.replace("btn-primary","btn-info")) {
                         if(!button.classList.replace("btn-danger", "btn-info")){
                             button.classList.replace("btn-success", "btn-info")
@@ -255,17 +265,56 @@
                         console.log(data[key]);
                         if(data[key] == "OK"){
                             button.classList.replace("btn-info","btn-success")
-                            document.getElementById("parse_hardware").innerHTML = "OK";
+                            document.getElementById("parse_hardware").innerHTML = "INSERT DONE";
                         }
                         else{
                             console.log(key + ": " + data[key]);
                             button.classList.replace("btn-info","btn-danger")
-                            document.getElementById("parse_hardware").innerHTML = "ERROR";
+                            document.getElementById("parse_hardware").innerHTML = "INSERT FAILED";
                         } 
                     }
                 }
             });
         }
+        
+        function trigger_bm(){
+            $.call_bm_script();
+        }
+        $.call_bm_script = function(){
+            $.ajax({
+                url: '/benchmark_result_parser',
+                dataType : "JSON",
+                type : "GET",
+                beforeSend: function(){ ///Write executing to button while sending and retrieving data.
+                    console.log("Executing benchmark parser...");
+                    var button = document.getElementById("parse_benchmark");
+                    document.getElementById("parse_benchmark").innerHTML = "Loading ...";
+                    if(!button.classList.replace("btn-primary","btn-info")) {
+                        if(!button.classList.replace("btn-danger", "btn-info")){
+                            button.classList.replace("btn-success", "btn-info")
+                        }
+                    }
+                },
+                success: function(result){
+                    var data = result;
+                    var button = document.getElementById("parse_benchmark");                   
+                    for(var key in data){
+                        console.log(key);
+                        console.log(data[key]);
+                    }
+                    if(data['Insert Status'] == "success"){
+                        button.classList.replace("btn-info","btn-success")
+                        button.innerHTML = "INSERT DONE";
+                    }
+                    else{
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("btn-info","btn-danger")
+                        button.innerHTML = "INSERT FAILED";
+                    } 
+                }
+            });
+        }
+        
         
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
