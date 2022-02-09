@@ -289,7 +289,7 @@
                         }
                     }
                     else{
-                        for(var i = 0; i < ids.length(); i++){
+                        for(var i = 0; i < ids.length; i++){
                             document.getElementById(ids[i]).style.color = "yellow";
                         }
                     } 
@@ -310,13 +310,13 @@
                 var data = result;
                 for(var key in data){
                     if(data[key] == 1){
-                        document.getElementById(id).style.color = "red";
+                        document.getElementById(key).style.color = "red";
                     } 
                     else if(data[key] == -1){
-                        document.getElementById(id).style.color = "white";
+                        document.getElementById(key).style.color = "white";
                     }
                     else{
-                        document.getElementById(id).style.color = "yellow";
+                        document.getElementById(key).style.color = "yellow";
                     }
                 }
             }

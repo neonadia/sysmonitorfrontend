@@ -1557,6 +1557,7 @@ def udpdeleteobject():
 @app.route('/udpstarobject')
 def udpstarobject():
     data = request.args.get('id')
+    result = {}
     try:        
         set_value = list(udp_collection.find({'_id':ObjectId(data)}))[0]['star'] * -1 # change the star to unstar or change the unstar to star
         os_ip = list(udp_collection.find({'_id':ObjectId(data)}))[0]['os_ip']
@@ -1565,12 +1566,14 @@ def udpstarobject():
         if set_value == 1:
             for cur_obj in list(udp_collection.find({'os_ip':os_ip, 'benchmark':benchmark})):
                 udp_collection.find_one_and_update({'_id':cur_obj['_id']},{'$set':{'star':-1}})
-        udp_collection.find_one_and_update({'_id':ObjectId(data)},{'$set':{'star':set_value}})  
-        set_value = {'value':set_value}      
+                result[str(cur_obj['_id'])] = -1
+                printf('Unselect: ' + str(cur_obj['_id']))
+        result[data] = set_value
+        udp_collection.find_one_and_update({'_id':ObjectId(data)},{'$set':{'star':set_value}})       
     except Exception as e:
         printf('Error msg:' + str(e))
-        set_value = {'value': 0}
-    data = json.dumps(set_value)
+        result = {'value': 0}
+    data = json.dumps(result)
     return data
 
 @app.route('/udpunstarallobject')
@@ -1612,7 +1615,10 @@ def udpautostar():
         for i in range(len(list(udp_collection.find({})))):
             udp_collection.find_one_and_update({'star':1},{'$set':{'star':-1}})
         # find best results, non-float/non-int results will be treat as one
-        obj_autostar = {}
+        obj_autostar = {} 
+        # obj_autostar = { bm_name_1: {os_ip_1: [resultMul, result_id], os_ip_2: [resultMul, result_id]} \
+        #                  bm_name_2: {os_ip_1: [resultMul, result_id], os_ip_2: [resultMul, result_id]} \
+        #                }
         for oneResult in list(udp_collection.find({})):
             if oneResult['benchmark'] in obj_autostar.keys():
                 resultMul = 1
@@ -1630,6 +1636,21 @@ def udpautostar():
                     if type(num) == float or type(num) == int:
                         resultMul *= num
                 obj_autostar[oneResult['benchmark']] = {oneResult['os_ip']:[resultMul,oneResult['_id']]}
+        # select best non-numerical results:
+        # obj_autostar = { bm_name_1: {os_ip_1: ['PASS', result_id], os_ip_2: ['PASS', result_id]} \
+        #                  bm_name_2: {os_ip_1: ['FAILED', result_id], os_ip_2: ['PASS', result_id]} \
+        #                }
+        # PASS reuslt has higher priority than failed ones.        
+        for oneResult in list(udp_collection.find({})):
+            if oneResult['benchmark'] in obj_autostar.keys():
+                if oneResult['os_ip'] not in obj_autostar[oneResult['benchmark']].keys():
+                    obj_autostar[oneResult['benchmark']][oneResult['os_ip']] = [oneResult['conclusion'],oneResult['_id']]
+                for ip in obj_autostar[oneResult['benchmark']].keys():
+                    if ip == oneResult['os_ip'] and obj_autostar[oneResult['benchmark']][ip][0] == 'FAILED' and oneResult['conclusion'] == 'PASS':
+                        obj_autostar[oneResult['benchmark']][ip] = [oneResult['conclusion'],oneResult['_id']]
+            elif oneResult['benchmark'] not in obj_autostar.keys():
+                obj_autostar[oneResult['benchmark']] = {oneResult['os_ip']:[oneResult['conclusion'],oneResult['_id']]}
+        
         # star the latest results
         for bm in obj_autostar.keys():
             for ip in obj_autostar[bm].keys():

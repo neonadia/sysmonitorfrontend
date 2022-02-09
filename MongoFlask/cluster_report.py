@@ -46,6 +46,15 @@ def cleanUnits(unitsList, opt):
     else:
         return unitsList[0][opt]
 
+def create_table_colors(table_length,header_color,other_color):
+    table_colors_list = []
+    for i in range(table_length):
+        if i == 0:
+            table_colors_list.append(header_color)
+        else:
+            table_colors_list.append(other_color)
+    return tuple(table_colors_list)
+
 mongoport = int(os.environ['MONGOPORT']) # using in jupyter: 8888
 rackname = os.environ['RACKNAME'].upper() 
 client = MongoClient('localhost', mongoport) # using in jupyter: change localhost to 172.27.28.15
@@ -547,8 +556,7 @@ class Test(object):
         table.setStyle(TableStyle([
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-            ('ROWBACKGROUNDS', (0, 0), (-1, -1), (0xD0D0FF, 0xFFD0D0)),
-            ("LINEBELOW", (0,0), (-1,-1), 1, colors.blue)
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
         ]))
         ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Cluster Summary</link> 
 / <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">Hardware Counts</link> 
@@ -563,8 +571,7 @@ class Test(object):
         table2.setStyle(TableStyle([
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black), 
-            ('ROWBACKGROUNDS', (0, 0), (-1, -1), (0xFFD0D0, 0xD0D0FF)),
-            ("LINEBELOW", (0,0), (-1,-1), 1, colors.blue)
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data2),colors.lightgrey,colors.lightblue))
         ]))
         
         paragraph1 = Paragraph(ptext1, centered)
@@ -724,8 +731,7 @@ class Test(object):
                 table3.setStyle(TableStyle([
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
                     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), (0xD0D0FF, 0xFFD0D0)),
-                    ("LINEBELOW", (0,0), (-1,-1), 1, colors.blue)
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
                 ]))
                 self.story.append(table3)
         else:
@@ -988,11 +994,11 @@ class Test(object):
                                 formatted_line_data.append(p1)
                             data3.append(formatted_line_data)
                             formatted_line_data = []
-
+                printf(name + ' Table length is ' + str(len(data3)))
                 t = Table(data3, colWidths=90, rowHeights=40, style=[
                     ('GRID',(0,0), (-1,-1),0.5,colors.black),
                     ('ALIGN', (0,-1),(-1,-1), 'CENTER'),
-                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), (colors.gold, colors.lightgrey))
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
                 ])
                 #self.story.append(KeepTogether([draw,spacer,t,spacer,p]))
                 self.story.append(KeepTogether([spacer,benchmarks_chartTitle,draw,spacer,spacer,benchmarks_tableTitle,spacer_median,cur_benchmark_title,spacer_median,t,spacer_median,hr_line,spacer]))
@@ -1024,11 +1030,12 @@ class Test(object):
                                 formatted_line_data.append(p1)
                             data3.append(formatted_line_data)
                             formatted_line_data = []
-
-                t = Table(data3, colWidths=90, rowHeights=40, style=[
+                printf(name + ' Table length is ' + str(len(data3)))
+                
+                t = Table(data3, colWidths=90, rowHeights=30, style=[
                     ('GRID',(0,0), (-1,-1),0.5,colors.black),
                     ('ALIGN', (0,-1),(-1,-1), 'CENTER'),
-                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), (colors.gold, colors.lightgrey))
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
                 ])
                 #self.story.append(KeepTogether([draw,spacer,t,spacer,p]))
                 self.story.append(KeepTogether([benchmarks_tableTitle_non_num,spacer_median,cur_benchmark_title,spacer_median,t,spacer_median,hr_line,spacer]))
