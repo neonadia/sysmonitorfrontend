@@ -995,7 +995,7 @@ class Test(object):
                             data3.append(formatted_line_data)
                             formatted_line_data = []
                 printf(name + ' Table length is ' + str(len(data3)))
-                t = Table(data3, colWidths=90, rowHeights=40, style=[
+                t = Table(data3, colWidths=80, rowHeights=40, style=[
                     ('GRID',(0,0), (-1,-1),0.5,colors.black),
                     ('ALIGN', (0,-1),(-1,-1), 'CENTER'),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
@@ -1032,7 +1032,7 @@ class Test(object):
                             formatted_line_data = []
                 printf(name + ' Table length is ' + str(len(data3)))
                 
-                t = Table(data3, colWidths=90, rowHeights=30, style=[
+                t = Table(data3, colWidths=80, rowHeights=30, style=[
                     ('GRID',(0,0), (-1,-1),0.5,colors.black),
                     ('ALIGN', (0,-1),(-1,-1), 'CENTER'),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
