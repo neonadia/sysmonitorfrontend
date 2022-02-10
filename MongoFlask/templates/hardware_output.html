@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>hardware_output</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <style>
+        table,
+        thead,
+        tr,
+        tbody,
+        th,
+        td {
+        text-align: center;
+        }
+        .table td {
+        text-align: center;
+        }
+        .dropdown-menu{
+            min-width: 0rem;
+        }
+        .dropdown-menu li {
+          position: relative;
+        }
+        .dropright .dropdown-menu{
+            width: min-content;
+            height: min-content;
+            text-align: center;
+            margin: 0%;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+<ul class="navbar-nav" id="nav_bar">
+
+    <li class='nav-item'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-home"></i>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
+            <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+        </div>
+    </li>
+    <li class='dropdown'>
+        <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" href="{{ url_for('udpserverupload') }}" target="_blank" type="button">
+            UDP SERVER v1.0
+        </a>
+    </li>
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="{{ url_for('downloadClusterReport') }}" role="button">
+        CLUSTER REPORT
+        </a>
+    </li>
+    <li class="dropdown">
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Advanced Features
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="{{ url_for('biosupload') }}" target="_blank">BIOS Update</a>
+                <a class="dropdown-item" href="{{ url_for('bmcupload') }}" target="_blank">BMC Update</a>
+                <a class="dropdown-item" href="{{ url_for('systemresetupload') }}" target="_blank">Power Reset Test</a>
+                <a class="dropdown-item" href="{{ url_for('bmceventcleanerupload') }}" target="_blank">BMC Events Cleaner</a>
+                <a class="dropdown-item" href="{{ url_for('ipmitoolcommandlineupload') }}" target="_blank">IPMI CLI</a>
+                <a class="dropdown-item" href="{{ url_for('checkipmisensor') }}" target="_blank">IPMI Sensor Check</a>
+                <a class="dropdown-item" href="{{ url_for('bioscomparisonoutput') }}" target="_blank">BIOS Comparison</a>
+                <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
+                <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
+                <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+                <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
+            </div>
+    </li>
+    <li class='dropdown'>
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="clock" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item">This is the local time of docker container.</a> 
+            </div>
+    </li>
+    <li class='nav-item'>
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="parse_hardware" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_hw()">
+            Load hardware data
+        </button>
+    </li>
+    <!-- <li class='nav-item' style="align-self:center; padding-left: 2%;" >
+        <form action="/hardware_output" method="POST" enctype="multipart/form-data" id = "fileform" style="display: flex;" >
+            <input type="file" id="file_input" name="file_field"   webkitdirectory directory/>
+            <input type="text" id="directories" name="directories" hidden />
+            <input type="submit"/>
+        </form>
+    </li> -->
+</ul>
+</nav>
+<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
+<table id="indexpage" class="table table-bordered table-striped" style="width:100%">
+    <thead class="thead-dark" >
+        <th class="align-middle" >No.</th>
+        <th class="align-middle" >HOSTNAME</th>
+        <th class="align-middle" >BMC_IP</th>
+        <th class="align-middle" >CPU</th>
+        <th class="align-middle" >MEMORY</th>
+        <th class="align-middle" >STORAGE</th>
+        <th class="align-middle" >NETWORKING</th>
+        <th class="align-middle" >GRAPHICS</th>
+        <th class="align-middle" >PSU</th>
+        <th class="align-middle" >FANS</th>
+		<th class="align-middle" >JSON</th>
+    </thead>
+    <tbody>
+        {% for hostname, bmc_ip, cpu, memory, storage, nics, gpu, psu, fans in data %}
+            <tr>
+                <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
+                <td class="align-middle font-weight-bold " >{{ hostname }}</td>
+                <td class="align-middle">
+                    <div class="dropdown dropright">  
+                        <a class="font-weight-bold"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{bmc_ip}}
+                        </a>
+                        <u1 class="dropdown-menu" aria-labelledby="dropdownMenuButton" x-placement="right-start" style="right:0px align-middle" >
+                            <li class= "dropdown-item align-items-center font-weight-bold" >Go to </li>
+                            <div class="dropdown-divider"></div>
+                            <li>
+                            <a class="dropdown-item align-middle " href="https://{{ bmc_ip }}" target="_blank">BMC Page</a>
+                            </li>
+                            <li>
+                            <a class="dropdown-item align-middle" href="javascript:void(0)" onclick="get_ikvm('{{bmc_ip}}')"> IKVM ({{bmc_ip}})</a>    
+                            </li>
+                        </u1>
+                    </div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_cpu_menu" style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_cpu_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_memory_menu"  style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_memory_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_storage')"> {{storage}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_storage_menu"  style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_storage_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_nics_menu" style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_nics_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_gpu')"> {{gpu}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_gpu_menu"  style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_gpu_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_psu')"> {{psu}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_psu_menu"  style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_psu_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_fans')"> {{fans}} </a>
+					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_fans_menu"  style="width: max-content;"> 
+						<ul id= "{{bmc_ip}}_fans_submenu" style="text-align: left; display: none"> </ul> 
+					</div>
+                </td>
+                <td class="align-middle">
+                    <a class="fas fa-file-archive" style="font-size: 24px" href="{{ url_for('get_node_hardware_json') }}?var={{ bmc_ip }}"></a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<!-- Footer -->
+<footer class="page-footer font-small teal pt-4 bg-primary text-white">
+  <!-- Footer Text -->
+  <div class="container-fluid text-center text-md-left">
+        <!-- Content -->
+        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+        </p>
+  </div>
+  <!-- Footer Text -->
+  <!-- Copyright  class="footer-copyright text-center py-3" -->
+  <div class="text-center text-light bg-dark">Copyright © 2021 
+    <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+    All Rights Reserved
+  </div>
+  <!-- Copyright -->
+</footer>
+<!-- Footer -->
+<script>
+    function show_details(val1){
+        var substrings = val1.split('_');
+        var bmc_ip = substrings[0];
+        var hardware = substrings[1];
+        console.log(hardware + " " + bmc_ip);///For debug
+		var menu = document.getElementById(val1 + "_submenu");
+		console.log(menu);
+		if (menu.style.display === "block") {
+			menu.style.display = "none";
+		} 
+		else{
+			if(hardware !== "N/A"){
+				$.fetch_hardware(bmc_ip,hardware);
+			}
+		}
+    }
+    $.fetch_hardware = function(bmc_ip,hardware){
+        $.ajax({
+            url: '/get_hardware_details',
+            data: {ip: bmc_ip, hw: hardware},
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                var html_element = bmc_ip + "_" + hardware + "_submenu";
+                var menu = document.getElementById(html_element);
+                if(menu.style.display === "none"){
+                    menu.style.display = "block";
+                    menu.innerHTML = "";
+                    if(hardware === "cpu"){
+                        for(var key in data){
+                            menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
+                        }
+                    }
+                    else if(hardware == "memory"){
+                        for(var key in data){
+                            menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
+                        }                       
+                    }
+                    else if(hardware == "storage"){
+                        for(var key in data){
+                            var newkey = key+bmc_ip
+                            menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
+                            for (var subkey in data[key]){
+                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                            }
+                        }                       
+                    }
+                    else if(hardware == "nics"){
+                        for(var key in data){
+                            menu.insertAdjacentHTML('beforeend',"<li style=bold> " +  data[key]  + "</li>");
+                        }   
+                    }
+                    else if(hardware == "gpu"){
+                        var i = 0
+                        for(var key in data){
+                            var newkey = "GPU"+ i + bmc_ip
+                            menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
+                            for (var subkey in data[key]){
+                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                            }
+                            i++;
+                        }   
+                    }
+                    else if(hardware == "psu"){
+                        var i = 0
+                        for(var key in data){
+                            var newkey = "PSU"+ i + bmc_ip
+                            menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
+                            for (var subkey in data[key]){
+                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                            }
+                            i++;
+                        }   
+                    }
+                    else if(hardware == "fans"){
+                        for(var key in data){
+                            menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
+                        }   
+                    }
+
+                }
+            }
+        });
+    }
+    function get_ikvm(val1){
+        $.ikvm(val1);
+    }
+    $.ikvm = function(val1){
+        $.ajax({
+            url: '/ajax_get_ikvm',
+            data: {ip: val1},
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                var ikvm_id = "ikvm_url:" + val1
+                for(var key in data){
+                    ikvm_url = "https://" + data[key]; 
+                }
+                window.open(ikvm_url, '_blank');
+            }
+        });
+    }
+    function trigger_hw(){
+        $.call_hw_script();
+    }
+    $.call_hw_script = function(){
+        $.ajax({
+            url: '/hardware_parser',
+            dataType : "JSON",
+            type : "GET",
+            beforeSend: function(){ 
+                console.log("Executing...");
+                var button = document.getElementById("parse_hardware");
+                document.getElementById("parse_hardware").innerHTML = "Loading";
+                if(!button.classList.replace("btn-primary","btn-info")) {
+                    if(!button.classList.replace("btn-danger", "btn-info")){
+                        button.classList.replace("btn-success", "btn-info")
+                    }
+                }
+            },
+            success: function(result){
+                var data = result;
+                var button = document.getElementById("parse_hardware");
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "OK"){
+                        button.classList.replace("btn-info","btn-success")
+                        document.getElementById("parse_hardware").innerHTML = "OK";
+                        window.location.reload();
+                    }
+                    else{
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("btn-info","btn-danger")
+                        document.getElementById("parse_hardware").innerHTML = "ERROR";
+                    } 
+                }
+            }
+        });
+    }
+    function startTime() {
+        var today = new Date()
+        //today.setHours(today.getHours() + 7) // adjust time
+        var year = today.getYear() + 1900;
+        var month = today.getMonth() + 1;
+        var day = today.getDate();
+        var h = today.getHours();
+        var m = today.getMinutes();
+        var s = today.getSeconds();
+        year = checkTime(year);
+        month = checkTime(month);
+        day = checkTime(day);
+        h = checkTime(h);
+        m = checkTime(m);
+        s = checkTime(s);
+        document.getElementById('clock').innerHTML = year + "-" + month + "-" + day + " " + h + ":" + m + ":" + s;
+        var t = setTimeout(startTime, 500);
+    }
+    function checkTime(i) {
+        if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
+        return i;
+    }
+    startTime();
+    $(document).ready(function() {
+        $('#indexpage').DataTable( {
+            "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
+            "pageLength" : -1,
+            dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
+            stateSave: true,
+            buttons: [
+                       'colvis'
+            ],
+        } );
+    } );
+</script>
+</body>
+</html>
+

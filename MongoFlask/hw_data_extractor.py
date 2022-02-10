@@ -1,19 +1,18 @@
 import pandas as pd
-import numpy as np
 import os
 import json
-from pandas import ExcelWriter
 import pymongo
 import sys
+import math
 mongoport = int(os.environ['MONGOPORT'])
 client = pymongo.MongoClient('localhost', mongoport)
 db = client.redfish
-collection = db.hw_data
+collection = db.hw_data ### MongoDB Collection
 ### Get hostname from input file (.csv), insert dash to reflect, and get bmc_ip list
 df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
-hostname_list = df_pwd['mac']
+hostname_list = df_pwd['mac'] #### Get mac address from pwd#.txt
 new_hostname_list = []
-for i in hostname_list:
+for i in hostname_list: ### Convert MAC address to xx-xx-xx-xx-xx format
     if ":" in i:
         new = i.replace(":","-")
         new_hostname_list.append(new.lower())
@@ -27,19 +26,17 @@ for i in hostname_list:
                 new += i[x]
         new_hostname_list.append(new.lower())
 inputhosts = new_hostname_list
-del new_hostname_list
-bmc_ips = list(df_pwd['ip']) 
-
+bmc_ips = list(df_pwd['ip'])  #### Get BMC_IPs from pwd#.txt
 
 # inputdir = "/app/RACK/"  i.e example path
-directory = os.environ['UPLOADPATH']
-# inputdir = directory + "/hw_data/"
+directory = os.environ['UPLOADPATH'] #### Usually /app/<YOUR FOLDER FROM WHICH YOU DECLARED IN auto.env
+# inputdir = directory + "/hw_data/" Navigate to your hardware logs folder. Needs to contain "hw_data" in the name in order to be flagged
 for x in os.listdir(directory):
     if 'hw_data' in x:
         if os.path.isdir(directory + x):
             inputdir = directory + x
-##### FIND SUB DIRECTORIES #################
-all_files = {}
+##### FIND DIRECTORIES #################
+all_files = {} #### Create dictionary of the hw_data directory to map all the subdirectories and files
 try:
     for dirname in os.listdir(inputdir):
         if os.path.isdir(inputdir+'/' +dirname) and "hw_info" in dirname:
@@ -68,10 +65,13 @@ for file in os.listdir(inputdir):
                     OS = i.split("=")[1]
                 elif "GPU" in i:
                     GPU = i.split("=")[1]
-        if OS == "" or GPU == "":
+        if OS == "":
             found = False
             print("Missing one or more variables in conf file",file=sys.stderr,flush=True)
             break
+        elif OS != "" and GPU == "":
+            found = True
+            print("Missing GPU variable in conf file but that is OK",flush=True)
         else:
             found = True
             break
@@ -81,51 +81,87 @@ print(OS + " " + GPU, file=sys.stdout, flush=True) #For debug
 
 ##### GET HOST NAMES FROM DIRECTORIES and Parse through data
 if found:
-    if OS == "ubuntu" or OS == 'centos':
-        print("Parsing hw info for ubuntu...", flush=True)
+    if OS == "ubuntu" or OS == "centos": #### FOR UBUNTU or CENTOS 
+        print("Parsing hw info for..." + OS,flush = True)
         for key in all_files.keys():
             hostname = str(key).split("_")[2]
             item = collection.find({},{"Hostname":1,"_id":0})
             hostlist = list(item)
-            if len(hostlist) == 0:
-                for i in range(len(inputhosts)):
-                        if inputhosts[i] == hostname:
-                            collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
-            else:
-                found = False
-                for i in range(len(hostlist)):
-                    temp_dict = hostlist[i]
-                    temp_name = temp_dict["Hostname"]
-                    if hostname == temp_name:
-                        found = True
-                if not found:
-                    for i in range(len(inputhosts)):
-                        if inputhosts[i] == hostname:
-                            collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+            # if len(hostlist) == 0:######## Search for existing document in mongo DB, if exists delete and create a new empty doc, or create a new empty doc if does not exist.
+            #     for i in range(len(inputhosts)):
+            #             if inputhosts[i] == hostname:
+            #                 collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+            # else:
+            #     found = False
+            #     for i in range(len(hostlist)):
+            #         temp_dict = hostlist[i]
+            #         temp_name = temp_dict["Hostname"]
+            #         if hostname == temp_name:
+            #             found = True
+            #             collection.delete_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+            #             collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+            #     if not found:
+            #         for i in range(len(inputhosts)):
+            #             if inputhosts[i] == hostname:
+            #                 collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+            for i in range(len(inputhosts)):
+                if hostname == inputhosts[i]:
+                    collection.delete_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+                    collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
 
+            storage_dict = {"Storage":{}} ### Storage entry consists of two seperate file( nvme or hdd). Creating a variable to cover the scope of the following for loop
             for file in all_files[key]:
                 ######## PARSE CPU HARDWARE DATA
                 # cpu info parser
-                if 'cpu' in file and 'json' in file:
-                    df_cpu_single = pd.read_json(file)
-                    dict_cpu_cur = {}
-                    for i in df_cpu_single['lscpu']:
-                        dict_cpu_cur[i['field'].split(":")[0]] = i['data']
-                    cpu_dict = {"CPU":dict_cpu_cur}
-                    collection.update_one({"Hostname":hostname},{"$set":cpu_dict})
-        #             collection.insert_one({"Hostname":hostname,"CPU":cpu_dict})
+                if 'cpu' in file:
+                    if 'json' in file:
+                        try:
+                            df_cpu_single = pd.read_json(file)
+                        except:
+                            print("Error: cannot read lscpu json file. Might be empty or wrong format. I hope you have a backup plan....",flush=True)
+                        else:
+                            dict_cpu_cur = {}
+                            for i in df_cpu_single['lscpu']:
+                                dict_cpu_cur[i['field'].split(":")[0]] = i['data']
+                            cpu_dict = {"CPU":dict_cpu_cur}
+                            collection.update_one({"Hostname":hostname},{"$set":cpu_dict})
+                    elif '.log' in file or '.txt' in file:
+                            cpu_dict = {"CPU":{}}
+                            with open(file,'r') as f:
+                                lines = f.readlines()
+                                for i in lines:
+                                    keyData = i.split(":")
+                                    cpu_dict['CPU'][keyData[0].strip()] = keyData[1].strip()
+                                    collection.update_one({"Hostname":hostname},{"$set":cpu_dict})
                 ######### PARSE STORAGE DATA (from nvme-cli in json format)
                 # # Opening JSON file
                 elif 'nvme' in file and 'json' in file:
                     with open(file) as json_file:
                         nvme_data = json.load(json_file)
-                        storage_dict = {"Storage":{}}
-                        i = 0
+                        i = len(storage_dict["Storage"])
                         for device in nvme_data["Devices"]:
                             storage_dict["Storage"][str(i)] = device
-                            i+= 1
-                        ### Get dict data structure for mongo insertion
-                    collection.update_one({"Hostname":hostname},{"$set":storage_dict}) 
+                            i += 1
+                elif "hdd" in file and ".log" in file:
+                    with open(file,'r') as log:
+                        hdd_data = log.readlines()
+                        ModelNumber = []
+                        DevicePath = []
+                        SerialNumber = []
+                        PhysicalSize = []
+                        for line in hdd_data:
+                            if "product" in line:
+                                ModelNumber.append(line.split(":")[1].strip())
+                            elif "logical name" in line:
+                                DevicePath.append(line.split(":")[1].strip())
+                            elif "serial" in line:
+                                SerialNumber.append(line.split(":")[1].strip())
+                            elif "size" in line and "GiB" in line:
+                                PhysicalSize.append(int(line.split(":")[1].strip().split()[1].strip("(GB)").strip())* 1000000000)
+                        j = len(storage_dict["Storage"])
+                        for i in range(len(ModelNumber)):
+                            storage_dict["Storage"][str(j)] = {"DevicePath":DevicePath[i],"ModelNumber" : ModelNumber[i],"SerialNumber":SerialNumber[i],"PhysicalSize":PhysicalSize[i]}
+                            j += 1
                 ######## PARSE RAM specs ###########
                 elif 'memory' in file and 'txt' in file:
                     with open(file,"r") as cur_file:
@@ -140,7 +176,11 @@ if found:
                         size = []
                         for line in lines:
                             if 'Size:' in line and 'Volatile' not in line and 'Cache' not in line and 'Logical' not in line:
-                                size.append(line.split(":")[1].strip())
+                                temp_size = line.split(":")[1].strip()
+                                if "MB" in temp_size:
+                                    gb_converter = math.trunc(round(int(temp_size.split(" ")[0]) / 1000,0))
+                                    temp_size = str(gb_converter) + " GB"
+                                size.append(temp_size)
                             elif 'Serial Number' in line:
                                 serial_nums.append(line.split(":")[1].strip())
                             elif 'Configured Memory Speed' in line:
@@ -157,7 +197,8 @@ if found:
                                 dimms_no = line.split(":")[1].strip()
                         gb = 0
                         for i in size:
-                            gb += int(i.split(" ")[0])
+                            if i != "No Module Installed":
+                                gb += int(i.split(" ")[0])
                         total_mem = gb
                         memory_data = {"Memory":{"DIMMS":dimms_no,"Total Memory":str(total_mem),"Slots": {}}}
                         for i in range(len(size)):
@@ -196,7 +237,7 @@ if found:
                                         headers = line.split(",")
                                         for iter in range(len(headers)):
                                             if 'device'in headers[iter]:
-                                                columns.update({'Device':iter});
+                                                columns.update({'Device':iter})
                                             elif 'GPU ID' in headers[iter]:
                                                 columns.update({"GPU ID":iter})
                                             elif 'VBIOS' in headers[iter]:
@@ -258,7 +299,6 @@ if found:
                         status = []
                         input_current = []
                         input_voltage = []
-
                         for line in lines:
                             if 'Item' in line:
                                 modules += 1
@@ -294,7 +334,10 @@ if found:
                                 fans["FANS"][str(i)] = {"name": line.split("|")[0].strip(),'status' :line.split("|")[2].strip(),"rpm":line.split("|")[1].strip() }
                                 i += 1
                         collection.update_one({"Hostname":hostname},{"$set":fans})
-                
+            if len(storage_dict["Storage"]) != 0: ##### If no storage logs were processed, do not update with empty dictionary.
+                collection.update_one({"Hostname":hostname},{"$set":storage_dict})
+                del storage_dict
 
 else:
-    print("Missing Configuration file",file=sys.stderr,flush=True)
+    print("Missing Configuration file",file=sys.stderr)
+    

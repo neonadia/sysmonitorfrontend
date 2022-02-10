@@ -4,6 +4,230 @@ import datetime
 from app import mongoport, rackname
 from multiprocessing import Pool
 from subprocess import Popen, PIPE
+import os
+from pymongo import MongoClient
+
+mongoport = int(os.environ['MONGOPORT'])
+client = MongoClient('localhost', mongoport)
+db = client.redfish
+collection = db.servers
+hardware_collection = db.hw_data
+def fetch_hardware_details(bmc_ip,hardware):
+    hardware_dict = hardware_collection.find_one({'bmc_ip':bmc_ip},{'_id':0})
+    NoneType = type(None)
+    if type(hardware_dict) != NoneType:
+        hw_dict = {}
+        if hardware == "cpu":
+            for i in hardware_dict:
+                    if i == "CPU":
+                        for j in hardware_dict[i]:
+                            if j != "Flags" and "Vulnerability" not in j:
+                                hw_dict[j] = hardware_dict[i][j]
+        elif hardware == "memory":
+            manufacturer = []
+            for i in hardware_dict:
+                if i == "Memory":
+                    for j in hardware_dict["Memory"]["Slots"]:
+                        if len(manufacturer) == 0:
+                            manufacturer.append(hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"])
+                        else:
+                            for m in manufacturer:
+                                if m != hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"] and hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"] != "NO DIMM":  
+                                    manufacturer.append(hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"])
+            for i,company in enumerate(manufacturer):
+                if len(manufacturer) == 1:
+                    hw_dict["Manufacturer"] = company
+                else:
+                    hw_dict["Manufacturer"+ "(" + str(i) + ")"] = company
+        elif hardware == "storage":
+            device_no = 0
+            for i in hardware_dict:
+                if i == "Storage":
+                    for j in hardware_dict[i]:
+                            temp_device_name = "Device"+ str(device_no)
+                            device_no += 1
+                            hw_dict[temp_device_name] = {}
+                            hw_dict[temp_device_name]["Model"] = hardware_dict[i][str(j)]["ModelNumber"]
+                            if "nvme" in hardware_dict[i][str(j)]["DevicePath"]:
+                                hw_dict[temp_device_name]["Type"] = "NVMe"
+                            else:
+                                hw_dict[temp_device_name]["Type"] = "HDD"
+                            hw_dict[temp_device_name]["Physical Size"] = str(int(hardware_dict[i][str(j)].get("PhysicalSize")) / 1000000000) + " GB"
+        elif hardware == "nics":
+            for i in hardware_dict:
+                if i == "NICS":
+                    for j in hardware_dict[i]:
+                        hw_dict[str(j)] = hardware_dict[i][str(j)]["Name"]
+        elif hardware == "gpu":
+            for i in hardware_dict:
+                if i == "Graphics":
+                    for j in hardware_dict[i]["GPU"]:
+                        temp_device_name = "GPU" + str(j)
+                        hw_dict[temp_device_name] = {}
+                        hw_dict[temp_device_name]["GPU Id"] = hardware_dict[i]["GPU"][str(j)]["GPU Id"]
+                        hw_dict[temp_device_name]["Series"] = hardware_dict[i]["GPU"][str(j)]["Series"]
+                        hw_dict[temp_device_name]["Model"] = hardware_dict[i]["GPU"][str(j)]["Model"]
+                        hw_dict[temp_device_name]["PCI Bus"] = hardware_dict[i]["GPU"][str(j)]["PCI Bus"]
+                        hw_dict[temp_device_name]["VBIOS"] = hardware_dict[i]["GPU"][str(j)]["VBIOS"]
+                        hw_dict[temp_device_name]["Serial No."] = hardware_dict[i]["GPU"][str(j)]["Serial No."]
+        elif hardware == "psu":
+            for i in hardware_dict:
+                if i == "PSU":
+                    for j in hardware_dict[i]:
+                        if j != "Number of PSUs":
+                            temp_device_name = "Unit" + str(j)
+                            hw_dict[temp_device_name] = {}
+                            hw_dict[temp_device_name]["Module No."] = hardware_dict[i][str(j)]["Module No."]
+                            hw_dict[temp_device_name]["Serial No."] = hardware_dict[i][str(j)]["Serial No."]
+        elif hardware == "fans":
+            for i in hardware_dict:
+                if i == "FANS":
+                    for j in hardware_dict[i]:
+                        hw_dict[hardware_dict[i][str(j)]["name"]] = hardware_dict[i][str(j)]["status"].upper()
+    
+    return hw_dict
+
+def get_hardwareData():
+    bmc_ips = []
+    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
+    for i in cur:
+        bmc_ips.append(i['BMC_IP'])
+    CPU = []
+    STORAGE = []
+    FANS = []
+    MEMORY = []
+    NICS = []
+    HOSTNAMES = []
+    PSU = []
+    GPU = []
+    equalizer = {"HOSTNAMES":0,"CPU": 0,"MEMORY":0,"STORAGE":0,"NICS":0,"GPU":0,"PSU":0,"FANS":0} #Equalizer scoreboard to have a symmetrical 2D array
+    NoneType = type(None)
+    for ip in bmc_ips:
+        hardware_dict = hardware_collection.find_one({'bmc_ip':ip},{'_id':0})
+        if type(hardware_dict) != NoneType:
+            for i in hardware_dict:
+                if "CPU" in i:
+                    cpu_string = ""
+                    add_string = ""
+                    speed_string = ""
+                    for j in hardware_dict[i]:
+                        if j == "Socket(s)":
+                            if hardware_dict[i][j] == "0":
+                                cpu_string = "N/A"
+                            else:
+                                cpu_string += hardware_dict[i][j] + "x "
+                        elif 'Model name' in j:
+                            cpu_string += hardware_dict[i][j]
+                    cpu_string += add_string + speed_string 
+                    CPU.append(cpu_string)
+                    equalizer["CPU"] += 1
+                elif "Memory" in i:
+                    dimm_no = ""
+                    total_mem = ""
+                    for j in hardware_dict[i]:
+                        if 'DIMMS' in j:
+                            dimm_no = hardware_dict[i][j]
+                        elif "Total Memory" in j:
+                            total_mem = hardware_dict[i][j]
+                    memory = dimm_no + " DIMMs; Total Memory: " + total_mem + "GB"
+                    MEMORY.append(memory)
+                    equalizer["MEMORY"] += 1
+                elif "PSU" in i:
+                    psu_num = ""
+                    psu_string = ""
+                    for j in hardware_dict[i]:
+                        if "Number" in j:
+                            psu_num = hardware_dict[str(i)][str(j)]
+                    psu_string += str(psu_num) + " PSUs"  
+                    PSU.append(psu_string)
+                    equalizer["PSU"] += 1
+                elif "Storage" in i:
+                    size = 0
+                    no_drives = 0
+                    for j in hardware_dict[i]:
+                        for k in hardware_dict[i][j]:
+                            if "PhysicalSize" in k:
+                                size += (hardware_dict[i][str(j)][k] / 1000000000)
+                                no_drives += 1
+                    gb_size = size
+                    storage = str(no_drives) + " drives; " + "Total System Storage: " + str(round(gb_size,1)) + " GB"
+                    STORAGE.append(storage)
+                    equalizer["STORAGE"] += 1
+                elif "NICS" in i:
+                    no_nics = 0
+                    for j in hardware_dict[i]:
+                        no_nics = int(j)
+                    no_nics += 1
+                    network = str(no_nics) + " network adapters"
+                    NICS.append(network)
+                    equalizer["NICS"] += 1
+                elif "Graphics" in i:
+                    no_gpus = 0
+                    maker = ""
+                    driver = ""
+                    for j in hardware_dict[i]:
+                        if "Number of GPUs" in j:
+                            no_gpus = int(hardware_dict[i][j])
+                        elif "Manufacturer" in j:
+                            maker = hardware_dict[i][j]
+                        elif "Driver Version" in j:
+                            driver = hardware_dict[i][j]
+                    graphics = str(no_gpus) + " " + maker  + " GPUs w/ " + driver + " driver"
+                    GPU.append(graphics)
+                    equalizer["GPU"] += 1
+                elif "FANS" in i:
+                    no_fans = 0
+                    for j in hardware_dict[i]:
+                        no_fans = int(j)
+                    no_fans += 1
+                    fans = "Number of fans: " + str(no_fans)
+                    FANS.append(fans)
+                    equalizer["FANS"] += 1
+                elif "Hostname" in i:
+                    HOSTNAMES.append(hardware_dict[i])
+                    equalizer["HOSTNAMES"] += 1
+        for i in equalizer:
+            compare = equalizer[i]
+            for j in equalizer:
+                if equalizer[j] < compare:
+                    equalizer[j] += 1
+                    if j == "CPU":
+                        CPU.append("N/A")
+                    elif j == "MEMORY":
+                        MEMORY.append("N/A")
+                    elif j == "HOSTNAMES":
+                        HOSTNAMES.append("N/A")
+                    elif j == "STORAGE":
+                        STORAGE.append("N/A")
+                    elif j == "NICS":
+                        NICS.append("N/A")
+                    elif j == "GPU":
+                        GPU.append("N/A")
+                    elif j == "PSU":
+                        PSU.append("N/A")
+                    else:
+                        FANS.append("N/A")
+                elif equalizer[j] > compare:
+                    compare += 1
+                    equalizer[i] = compare
+                    if i == "CPU":
+                        CPU.append("N/A")
+                    elif i == "MEMORY":
+                        MEMORY.append("N/A")
+                    elif i == "HOSTNAMES":
+                        HOSTNAMES.append("N/A")
+                    elif i == "STORAGE":
+                        STORAGE.append("N/A")
+                    elif i == "NICS":
+                        NICS.append("N/A")
+                    elif i == "GPU":
+                        GPU.append("N/A")
+                    elif i == "PSU":
+                        PSU.append("N/A")
+                    else:
+                        FANS.append("N/A")
+    data = zip(HOSTNAMES,bmc_ips,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)
+    return data
 
 def find_ikvm(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
@@ -18,9 +242,7 @@ def find_ikvm(bmc_ip):
             ikvm_addr = 'unknown'
             continue
     connect.close()
-
     return ikvm_addr
-
 
 def makeSmcipmiExcutable():
     process = Popen('find SMCIPMITOOL -type f -iname "*" -exec chmod +x {} \;', shell=True, stdout=PIPE, stderr=PIPE)

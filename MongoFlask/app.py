@@ -42,10 +42,11 @@ collection = db.servers
 monitor_collection = db.monitor
 udp_collection = db.udp
 udp_deleted_collection = db.udpdel
+hardware_collection = db.hw_data
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
-
+ 
 def printf(data):
     print(data, flush=True)
 
@@ -73,8 +74,6 @@ def get_node_time():
     time = {'Time' : date_time}
     data = json.dumps(time)
     return data
-
-
 
 @app.route('/uid_onoff')
 def uid_onoff():# Returns BLINKING, OFF, N/A
@@ -1555,6 +1554,24 @@ def udpdeleteobject():
         return render_template('error.html',error=e)
     return redirect(url_for('udpoutput'))
 
+@app.route('/udpdeleteallobject')
+def udpdeleteallobject():
+    deleted_data = {'Status': 'success'}
+    try:
+        for i in udp_collection.find({}):
+            backup = list(udp_collection.find({'_id':i['_id']}))[0]
+            backup['star'] = -1
+            udp_deleted_collection.insert(backup)
+            udp_collection.find_one_and_delete({'_id':i['_id']},{})
+            deleted_data[str(i['_id'])] = str(i['file_name'])
+    except Exception as e:
+        deleted_data = {'Status': 'failed'}
+        deleted_data = {'Error Message': str(e)}
+        printf(e)
+    data = json.dumps(deleted_data)
+    return data
+
+
 @app.route('/udpstarobject')
 def udpstarobject():
     data = request.args.get('id')
@@ -2315,6 +2332,32 @@ def chart_othertemperatures(bmc_ip):
         else:
             return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
 
+@app.route("/hardware_output",methods=["GET","POST"])
+def hardware_output():
+    data = get_data.get_hardwareData()
+    rackobserverurl = 'http://' + get_ip() + ':' +  os.environ['RACKPORT']
+    return render_template('hardware_output.html',data=data,rackobserverurl=rackobserverurl,rackname=rackname)
+
+@app.route('/get_node_hardware_json')
+def get_node_hardware_json():
+    bmc_ip = request.args.get('var')
+    cur_result = hardware_collection.find_one({'bmc_ip':bmc_ip},{'_id':0})
+    hostname = cur_result['Hostname']
+    try:
+        filename = os.environ['UPLOADPATH'] + hostname + "_hardware.json"
+        with open(filename, 'w') as output:
+            json.dump(cur_result,output)
+    except:
+        print("Error on downloading json",flush=True)
+    return send_file(filename,as_attachment=True,cache_timeout=0)
+
+@app.route("/get_hardware_details")
+def get_hardware_details():
+    bmc_ip = request.args.get('ip')
+    hardware = request.args.get('hw')
+    details = get_data.fetch_hardware_details(bmc_ip,hardware)
+    data = json.dumps(details)
+    return data
 
 @app.route('/hardware_parser')
 def hardware_parser():
@@ -2372,7 +2415,7 @@ def benchmark_result_parser():
             if os.path.isdir(inputdir + '/' + dirname) and clean_mac(dirname.split('_')[-1]) in mac_dict:
                 dirname_list.append(dirname)
                 cur_ip = mac_dict[clean_mac(dirname.split('_')[-1])]
-                print("###################################################### " + cur_ip + '||' + dirname + " #####################################################")
+                printf("###################################################### " + cur_ip + '||' + dirname + " #####################################################")
                 messages[cur_ip]  = dirname
                 for filename in os.listdir(inputdir + '/' + dirname):
                     for config in config_list:
@@ -2411,7 +2454,7 @@ def benchmark_result_parser():
         printf("Error message: " + str(e))
     data = json.dumps(messages)
     return data
-    
+
 
 def get_sensor_names(bmc_ip): #Sensor names only for header in html - return a various lists
     cpu_temps,vrm_temps,dimm_temps,sys_temps = get_temp_names(bmc_ip)
