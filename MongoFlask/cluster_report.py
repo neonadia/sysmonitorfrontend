@@ -346,8 +346,8 @@ for item in all_hw_data:
                 # Count the model
                 else:
                     cur_nic[nic['Name']] += 1
-                    
-        parsed_data[-1]['nic_model'] = '<br/>'.join(cur_nic.keys())
+        if len(item['NICS']) != 0:        
+            parsed_data[-1]['nic_model'] = '<br/>'.join(cur_nic.keys())
         for key in cur_nic:
             #print(cur_storage[key][1])
             parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].replace('0','')
@@ -377,13 +377,15 @@ for item in all_hw_data:
     
     if 'FANS' in item:
         num_fan = 0
+        num_ns = 0
         parsed_data[-1]['fan_note'] = 'All Good'
         for index_f in item['FANS']:
             fan = item['FANS'][index_f]
             if type(fan) == dict:
                 num_fan += 1
                 if fan.get('status') != 'ok':
-                    parsed_data[-1]['fan_note'] = 'Error'
+                    num_ns += 1
+        parsed_data[-1]['fan_note'] = str(num_ns) + ' fan(s) show ns'
         parsed_data[-1]['fan_num'] = str(num_fan)
     
     if 'Memory' in item:
@@ -394,8 +396,9 @@ for item in all_hw_data:
         if 'Slots' in item['Memory']:
             all_manufactures = []
             for dim in item['Memory']['Slots']:
-                if 'Manufacturer' in item['Memory']['Slots'][dim] and item['Memory']['Slots'][dim]['Manufacturer'] not in all_manufactures:
-                    all_manufactures.append(item['Memory']['Slots'][dim]['Manufacturer'])
+                if 'Manufacturer' in item['Memory']['Slots'][dim] and item['Memory']['Slots'][dim]['Manufacturer'] not in all_manufactures:                 
+                    if "NO DIMM" not in item['Memory']['Slots'][dim]['Manufacturer']:
+                        all_manufactures.append(item['Memory']['Slots'][dim]['Manufacturer'])
         #print(all_manufactures)
         parsed_data[-1]['mem_model'] = '<br/>'.join(all_manufactures)
 #parsed_data[0]['mac'] = -1
@@ -515,6 +518,7 @@ class Test(object):
         bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="black",leftIndent=0)
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         ## Create header with column names
         for text in text_data:
             ptext = "<font size=%s><b>%s</b></font>" % (font_size-2, text)
@@ -564,8 +568,8 @@ class Test(object):
 / <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
 / <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark Report</link>"""
         
-        ptext2 = """<a name="TABLE2"/><font color="black" size="12">Hardware Counts and Models """ + rackname + """</font>"""
-        ptext1 = """<a name="TABLE1"/><font color="black" size="12">Cluster Summary for """ + rackname + """</font>"""
+        ptext2 = """<a name="TABLE2"/><font color="black" size="12"><b>Hardware Counts and Models """ + rackname + """</b></font>"""
+        ptext1 = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Summary for """ + rackname + """</b></font>"""
         p = Paragraph(ptext, centered)
         table2 = Table(data2, colWidths=[95, 120, 40, 40, 70, 40, 70, 40])
         table2.setStyle(TableStyle([
@@ -620,7 +624,7 @@ class Test(object):
         
         ########################################Node by Node Hardware summary##################################################
         self.story.append(PageBreak())
-        ptext_hn = """<a name="TABLE3"/><font color="black" size="12">Detailed Hardware Information Per Node</font>"""
+        ptext_hn = """<a name="TABLE3"/><font color="black" size="12"><b>Detailed Hardware Information Per Node</b></font>"""
         hn_title = Paragraph(ptext_hn, centered)
         hn_title.keepWithNext = True
         self.story.append(hn_title) 
@@ -638,11 +642,9 @@ class Test(object):
         
         if 'hw_data' in list_of_collections and len(serialNumber) == len(MacAddress) and len(serialNumber) == len(parsed_data_sort):
             for sn, mac, cur_hw in zip(serialNumber, MacAddress, parsed_data_sort):
-                ptext_hn_sub = """<a name="NH_TITLE"/><font color="black" size="12">Hardware List of SN: """ + sn + """ MAC: """ + mac +"""</font>"""
-                hn_title_sub = Paragraph(ptext_hn_sub, centered)
+                ptext_hn_sub = """<a name="NH_TITLE"/><font color="black" size="12"><b>SN: """ + sn + """ MAC: """ + mac +"""</b></font>"""
+                hn_title_sub = Paragraph(ptext_hn_sub, bm_title)
                 hn_title_sub.keepWithNext = True
-                self.story.append(hn_title_sub) 
-                self.story.append(ConditionalSpacer(width=1, height=2.5))     
                 ## Create header with column names
                 d3 = []
                 hn_columns = ["Item Name", "Model Name", "Quantity", "Notes"]
@@ -727,13 +729,15 @@ class Test(object):
                         formatted_line_data.append(p3)
                     data3.append(formatted_line_data)
                     formatted_line_data = []
-                table3 = Table(data3, colWidths=[70, 170, 65, 170])
+                table3 = Table(data3, colWidths=[65, 160, 60, 155])
                 table3.setStyle(TableStyle([
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
                     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
                 ]))
-                self.story.append(table3)
+                #self.story.append(hn_title_sub) 
+                #self.story.append(ConditionalSpacer(width=1, height=2.5))     
+                self.story.append(KeepTogether([hn_title_sub,spacer_tiny,table3,spacer_tiny,hr_line,spacer_tiny]))
         else:
             ptext_hn_nodata = """
             Warning: No OS level Hardware Data can be found in Database:<br />
@@ -749,7 +753,7 @@ class Test(object):
         
         #Sensor reading charts
         self.story.append(PageBreak())
-        ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12">Sensor Reading Report</font>"""
+        ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12"><b>Sensor Reading Report</b></font>"""
         sr_title = Paragraph(ptext_sr, centered)
         sr_title.keepWithNext = True
         self.story.append(sr_title)
@@ -864,7 +868,7 @@ class Test(object):
         
         self.story.append(PageBreak())
         #benchmark charts and tables
-        ptext_bm = """<a name="BM_TITLE"/><font color="black" size="12">Benchmark Report</font>"""
+        ptext_bm = """<a name="BM_TITLE"/><font color="black" size="12"><b>Benchmark Report</b></font>"""
         benchmarks_title = Paragraph(ptext_bm, centered)
         benchmarks_title.keepWithNext = True    
         
@@ -906,7 +910,6 @@ class Test(object):
         ptext_table_non_num = 'Non-Numerical Results Table is as shown below'
         benchmark_number = 1
         
-        hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         
         
         for data, unit, node, name in zip(benchmark_data,benchmark_unit,benchmark_node,list(benchmark_map.keys())):

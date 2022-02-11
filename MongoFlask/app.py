@@ -44,11 +44,24 @@ udp_collection = db.udp
 udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
 
+
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
  
 def printf(data):
     print(data, flush=True)
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 @app.route('/ajax_get_ikvm')
 def get_ikvm():
@@ -287,20 +300,7 @@ def index():
   
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
-    rackobserverurl = 'http://' + get_ip() + ':' +  os.environ['RACKPORT']
     return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl,cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages, cur_time=cur_time, time_zone=time_zone)
-
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
 
 def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
@@ -318,7 +318,7 @@ def getSerialNumber(ipmiip):
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('about.html',rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/details')
 def details():
@@ -341,7 +341,7 @@ def details():
     memory = json2html.convert(json = details3)
     storage = json2html.convert(json = details4)
     pcie = json2html.convert(json = details5)
-    return render_template('details.html', ip=ip, bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages)
+    return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
 
 @app.route('/systemresetupload',methods=["GET","POST"])
 def systemresetupload():
@@ -368,7 +368,7 @@ def systemresetupload():
             resetfile.save(savepath + "resetip.txt")
             printf("{} has been saved as resetip.txt".format(resetfile.filename))
             return redirect(url_for('systemresetupload'))
-    return render_template('systemresetupload.html',data=zip(allips,indicators))
+    return render_template('systemresetupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/systemresetstart',methods=["GET","POST"])
 def systemresetstart():
@@ -423,14 +423,14 @@ def systemresetstart():
     os.remove(rstatuspath)
     #os.remove(savepath+"resetip.txt")
     result = "Power Reset Test Done"
-    return render_template('resetresult.html',iplist=iplist ,nreset=nreset, tp1=tp1, tp2=tp2, tspend=tspend, result=result)
+    return render_template('resetresult.html',iplist=iplist ,rackname=rackname,nreset=nreset, tp1=tp1, tp2=tp2, tspend=tspend, result=result,rackobserverurl = rackobserverurl)
     
 
 @app.route('/systembootup')
 def systembootup():
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "resetip.txt"
     if fileEmpty(filepath):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     df_reset = pd.read_csv(filepath,names=['ip'])
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     iplist = list(df_reset['ip'])
@@ -451,7 +451,7 @@ def systembootup():
 def systemshutdown():
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "resetip.txt"
     if fileEmpty(filepath):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     df_reset = pd.read_csv(filepath,names=['ip'])
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     iplist = list(df_reset['ip'])
@@ -459,7 +459,7 @@ def systemshutdown():
     pwd_list = []
     for ip in iplist:
         if ip not in iplist_rack:
-            return render_template('error.html',error="Assigned IP [" + ip + "] not belong to current rack!")
+            return render_template('error.html',error="Assigned IP [" + ip + "] not belong to current rack!",rackname=rackname,rackobserverurl = rackobserverurl)
         else:
             pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
     for ip, pwd in zip(iplist,pwd_list):
@@ -472,7 +472,7 @@ def systemshutdown():
 def systemreset():
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "resetip.txt"
     if fileEmpty(filepath):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     df_reset = pd.read_csv(filepath,names=['ip'])
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     iplist = list(df_reset['ip'])
@@ -480,7 +480,7 @@ def systemreset():
     pwd_list = []
     for ip in iplist:
         if ip not in iplist_rack:
-            return render_template('error.html',error="Assigned IP [" + ip + "] not belong to current rack!")
+            return render_template('error.html',error="Assigned IP [" + ip + "] not belong to current rack!",rackname=rackname,rackobserverurl = rackobserverurl)
         else:
             pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
     for ip, pwd in zip(iplist,pwd_list):
@@ -581,7 +581,7 @@ def checkipmisensor():
             prob_flags.append(1)
         else:
             prob_flags.append(0)
-    return render_template('checkipmisensor.html',data=zip(name_list,ip_list,pwd_list,sn_list,bmc_version,bios_version,cpld_version,num_all,num_workable,num_nonworkable,num_unknown,prob_flags))
+    return render_template('checkipmisensor.html',rackname=rackname,data=zip(name_list,ip_list,pwd_list,sn_list,bmc_version,bios_version,cpld_version,num_all,num_workable,num_nonworkable,num_unknown,prob_flags),rackobserverurl = rackobserverurl)
 
 @app.route('/systemresetstatus')
 def systemresetstatus():
@@ -593,7 +593,7 @@ def systemresetstatus():
                 data.append(line.replace('\n',''))
     except:
         data = ['Not Started Yet']
-    return render_template('systemresetstatus.html',data=data)
+    return render_template('systemresetstatus.html',rackname=rackname,data=data,rackobserverurl = rackobserverurl)
 
 
 
@@ -652,16 +652,16 @@ def biosupload():
             biosfile.save(os.path.join(savepath, "bios.222"))
             printf("{} has been saved as bios.222".format(biosfile.filename))
             return redirect(url_for('biosupload'))
-    return render_template('biosupload.html',ip_list = getIPlist())
+    return render_template('biosupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/biosupdate',methods=["GET","POST"])
 def biosupdate():
     ip = request.args.get('var')
-    return render_template('biosupdate.html',ip=ip)
+    return render_template('biosupdate.html',ip=ip,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/biosupdaterack',methods=["GET","POST"])
 def biosupdaterack():
-    return render_template('biosupdaterack.html',numOfNodes=len(getIPlist()))
+    return render_template('biosupdaterack.html',numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/biosupdatestartrack',methods=["GET","POST"])
 def biosupdatestartrack():
@@ -702,9 +702,9 @@ def biosupdatestartrack():
                 ip_nocomplete.append(list(df_pwd['ip'])[i] + " Not Completed!")
             else:
                 ip_nocomplete.append(list(df_pwd['ip'])[i])
-        return render_template('biosupdateresult.html', ips = ip_nocomplete, me = str(me), nvram = str(nvram), smbios = str(smbios), tspend = tspend, completion = "Not Completed!")
+        return render_template('biosupdateresult.html', ips = ip_nocomplete,rackname=rackname, me = str(me), nvram = str(nvram), smbios = str(smbios), tspend = tspend, completion = "Not Completed!",rackobserverurl = rackobserverurl)
     os.remove(fuopath)
-    return render_template('biosupdateresult.html', ips = list(df_pwd['ip']), me = str(me), nvram = str(nvram), smbios = str(smbios), tspend = tspend, completion = "Completed!")
+    return render_template('biosupdateresult.html', ips = list(df_pwd['ip']),rackname=rackname, me = str(me), nvram = str(nvram), smbios = str(smbios), tspend = tspend, completion = "Completed!",rackobserverurl = rackobserverurl)
 
 @app.route('/biosupdatestart',methods=["GET","POST"])
 def biosupdatestart():
@@ -733,28 +733,28 @@ def biosupdatestart():
             bftime = time.time()
             tspend = str(int(bftime - bstime)) + " secs"
             insert_flag(0) # updating ended
-            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!")
+            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!",rackname=rackname,rackobserverurl = rackobserverurl)
         biosflag = BiosUploadingFile(IPMI,biosfile,auth)
         if biosflag != None:
             CancelBiosUpdate(IPMI,auth)
             bftime = time.time()
             tspend = str(int(bftime - bstime)) + " secs"
             insert_flag(0) # updating ended
-            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!")
+            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!",rackname=rackname,rackobserverurl = rackobserverurl)
         biosflag = BiosStartUpdating(IPMI,auth,StrToBool(me),StrToBool(nvram),StrToBool(smbios))
         if biosflag != None:
             CancelBiosUpdate(IPMI,auth)
             bftime = time.time()
             tspend = str(int(bftime - bstime)) + " secs"
             insert_flag(0) # updating ended
-            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!")
+            return render_template('biosupdateresult.html', ips = [IPMI + " Not Completed!!"], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Not Completed!",rackname=rackname,rackobserverurl = rackobserverurl)
         systemRebootTesting(IPMI,auth,"GracefulRestart")
         time.sleep(3)
         insert_flag(0) # updating ended
         bftime = time.time()
         tspend = str(int(bftime - bstime)) + " secs"
     os.remove(fuopath)
-    return render_template('biosupdateresult.html', ips = [IPMI], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Completed")
+    return render_template('biosupdateresult.html', ips = [IPMI], me = str(StrToBool(me)), nvram = str(StrToBool(nvram)), smbios = str(StrToBool(smbios)), tspend = tspend, completion = "Completed",rackname=rackname,rackobserverurl = rackobserverurl)
 
 
 @app.route('/bmcupload',methods=["GET","POST"])
@@ -769,16 +769,16 @@ def bmcupload():
             bmcfile.save(os.path.join(savepath, "bmc.bin"))
             printf("{} has been saved as bmc.bin".format(bmcfile.filename))
             return redirect(url_for('bmcupload'))
-    return render_template('bmcupload.html',ip_list = getIPlist())
+    return render_template('bmcupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bmcupdaterack',methods=["GET","POST"])
 def bmcupdaterack():
     ip = str(request.args.get('var'))
     if ip == "ALL":
         ipstr = ",".join(str(x) for x in getIPlist())
-        return render_template('bmcupdaterack.html',ip = ipstr,numOfNodes=len(getIPlist()) )
+        return render_template('bmcupdaterack.html',ip = ipstr,numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl)
     else:
-        return render_template('bmcupdaterack.html',ip = ip,numOfNodes=1 )
+        return render_template('bmcupdaterack.html',ip = ip,numOfNodes=1,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bmcupdatestartrack',methods=["GET","POST"])
 def bmcupdatestartrack():
@@ -824,7 +824,7 @@ def bmcupdatestartrack():
                 ip_nocomplete.append(list(df_pwd['ip'])[i] + " Not Completed!")
             else:
                 ip_nocomplete.append(list(df_pwd['ip'])[i])       
-        return render_template('firmupdateresult.html', ips = ip_nocomplete, cfg = str(cfg), sdr = str(sdr), ssl = str(ssl), tspend = tspend, completion = "Not Completed!")
+        return render_template('firmupdateresult.html', ips = ip_nocomplete, cfg = str(cfg), sdr = str(sdr), ssl = str(ssl), tspend = tspend, completion = "Not Completed!",rackname=rackname,rackobserverurl = rackobserverurl)
     with open(fuopath, 'a') as rprint:
         rprint.write(time.asctime() + ": Checking BMC status.\n")
     for ip, pwd in zip(list(df_pwd['ip']),list(df_pwd['pwd'])):
@@ -832,7 +832,7 @@ def bmcupdatestartrack():
             time.sleep(5)
     os.remove(fuopath)
     insert_flag(0)
-    return render_template('firmupdateresult.html', ips = ip_list, cfg = str(cfg), sdr = str(sdr), ssl = str(ssl), tspend = tspend, completion = "Completed")
+    return render_template('firmupdateresult.html', ips = ip_list, cfg = str(cfg), sdr = str(sdr), ssl = str(ssl), tspend = tspend, completion = "Completed",rackname=rackname,rackobserverurl = rackobserverurl)
 
 
 @app.route('/firmwareupdatestatus')
@@ -845,7 +845,7 @@ def firmwareupdatestatus():
                 data.append(line.replace('\n',''))
     except:
         data = ['Not Started Yet']
-    return render_template('firmwareupdatestatus.html',data=data)
+    return render_template('firmwareupdatestatus.html',data=data,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bmceventcleanerupload',methods=["GET","POST"])
 def bmceventcleanerupload():
@@ -872,7 +872,7 @@ def bmceventcleanerupload():
             bmcipfile.save(savepath+"bmceventcleanerip.txt")
             printf("{} has been saved as bmceventcleanerip.txt".format(bmcipfile.filename))
             return redirect(url_for('bmceventcleanerupload'))
-    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators))
+    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bmceventcleanerstart',methods=["GET","POST"])
 def bmceventcleanerstart():
@@ -904,7 +904,7 @@ def bmceventcleanerstart():
         messages = []
         messages.append("BMC events has been cleaned up for the following IPs:")
         messages += iplist
-        return render_template('simpleresult.html',messages=messages)
+        return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/ipmitoolcommandlineupload',methods=["GET","POST"])
 def ipmitoolcommandlineupload():
@@ -931,7 +931,7 @@ def ipmitoolcommandlineupload():
             ipmitoolipfile.save(savepath + "ipmitoolip.txt")
             printf("{} has been saved as ipmitoolip.txt".format(ipmitoolipfile.filename))
             return redirect(url_for('ipmitoolcommandlineupload'))   
-    return render_template('ipmitoolcommandlineupload.html',data = zip(allips, indicators))
+    return render_template('ipmitoolcommandlineupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/ipmitoolstart',methods=["GET","POST"])
 def ipmitoolstart():
@@ -966,7 +966,7 @@ def ipmitoolstart():
             ipmistdout.append(ipmistartone(data[i])[0])
             ipmistderr.append(ipmistartone(data[i])[1])
         #os.remove(savepath+"ipmitoolip.txt")
-        return render_template('ipmitoolcommandlineoutput.html', ipmistdout = ipmistdout, ipmistderr = ipmistderr)
+        return render_template('ipmitoolcommandlineoutput.html', ipmistdout = ipmistdout, ipmistderr = ipmistderr,rackname=rackname,rackobserverurl = rackobserverurl)
 
 def ipmistartone(data_list):
     ip = data_list[0]
@@ -1094,15 +1094,15 @@ def advanceinputgenerator():
 def sumlogpage():
     sumlogout = sumLogOutput()
     if sumlogout == 1:
-        return render_template("sumLog.html", sumloglines = ['SUM is not running!!'])
+        return render_template("sumLog.html", sumloglines = ['SUM is not running!!'],rackname=rackname,rackobserverurl = rackobserverurl)
     elif sumlogout == 1:
-        return render_template("sumLog.html", sumloglines = ['Multiple SUM processes are detected, no output can display!!'])
+        return render_template("sumLog.html", sumloglines = ['Multiple SUM processes are detected, no output can display!!'],rackname=rackname,rackobserverurl = rackobserverurl)
     sumloglines = ["SUM is running!!"]
     with open(sumlogout, "r") as sumlogfile:
         for line in sumlogfile:
             line = line.strip()
             sumloglines.append(line)
-    return render_template("sumLog.html", sumloglines = sumloglines)
+    return render_template("sumLog.html", sumloglines = sumloglines,rackname=rackname,rackobserverurl = rackobserverurl)
         
 @app.route('/sumtoolboxupload',methods=['GET', 'POST'])
 def sumtoolboxupload():
@@ -1129,7 +1129,7 @@ def sumtoolboxupload():
             suminputipfile.save(savepath + "suminput.txt")
             printf("{} has been saved as suminput.txt".format(suminputipfile.filename))
             return redirect(url_for('sumtoolboxupload'))   
-    return render_template('sumtoolboxupload.html',data = zip(allips, indicators))
+    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/sumbioscompoutput',methods=['GET', 'POST'])
 def sumbioscompoutput():
@@ -1139,7 +1139,7 @@ def sumbioscompoutput():
     sumGetBiosSettings(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
     sum_bioscomp = sumCompBiosSettings()['compResult']
     #sumRemoveFiles('htmlBios')
-    return render_template('sumbioscompoutput.html', sum_bioscomp = sum_bioscomp)
+    return render_template('sumbioscompoutput.html', sum_bioscomp = sum_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/sumbootorderdownload',methods=['GET', 'POST'])
 def sumbootorderdownload():
@@ -1159,7 +1159,7 @@ def sumbootorderdownload():
 @app.route('/sumdownloadbiossettings',methods=['GET', 'POST'])
 def sumdownloadbiossettings():
     if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     makeSumExcutable()
     inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
     outputdir = os.environ['UPLOADPATH'] + 'BiosSettings_' + os.environ['RACKNAME']
@@ -1179,7 +1179,7 @@ def sumdownloadbiossettings():
 @app.route('/sumdownloaddmi',methods=['GET', 'POST'])
 def sumdownloaddmi():
     if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     makeSumExcutable()
     inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
     outputdir = os.environ['UPLOADPATH'] + 'DMI_' + os.environ['RACKNAME']
@@ -1213,7 +1213,7 @@ def sumbiosimageupload():
 @app.route('/sumbiosupdateoutput',methods=['GET', 'POST'])
 def sumbiosupdateoutput():
     if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     makeSumExcutable()
     inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "bios.222"
@@ -1227,7 +1227,7 @@ def sumbiosupdateoutput():
     messages = ["SUM finished BIOS update for following nodes:"]
     messages = messages + iplist
     messages.append("System reboot has been performed.")
-    return render_template('simpleresult.html', messages = messages)
+    return render_template('simpleresult.html', messages = messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/sumbmcimageupload',methods=['GET', 'POST'])
 def sumbmcimageupload():
@@ -1255,7 +1255,7 @@ def sumbmcupdateoutput():
     messages = ["SUM finished BMC update for following nodes:"]
     messages = messages + iplist
     messages.append("Redfish will be reset automatically.")
-    return render_template('simpleresult.html', messages = messages)
+    return render_template('simpleresult.html', messages = messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/sumbiossettingsupload',methods=['GET', 'POST'])
 def sumbiossettingsupload():
@@ -1273,7 +1273,7 @@ def sumbiossettingsupload():
 @app.route('/sumbiossettingschangeoutput',methods=['GET', 'POST'])
 def sumbiossettingschangeoutput():
     if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
-        return render_template('error.html',error="No input IP found!")
+        return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
     makeSumExcutable()
     inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "biossettings.html"
@@ -1288,7 +1288,7 @@ def sumbiossettingschangeoutput():
     messages = messages + iplist
     messages.append("Redfish will be reset automatically.")
     messages.append("After reboot it could take 5 to 10 mins for the BIOS modification take effects.")
-    return render_template('simpleresult.html', messages = messages)
+    return render_template('simpleresult.html', messages = messages,rackname=rackname,rackobserverurl = rackobserverurl)
      
 @app.route('/bioscomparisonoutput')
 def bioscomparisonoutput():
@@ -1297,7 +1297,7 @@ def bioscomparisonoutput():
         time.sleep(1)
     df_auth = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     data_bioscomp = compareBiosSettings(df_auth)['compResult']
-    return render_template('bioscomparisonoutput.html', data_bioscomp = data_bioscomp)
+    return render_template('bioscomparisonoutput.html', data_bioscomp = data_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bootorderoutput')
 def bootorderoutput():
@@ -1401,9 +1401,9 @@ def event():
         ipmitool_msg.append("N/A")
     data = zip(sel_id,dates,severity,action,sensor,redfish_msg,ipmitool_msg)
     if show_names == "true":
-        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = ips_names)
+        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = ips_names,rackname=rackname,rackobserverurl = rackobserverurl)
     else:
-        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist())
+        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpserverupload',methods=["GET","POST"])
 def udpserverupload():
@@ -1430,7 +1430,7 @@ def udpserverupload():
             udpipfile.save(savepath+"udpserveruploadip.txt")
             printf("{} has been saved as udpserveruploadip.txt".format(udpipfile.filename))
             return redirect(url_for('udpserverupload'))
-    return render_template('udpserverupload.html',data=zip(allips,indicators))
+    return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
     
 @app.route('/udpserversendfileandrun',methods=["GET","POST"])
 def udpserversendfileandrun():
@@ -1452,7 +1452,7 @@ def udpserversendfileandrun():
             messages = []
             messages.append("Benchmark will be started in a few secs.")
             messages.append("Please do not submit any benchmarks while it's running.")
-            return render_template('simpleresult.html',messages=messages)
+            return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpserveruploadinputfile',methods=["GET","POST"])
 def udpserveruploadinputfile():
@@ -1474,7 +1474,7 @@ def udpserveruploadinputfile():
             messages = []
             messages.append("Benchmark input files have been uploaded.")
             messages.append("Please back to the udp server page to run the benchmark.")
-            return render_template('simpleresult.html',messages=messages)
+            return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpservercheckonline',methods=["GET","POST"])
 def udpservercheckonline():
@@ -1506,7 +1506,7 @@ def udpserverinitialize():
         messages.append("2. MACNAME in env file is correct.")
         messages.append("3. UDP Clients are running.")
         messages.append("4. System firewall has been disabled and stopped.")
-        return render_template('simpleresult.html',messages=messages)
+        return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpoutput')
 def udpoutput():
@@ -1525,7 +1525,7 @@ def udpoutput():
         id.append(str(i['_id']))
         file_name.append(i['file_name'])
         conclusion.append(i['conclusion'])
-    return render_template('udpoutput.html',data=zip(star, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id)
+    return render_template('udpoutput.html',rackname=rackname,data=zip(star, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id,rackobserverurl = rackobserverurl)
 
 
 @app.route('/udpsendlogfile')
@@ -1551,7 +1551,7 @@ def udpdeleteobject():
         udp_deleted_collection.insert(backup)
         udp_collection.find_one_and_delete({'_id':ObjectId(data)},{})
     except Exception as e:
-        return render_template('error.html',error=e)
+        return render_template('error.html',error=e,rackname=rackname,rackobserverurl = rackobserverurl)
     return redirect(url_for('udpoutput'))
 
 @app.route('/udpdeleteallobject')
@@ -1705,7 +1705,7 @@ def make_tarfile(output_filename, source_dir):
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
-    return render_template('simpleresult.html',messages=messages)
+    return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
@@ -1745,14 +1745,14 @@ def min_max_temperatures_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'   
     if show_names == 'true':
-        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures")
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures",rackobserverurl = rackobserverurl)
     else:
-        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures")
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures",rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
-    return render_template('simpleresult.html',messages=messages)
+    return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
@@ -1792,14 +1792,14 @@ def min_max_voltages_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
     if show_names == 'true':
-        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages")    
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages",rackobserverurl = rackobserverurl)    
     else:
-        return render_template('imageOutput.html',chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages")
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages",rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Fans", "Reading", 999999)
-    return render_template('simpleresult.html',messages=messages)
+    return render_template('simpleresult.html',rackname=rackname,messages=messages,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
@@ -1844,9 +1844,9 @@ def min_max_fans_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'    
     if show_names == 'true':
-        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans")
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans",rackobserverurl = rackobserverurl)
     else:
-        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans")
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans",rackobserverurl = rackobserverurl)
 
 
 @app.route('/min_max_power_chart/<bmc_ip>')
@@ -1888,9 +1888,9 @@ def min_max_power_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
     if show_names == 'true':
-        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power")   
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power",rackobserverurl = rackobserverurl)   
     else:
-        return render_template('imageOutput.html',show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power")
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power",rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
@@ -1946,7 +1946,7 @@ def min_max_alltemperatures_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html', sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',rackname=rackname, sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_allpower_chart')
 def min_max_allpower_chart():
@@ -2001,7 +2001,7 @@ def min_max_allpower_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
-    return render_template('imageOutputRack.html',chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight)
+    return render_template('imageOutputRack.html',rackname=rackname,chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
 
 
 @app.route('/chart_powercontrol/<bmc_ip>')
@@ -2039,15 +2039,15 @@ def chart_powercontrol(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_powercontrol.html', reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol")        
+            return render_template('chart_powercontrol.html',rackname=rackname, reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol",rackobserverurl = rackobserverurl)        
         else:
-            return render_template('chart_powercontrol.html', reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+            return render_template('chart_powercontrol.html', reading= reading, title='Power Control', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol",rackobserverurl = rackobserverurl)
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_powercontrol.html',reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol")
+            return render_template('chart_powercontrol.html',rackname=rackname,reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powercontrol",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_powercontrol.html',reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol")
+            return render_template('chart_powercontrol.html',rackname=rackname,reading = reading,title='Power Control',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powercontrol",rackobserverurl = rackobserverurl)
 
 @app.route('/chart_voltages/<bmc_ip>')
 def chart_voltages(bmc_ip):
@@ -2066,16 +2066,16 @@ def chart_voltages(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_voltages.html', title='Voltages', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages")
+            return render_template('chart_voltages.html', title='Voltages',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_voltages.html', title='Voltages', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+            return render_template('chart_voltages.html', title='Voltages',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages",rackobserverurl = rackobserverurl)
 
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_voltages.html', title='Voltages',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages")
+            return render_template('chart_voltages.html', title='Voltages',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_voltages",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_voltages.html', title='Voltages',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages")
+            return render_template('chart_voltages.html', title='Voltages',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_voltages",rackobserverurl = rackobserverurl)
    
 
 @app.route('/chart_powersuppliesvoltage/<bmc_ip>')
@@ -2095,15 +2095,15 @@ def chart_powersuppliesvoltage(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage")
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage")
         else:
-            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage")        
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliesvoltage",rackobserverurl = rackobserverurl)        
         else:
-            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage")
+            return render_template('chart_powersuppliesvoltage.html', title='Power Supplies Voltage',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliesvoltage",rackobserverurl = rackobserverurl)
      
 @app.route('/chart_powersuppliespower/<bmc_ip>')
 def chart_powersuppliespower(bmc_ip):
@@ -2122,16 +2122,16 @@ def chart_powersuppliespower(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower")
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)
         else: 
-            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)
 
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower")        
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)        
         else:
-            return render_template('chart_powersuppliespower.html', title='Power Supplies Power', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower")
+            return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)
   
 @app.route('/chart_allpowercontrols')
 def chart_allpowercontrols():
@@ -2145,7 +2145,7 @@ def chart_allpowercontrols():
                 if cur_ip == i.get("Name").split(",")[0].strip(" ") and cur_name != "No Value":
                     i.update({"Name": cur_name + " (" + cur_ip + "), Unit: W"})
                     break
-    return render_template('chart_allpowercontrols.html', title='All Power Controls', dataset=data, chart_name = "chart_allpowercontrols")
+    return render_template('chart_allpowercontrols.html', title='All Power Controls',rackname=rackname, dataset=data, chart_name = "chart_allpowercontrols",rackobserverurl = rackobserverurl)
 
 @app.route('/chart_alltemperatures')
 def chart_alltemperatures():
@@ -2162,7 +2162,7 @@ def chart_alltemperatures():
                 if cur_ip == i.get("Name").split(",")[0] and cur_name != "No Value": # 
                     i.update({"Name": cur_name + " (" + cur_ip + ")"})
                     break
-    return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures")
+    return render_template('chart_alltemperatures.html', title='All Temperature ' + sensor_name,rackname=rackname, dataset=data, sensor_name=sensor_name, chart_name = "chart_alltemperatures",rackobserverurl = rackobserverurl)
 
 @app.route('/chart_allfans')
 def chart_allfans():
@@ -2179,7 +2179,7 @@ def chart_allfans():
                 if cur_ip == i.get("Name") and cur_name != "No Value":
                     i.update({"Name": cur_name + " (" + cur_ip + ")"})
                     break
-    return render_template('chart_allfans.html', title='All Fans ' + sensor_name, dataset=data, sensor_name=sensor_name, chart_name = "chart_allfans")     
+    return render_template('chart_allfans.html', title='All Fans ' + sensor_name,rackname=rackname, dataset=data, sensor_name=sensor_name, chart_name = "chart_allfans",rackobserverurl = rackobserverurl)     
 
 @app.route('/chart_fans/<bmc_ip>')
 def chart_fans(bmc_ip):
@@ -2198,16 +2198,16 @@ def chart_fans(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_fans.html', title='Fans', show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans")
+            return render_template('chart_fans.html', title='Fans',rackname=rackname, show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_fans.html', title='Fans', show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+            return render_template('chart_fans.html', title='Fans',rackname=rackname, show_names = show_names, dataset=data, skip = skip,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans",rackobserverurl = rackobserverurl)
 
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_fans.html', title='Fans',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans")        
+            return render_template('chart_fans.html', title='Fans',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_fans",rackobserverurl = rackobserverurl)        
         else:
-            return render_template('chart_fans.html', title='Fans',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans")
+            return render_template('chart_fans.html', title='Fans',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_fans",rackobserverurl = rackobserverurl)
 
 
 @app.route('/chart_cputemperatures/<bmc_ip>')
@@ -2227,15 +2227,15 @@ def chart_cputemperatures(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures")
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min , t_max = t_max ,t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures",rackobserverurl = rackobserverurl)
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures")
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_cputemperatures",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_cputemperatures.html', title='CPU Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures")
+            return render_template('chart_cputemperatures.html', title='CPU Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_cputemperatures",rackobserverurl = rackobserverurl)
 
 
 
@@ -2263,15 +2263,15 @@ def chart_vrmtemperatures(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures")
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',rackname=rackname,show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures",rackobserverurl = rackobserverurl)
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures")     
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_vrmtemperatures",rackobserverurl = rackobserverurl)     
         else:
-            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures")     
+            return render_template('chart_vrmtemperatures.html', title='VRM Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_vrmtemperatures",rackobserverurl = rackobserverurl)     
 
 
 @app.route('/chart_dimmctemperatures/<bmc_ip>')
@@ -2291,18 +2291,18 @@ def chart_dimmctemperatures(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures")
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures",rackobserverurl = rackobserverurl)
 
         else:
-            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures',rackname=rackname, show_names = show_names, dataset=data,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures",rackobserverurl = rackobserverurl)
 
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures")
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures',rackname=rackname, show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_dimmctemperatures",rackobserverurl = rackobserverurl)
 
         else:
-            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures', show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures")
+            return render_template('chart_dimmctemperatures.html', title='DIMMC Temperatures',rackname=rackname, show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_dimmctemperatures",rackobserverurl = rackobserverurl)
 
 @app.route('/chart_othertemperatures/<bmc_ip>')
 def chart_othertemperatures(bmc_ip):
@@ -2322,21 +2322,20 @@ def chart_othertemperatures(bmc_ip):
         t_max = (date_time_obj + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
         skip = "no"
         if show_names == 'true':
-            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures")
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',rackname=rackname,show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',rackname=rackname,show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, skip = skip, t_min = t_min, t_max = t_max, t_min_max = t_min_max, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures",rackobserverurl = rackobserverurl)
     else:
         name = request.args.get('name')
         if show_names == 'true':
-            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures")
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',rackname=rackname,show_names = show_names,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_othertemperatures",rackobserverurl = rackobserverurl)
         else:
-            return render_template('chart_othertemperatures.html', title='Other Temperatures',show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures")
+            return render_template('chart_othertemperatures.html', title='Other Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures",rackobserverurl = rackobserverurl)
 
 @app.route("/hardware_output",methods=["GET","POST"])
 def hardware_output():
     data = get_data.get_hardwareData()
-    rackobserverurl = 'http://' + get_ip() + ':' +  os.environ['RACKPORT']
-    return render_template('hardware_output.html',data=data,rackobserverurl=rackobserverurl,rackname=rackname)
+    return render_template('hardware_output.html',data=data,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/get_node_hardware_json')
 def get_node_hardware_json():
@@ -2492,12 +2491,12 @@ def get_node_names(): #Gather node names from node_names file. Return a boolean 
 @app.errorhandler(404)
 def page_not_found(e):
     # note that we set the 404 status explicitly!!
-    return render_template('404.html'), 404
+    return render_template('404.html',rackname=rackname,rackobserverurl = rackobserverurl), 404
 
 @app.errorhandler(500)
 def internal_error(e):
     # note that we set the 500 status explicitly!!
-    return render_template('500.html'), 500
+    return render_template('500.html',rackname=rackname,rackobserverurl = rackobserverurl), 500
 
 @app.route('/howToDeploy')
 def howToDeploy():
@@ -2621,6 +2620,7 @@ def downloadNodeReport_PDF(bmc_ip):
 
 if __name__ == '__main__':
     get_data.makeSmcipmiExcutable()
+    rackobserverurl =  'http://' + get_ip() + ':' +  os.environ['RACKPORT']
     printf("Frontend port number is " + str(frontport))
     if os.environ['DEBUG_MODE'] == 'True':
         printf('Debug Mode is True')

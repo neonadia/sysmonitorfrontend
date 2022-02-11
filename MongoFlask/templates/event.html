@@ -59,9 +59,13 @@
 
 <ul class="navbar-nav">
     <li class='nav-item'>
-        <a class="btn btn-primary btn-lg text-white" href="{{ url_for('index') }}" role="button">
-            <i class="fas fa-home"></i>
-        </a>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-home"></i>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
+            <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+        </div>
     </li>
     {% include "documentationButton.html" %}
     {% if 'no_time' not in date_time%}

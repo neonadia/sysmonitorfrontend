@@ -27,6 +27,15 @@
 <body>
     <nav class="navbar navbar-dark bg-primary">
         <div class="form-row align-items-center">
+            <div class="dropdown col col-auto">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-home"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
+                    <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                </div>
+            </div>
             <div class="col col-auto">
                 <button type="button" class="btn btn-primary fas fa-history text-white " id = "history"></button>
             </div>
