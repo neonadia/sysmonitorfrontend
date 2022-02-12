@@ -291,7 +291,7 @@ for item in all_hw_data:
             parsed_data[-1]['cpu_note'] += item['CPU']['Core(s) per socket'] + ' Cores '
         if 'Thread(s) per core' in item['CPU']:
             parsed_data[-1]['cpu_note'] = parsed_data[-1]['cpu_note'].replace('N/A','')
-            parsed_data[-1]['cpu_note'] += item['CPU']['Thread(s) per core'] + ' Threads '
+            parsed_data[-1]['cpu_note'] += item['CPU']['Thread(s) per core'] + ' Thread(s) per core'
         parsed_data[-1]['cpu_note'] = parsed_data[-1]['cpu_note'].strip()
         
     if 'Storage' in item:
@@ -392,7 +392,7 @@ for item in all_hw_data:
         if 'DIMMS' in item['Memory']:
             parsed_data[-1]['mem_num'] = item['Memory']['DIMMS']
         if 'Total Memory' in item['Memory']:
-            parsed_data[-1]['mem_note'] = 'Total Size: ' + item['Memory']['Total Memory'] + ' MB'
+            parsed_data[-1]['mem_note'] = 'Total Size: ' + item['Memory']['Total Memory'] + ' GB'
         if 'Slots' in item['Memory']:
             all_manufactures = []
             for dim in item['Memory']['Slots']:
