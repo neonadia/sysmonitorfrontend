@@ -396,9 +396,10 @@ for item in all_hw_data:
         if 'Slots' in item['Memory']:
             all_manufactures = []
             for dim in item['Memory']['Slots']:
-                if 'Manufacturer' in item['Memory']['Slots'][dim] and item['Memory']['Slots'][dim]['Manufacturer'] not in all_manufactures:                 
-                    if "NO DIMM" not in item['Memory']['Slots'][dim]['Manufacturer']:
-                        all_manufactures.append(item['Memory']['Slots'][dim]['Manufacturer'])
+                if 'Manufacturer' in item['Memory']['Slots'][dim] and 'Part No.' in item['Memory']['Slots'][dim]:
+                    cur_entry = item['Memory']['Slots'][dim]['Manufacturer'] + ' ' + item['Memory']['Slots'][dim]['Part No.']
+                    if cur_entry not in all_manufactures and "NO DIMM" not in cur_entry:
+                            all_manufactures.append(cur_entry)
         #print(all_manufactures)
         parsed_data[-1]['mem_model'] = '<br/>'.join(all_manufactures)
 #parsed_data[0]['mac'] = -1
@@ -409,6 +410,105 @@ for ip in bmc_ip:
     for item in parsed_data:
         if item['bmc_ip'] == ip:
             parsed_data_sort.append(item)
+
+#### Code to fetch OS LEVEL serial number from database ###
+sn_data = []
+sn_data_template = {'bmc_ip':'N/A','mac':'N/A',\
+           'Memory SN':'N/A','NIC SN':'N/A','NIC FW':'N/A','GPU SN':'N/A','GPU FW':'N/A',\
+           'Disk SN':'N/A','Disk FW':'N/A','PSU SN':'N/A'\
+          }   
+sn_seperator = '<font color="blue">|</font>'          
+for item in all_hw_data:
+    #print(item['Hostname'])
+    sn_data.append(sn_data_template.copy()) # if not using copy(), all the dicts are the same reference
+    if 'bmc_ip' in item:
+        sn_data[-1]['bmc_ip'] = item['bmc_ip']
+    if 'Hostname' in item:
+        sn_data[-1]['mac'] = item['Hostname'].replace('-','').replace(':','')
+    if 'Memory' in item:
+        if 'Slots' in item['Memory']:
+            for mem_index in item['Memory']['Slots']:
+                mem = item['Memory']['Slots'][mem_index]
+                if isinstance(mem, dict):
+                    if sn_data[-1]['Memory SN'] == 'N/A':
+                        sn_data[-1]['Memory SN'] = ''
+                    if 'Serial No.' in mem and 'NO DIMM' not in mem['Serial No.']:
+                        sn_data[-1]['Memory SN'] += mem['Serial No.'] + sn_seperator
+                    elif 'NO DIMM' not in mem['Serial No.']:
+                        sn_data[-1]['Memory SN'] += 'N/A' + sn_seperator
+    if 'Storage' in item:
+        for hd_index in item['Storage']:
+            hd = item['Storage'][hd_index]
+            if isinstance(hd, dict):
+                if sn_data[-1]['Disk SN'] == 'N/A':
+                    sn_data[-1]['Disk SN'] = ''
+                if sn_data[-1]['Disk FW'] == 'N/A':
+                    sn_data[-1]['Disk FW'] = ''
+                if 'SerialNumber' in hd:
+                    sn_data[-1]['Disk SN'] += hd['SerialNumber'] + sn_seperator
+                else:
+                    sn_data[-1]['Disk SN'] += 'N/A' + sn_seperator
+                if 'Firmware' in hd:
+                    sn_data[-1]['Disk FW'] += hd['Firmware'] + sn_seperator
+                else:
+                    sn_data[-1]['Disk FW'] += 'N/A' + sn_seperator
+    if 'PSU' in item:
+        for index_p in item['PSU']:
+            psu = item['PSU'][index_p] 
+            if isinstance(psu, dict):
+                if sn_data[-1]['PSU SN'] == 'N/A':
+                    sn_data[-1]['PSU SN'] = ''
+                if 'Serial No.'  in psu:
+                    sn_data[-1]['PSU SN'] += psu['Serial No.'] + sn_seperator
+                else:
+                    sn_data[-1]['PSU SN'] += 'N/A' + sn_seperator
+    if 'Graphics' in item:
+        if 'GPU' in item['Graphics']:
+            for gpu_index in item['Graphics']['GPU']:
+                gpu = item['Graphics']['GPU'][gpu_index]
+                if isinstance(hd, dict):
+                    if sn_data[-1]['GPU SN'] == 'N/A':
+                        sn_data[-1]['GPU SN'] = ''
+                    if sn_data[-1]['GPU FW'] == 'N/A':
+                        sn_data[-1]['GPU FW'] = ''
+                    if 'Serial No.' in gpu:
+                        sn_data[-1]['GPU SN'] += gpu['Serial No.'] + sn_seperator
+                    else:
+                        sn_data[-1]['GPU SN'] += 'N/A' + sn_seperator
+                    if 'VBIOS' in gpu:
+                        sn_data[-1]['GPU FW'] += gpu['VBIOS'] + sn_seperator
+                    else:
+                        sn_data[-1]['GPU FW'] += 'N/A' + sn_seperator
+
+    if 'NICS' in item:
+        for nic_index in item['NICS']:
+            nic = item['NICS'][nic_index]
+            if isinstance(nic, dict):
+                if sn_data[-1]['NIC SN'] == 'N/A':
+                    sn_data[-1]['NIC SN'] = ''
+                if sn_data[-1]['NIC FW'] == 'N/A':
+                    sn_data[-1]['NIC FW'] = ''
+                if 'Serial' in nic:
+                    sn_data[-1]['NIC SN'] += nic['Serial'] + sn_seperator
+                else:
+                    sn_data[-1]['NIC SN'] += 'N/A' + sn_seperator
+                if 'Firmware' in nic:
+                    sn_data[-1]['NIC FW'] += nic['Firmware'] + sn_seperator
+                else:
+                    sn_data[-1]['NIC FW'] += 'N/A' + sn_seperator
+
+sn_data_sort = []
+
+# sort the sn data according to the bmc_ip list
+for ip in bmc_ip:
+    for item in sn_data:
+        if item['bmc_ip'] == ip:
+            sn_data_sort.append(item)
+
+printf('############sn_data############')
+for i in sn_data_sort:
+    printf(i)
+
 
 class Test(object):
     """"""
@@ -566,7 +666,8 @@ class Test(object):
 / <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">Hardware Counts</link> 
 / <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">Hardware Per Node</link> 
 / <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
-/ <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark Report</link>"""
+/ <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark</link>
+/ <link href="#Archive"color="blue" fontName="Helvetica-Bold">Archive</link>"""
         
         ptext2 = """<a name="TABLE2"/><font color="black" size="12"><b>Hardware Counts and Models """ + rackname + """</b></font>"""
         ptext1 = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Summary for """ + rackname + """</b></font>"""
@@ -655,7 +756,7 @@ class Test(object):
 
                 data3 = [d3]
 
-                hn_rows_basic =  ['Processor','Memory','GPU','Hard Drive','NIC cards','Power Supply','Fans']
+                hn_rows_basic =  ['Processor','Memory','GPU','Disk','NIC cards','Power Supply','Fans']
                 hn_rows = hn_rows_basic
                 hn_counts = len(hn_rows)
                 hw_details = [[0 for i in range(len(hn_columns))] for j in range(hn_counts) ]
@@ -691,7 +792,7 @@ class Test(object):
                                 hw_details[i][j] = cur_hw['gpu_num']
                             else:
                                 hw_details[i][j] = cur_hw['gpu_note']
-                        elif 'Hard Drive' in hn_rows[i]:
+                        elif 'Disk' in hn_rows[i]:
                             if j == 1: 
                                 hw_details[i][j] = cur_hw['hd_model']
                             elif j == 2:
@@ -1043,6 +1144,71 @@ class Test(object):
                 #self.story.append(KeepTogether([draw,spacer,t,spacer,p]))
                 self.story.append(KeepTogether([benchmarks_tableTitle_non_num,spacer_median,cur_benchmark_title,spacer_median,t,spacer_median,hr_line,spacer]))
                 #self.story.append(PageBreak())
+
+
+        ########################################All Parts' Serial Number summary##################################################
+        self.story.append(PageBreak())
+        ptext_hn = """<a name="Archive"/><font color="black" size="12"><b>Archive: all parts' Serial Number (SN) and Firmware (FW)</b></font>"""
+        hn_title = Paragraph(ptext_hn, centered)
+        hn_title.keepWithNext = True
+        self.story.append(hn_title) 
+        self.story.append(p)
+
+        ptext_hn_intro = """
+        Table below shows the parts' SN and FW for each part of every node:<br />
+        """
+        sn_node_intro = Paragraph(ptext_hn_intro, other_intro)
+        sn_node_intro.keepWithNext = True
+        self.story.append(sn_node_intro)
+        
+        if 'hw_data' in list_of_collections and len(serialNumber) == len(MacAddress) and len(serialNumber) == len(sn_data_sort):
+            for sn, mac, cur_sn in zip(serialNumber, MacAddress, sn_data_sort):
+                ptext_sn_sub = """<a name="NH_TITLE"/><font color="black" size="12"><b>SN: """ + sn + """ MAC: """ + mac +"""</b></font>"""
+                sn_title_sub = Paragraph(ptext_sn_sub, bm_title)
+                sn_title_sub.keepWithNext = True
+                ## Create header with column names
+                d4 = []
+                sn_columns = ["Item", "Information"]
+                for text in sn_columns:
+                    ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
+                    p4 = Paragraph(ptext, centered)
+                    d4.append(p4)
+
+                data4 = [d4]
+
+                # check mac address
+                if cur_sn['mac'].strip().lower() != mac.replace('-','').replace(':','').strip().lower():
+                    print('Warning: Found unmatching MAC addressses between Database and CSV file.')
+                    print(cur_sn['mac'].strip().lower())
+                    print(mac.replace('-','').replace(':','').strip().lower())
+                
+                for cur_key in cur_sn.keys():
+                    if 'SN' not in cur_key and 'FW' not in cur_key:
+                        continue
+                    ptext_key = "<font size=%s>%s</font>" % (font_size-2, cur_key)
+                    ptext_value = "<font size=%s>%s</font>" % (font_size-2, cur_sn[cur_key])
+                    p4_key = Paragraph(ptext_key, centered)
+                    p4_value = Paragraph(ptext_value, centered)
+                    data4.append([p4_key,p4_value])    
+                    
+                table4 = Table(data4, colWidths=[55, 385])
+                table4.setStyle(TableStyle([
+                    ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                    ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data4),colors.lightgrey,colors.lightblue))
+                ]))  
+                self.story.append(KeepTogether([sn_title_sub,spacer_tiny,table4,spacer_tiny,hr_line,spacer_tiny]))
+        else:
+            ptext_sn_nodata = """
+            Warning: No OS level Hardware Data can be found in Database:<br />
+            1. Make sure the 'hw_data' is inside the input directory.<br />
+            2. Make sure the config file is inside the 'hw_data' directory.<br />
+            3. Check the MAC addresses are the same as the input files.<br />
+            4. Check if any nodes hw data missing.<br />
+            5. Go the UDP Controller page to reload the data.<br />
+            """
+            hardware_node_nodata = Paragraph(ptext_sn_nodata, warning)
+            self.story.append(hardware_node_nodata)
 #----------------------------------------------------------------------
 if __name__ == "__main__":
     t = Test()
