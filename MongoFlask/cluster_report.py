@@ -18,6 +18,7 @@ import sys
 import math
 import datetime
 import pymongo
+import string
 
 class ConditionalSpacer(Spacer):
 
@@ -54,6 +55,29 @@ def create_table_colors(table_length,header_color,other_color):
         else:
             table_colors_list.append(other_color)
     return tuple(table_colors_list)
+
+def get_string_width(st):
+    size = 0 # in milinches
+    for s in st:
+        if s in 'lij|\' ': size += 37
+        elif s in '![]fI.,:;/\\t': size += 50
+        elif s in '`-(){}r"': size += 60
+        elif s in '*^zcsJkvxy': size += 85
+        elif s in 'aebdhnopqug#$L+<>=?_~FZT' + string.digits: size += 95
+        elif s in 'BSPEAKVXY&UwNRCHD': size += 112
+        elif s in 'QGOMm%W@': size += 135
+        else: size += 50
+    return size * 6 / 1000.0 # Convert to picas
+
+def auto_font_size(input_string,seperator_html, seperator_real):
+    input_string = input_string.replace(seperator_html,seperator_real)
+    if get_string_width(input_string) <= 50:
+        font_size = 7
+    else:
+        font_size = 50/get_string_width(input_string) * 7
+    if font_size < 5:
+        font_size = 5
+    return font_size
 
 mongoport = int(os.environ['MONGOPORT']) # using in jupyter: 8888
 rackname = os.environ['RACKNAME'].upper() 
@@ -339,13 +363,13 @@ for item in all_hw_data:
         cur_nic = {}
         for index_n in item['NICS']:
             nic = item['NICS'][index_n]
-            if 'Name' in nic:
+            if 'Part Number' in nic:
                 # Initilize for the model
-                if nic['Name'] not in cur_nic:
-                    cur_nic[nic['Name']] = 1
+                if nic['Part Number'] not in cur_nic:
+                    cur_nic[nic['Part Number']] = 1
                 # Count the model
                 else:
-                    cur_nic[nic['Name']] += 1
+                    cur_nic[nic['Part Number']] += 1
         if len(item['NICS']) != 0:        
             parsed_data[-1]['nic_model'] = '<br/>'.join(cur_nic.keys())
         for key in cur_nic:
@@ -412,14 +436,22 @@ for ip in bmc_ip:
             parsed_data_sort.append(item)
 
 #### Code to fetch OS LEVEL serial number from database ###
+sn_seperator = '<font color="blue">&nbsp|&nbsp;</font>'
+sn_seperator_real = ' | ' # for calculating the length  
 sn_data = []
 sn_data_template = {'bmc_ip':'N/A','mac':'N/A',\
-           'Chassis SN':'N/A','MB SN':'N/A',\
-           'Memory SN':'N/A','NIC SN':'N/A','NIC FW':'N/A','NIC MAC':'N/A',\
-           'GPU SN':'N/A','GPU FW':'N/A',\
-           'Disk SN':'N/A','Disk FW':'N/A','PSU SN':'N/A'\
-          }   
-sn_seperator = '<font color="black">,&nbsp;</font>'          
+           'System PN':'N/A','System SN':'N/A',\
+           'Chassis PN':'N/A','Chassis SN':'N/A',\
+           'MB PN':'N/A','MB SN':'N/A',\
+#           'System PN':'SYS-2029BT-HNR' + sn_seperator,'System SN':'S264322X9707411' + sn_seperator,\
+#           'Chassis PN':'CSE-458GTS-R3K06P' + sn_seperator,'Chassis SN':'C458GAK45030007' + sn_seperator,\
+#           'MB PN':'MBD-H12DGQ-NT6-P' + sn_seperator,'MB SN':'WM21AS603864' + sn_seperator,\
+           'Memory PN':'N/A','Memory SN':'N/A',\
+           'NIC PN':'N/A','NIC SN':'N/A','NIC FW':'N/A','NIC MAC':'N/A',\
+           'GPU PN':'N/A','GPU SN':'N/A','GPU FW':'N/A',\
+           'Disk PN':'N/A','Disk SN':'N/A','Disk FW':'N/A',\
+           'PSU PN':'N/A','PSU SN':'N/A'\
+          }           
 for item in all_hw_data:
     #print(item['Hostname'])
     sn_data.append(sn_data_template.copy()) # if not using copy(), all the dicts are the same reference
@@ -434,10 +466,14 @@ for item in all_hw_data:
                 if isinstance(mem, dict):
                     if sn_data[-1]['Memory SN'] == 'N/A':
                         sn_data[-1]['Memory SN'] = ''
+                    if sn_data[-1]['Memory PN'] == 'N/A':
+                        sn_data[-1]['Memory PN'] = ''
                     if 'Serial No.' in mem and 'NO DIMM' not in mem['Serial No.']:
                         sn_data[-1]['Memory SN'] += mem['Serial No.'] + sn_seperator
                     elif 'NO DIMM' not in mem['Serial No.']:
                         sn_data[-1]['Memory SN'] += 'N/A' + sn_seperator
+                    if 'Part No.' in mem and 'NO DIMM' not in mem['Part No.']:
+                        sn_data[-1]['Memory PN'] += mem['Part No.'] + sn_seperator
     if 'Storage' in item:
         for hd_index in item['Storage']:
             hd = item['Storage'][hd_index]
@@ -446,6 +482,8 @@ for item in all_hw_data:
                     sn_data[-1]['Disk SN'] = ''
                 if sn_data[-1]['Disk FW'] == 'N/A':
                     sn_data[-1]['Disk FW'] = ''
+                if sn_data[-1]['Disk PN'] == 'N/A':
+                    sn_data[-1]['Disk PN'] = ''
                 if 'SerialNumber' in hd:
                     sn_data[-1]['Disk SN'] += hd['SerialNumber'] + sn_seperator
                 else:
@@ -454,16 +492,26 @@ for item in all_hw_data:
                     sn_data[-1]['Disk FW'] += hd['Firmware'] + sn_seperator
                 else:
                     sn_data[-1]['Disk FW'] += 'N/A' + sn_seperator
+                if 'ModelNumber' in hd:
+                    sn_data[-1]['Disk PN'] += hd['ModelNumber'] + sn_seperator
+                else:
+                    sn_data[-1]['Disk PN'] += 'N/A' + sn_seperator
     if 'PSU' in item:
         for index_p in item['PSU']:
             psu = item['PSU'][index_p] 
             if isinstance(psu, dict):
                 if sn_data[-1]['PSU SN'] == 'N/A':
                     sn_data[-1]['PSU SN'] = ''
+                if sn_data[-1]['PSU PN'] == 'N/A':
+                    sn_data[-1]['PSU PN'] = ''
                 if 'Serial No.'  in psu:
                     sn_data[-1]['PSU SN'] += psu['Serial No.'] + sn_seperator
                 else:
                     sn_data[-1]['PSU SN'] += 'N/A' + sn_seperator
+                if 'Module No.'  in psu:
+                    sn_data[-1]['PSU PN'] += psu['Module No.'] + sn_seperator
+                else:
+                    sn_data[-1]['PSU PN'] += 'N/A' + sn_seperator
     if 'Graphics' in item:
         if 'GPU' in item['Graphics']:
             for gpu_index in item['Graphics']['GPU']:
@@ -473,6 +521,8 @@ for item in all_hw_data:
                         sn_data[-1]['GPU SN'] = ''
                     if sn_data[-1]['GPU FW'] == 'N/A':
                         sn_data[-1]['GPU FW'] = ''
+                    if sn_data[-1]['GPU PN'] == 'N/A':
+                        sn_data[-1]['GPU PN'] = ''
                     if 'Serial No.' in gpu:
                         sn_data[-1]['GPU SN'] += gpu['Serial No.'] + sn_seperator
                     else:
@@ -481,6 +531,10 @@ for item in all_hw_data:
                         sn_data[-1]['GPU FW'] += gpu['VBIOS'] + sn_seperator
                     else:
                         sn_data[-1]['GPU FW'] += 'N/A' + sn_seperator
+                    if 'Model' in gpu:
+                        sn_data[-1]['GPU PN'] += gpu['Model'] + sn_seperator
+                    else:
+                        sn_data[-1]['GPU PN'] += 'N/A' + sn_seperator
 
     if 'NICS' in item:
         for nic_index in item['NICS']:
@@ -492,6 +546,8 @@ for item in all_hw_data:
                     sn_data[-1]['NIC FW'] = ''
                 if sn_data[-1]['NIC MAC'] == 'N/A':
                     sn_data[-1]['NIC MAC'] = ''
+                if sn_data[-1]['NIC PN'] == 'N/A':
+                    sn_data[-1]['NIC PN'] = ''
                 if 'Serial' in nic:
                     sn_data[-1]['NIC SN'] += nic['Serial'] + sn_seperator
                 else:
@@ -504,6 +560,62 @@ for item in all_hw_data:
                     sn_data[-1]['NIC MAC'] += nic['MAC'] + sn_seperator
                 else:
                     sn_data[-1]['NIC MAC'] += 'N/A' + sn_seperator
+                if 'MAC' in nic:
+                    sn_data[-1]['NIC PN'] += nic['Part Number'] + sn_seperator
+                else:
+                    sn_data[-1]['NIC PN'] += 'N/A' + sn_seperator
+
+    if 'System' in item:
+        for index_sys in item['System']:
+            sys = item['System'][index_sys] 
+            if isinstance(sys, dict):
+                if sn_data[-1]['System SN'] == 'N/A':
+                    sn_data[-1]['System SN'] = ''
+                if sn_data[-1]['System PN'] == 'N/A':
+                    sn_data[-1]['System PN'] = ''
+                if 'Serial Number'  in sys:
+                    sn_data[-1]['System SN'] += sys['Serial Number'] + sn_seperator
+                else:
+                    sn_data[-1]['System SN'] += 'N/A' + sn_seperator
+                if 'Product Name'  in sys:
+                    sn_data[-1]['System PN'] += sys['Product Name'] + sn_seperator
+                else:
+                    sn_data[-1]['System PN'] += 'N/A' + sn_seperator
+
+    if 'Chassis' in item:
+        for index_chas in item['Chassis']:
+            chas = item['Chassis'][index_chas] 
+            if isinstance(chas, dict):
+                if sn_data[-1]['Chassis SN'] == 'N/A':
+                    sn_data[-1]['Chassis SN'] = ''
+                if sn_data[-1]['Chassis PN'] == 'N/A':
+                    sn_data[-1]['Chassis PN'] = ''
+                if 'Serial Number'  in chas:
+                    sn_data[-1]['Chassis SN'] += chas['Serial Number'] + sn_seperator
+                else:
+                    sn_data[-1]['Chassis SN'] += 'N/A' + sn_seperator
+                if 'Product Name'  in chas:
+                    sn_data[-1]['Chassis PN'] += chas['Product Name'] + sn_seperator
+                else:
+                    sn_data[-1]['Chassis PN'] += 'N/A' + sn_seperator
+                # chassis currently has no PN in dmidecode yet.
+
+    if 'Base Board' in item:
+        for index_mb in item['Base Board']:
+            mb = item['Base Board'][index_mb] 
+            if isinstance(mb, dict):
+                if sn_data[-1]['MB SN'] == 'N/A':
+                    sn_data[-1]['MB SN'] = ''
+                if sn_data[-1]['MB PN'] == 'N/A':
+                    sn_data[-1]['MB PN'] = ''
+                if 'Serial Number'  in mb:
+                    sn_data[-1]['MB SN'] += mb['Serial Number'] + sn_seperator
+                else:
+                    sn_data[-1]['MB SN'] += 'N/A' + sn_seperator
+                if 'Product Name'  in mb:
+                    sn_data[-1]['MB PN'] += mb['Product Name'] + sn_seperator
+                else:
+                    sn_data[-1]['MB PN'] += 'N/A' + sn_seperator
 
 sn_data_sort = []
 
@@ -514,10 +626,10 @@ for ip in bmc_ip:
             sn_data_sort.append(item)
 
 # remove tail sn_seperator:
-for i, node_data in enumerate(sn_data_sort):
-    for key in node_data.keys():
-        if len(node_data[key]) >= 1 and node_data[key].endswith(sn_seperator):
-            sn_data_sort[i][key] = node_data[key][:-len(sn_seperator)]
+#for i, node_data in enumerate(sn_data_sort):
+#    for key in node_data.keys():
+#        if len(node_data[key]) >= 1 and node_data[key].endswith(sn_seperator):
+#            sn_data_sort[i][key] = node_data[key][:-len(sn_seperator)]
 
 printf('############sn_data############')
 for i in sn_data_sort:
@@ -673,6 +785,7 @@ class Test(object):
 
         table = Table(data, colWidths=[95, 90, 60, 75, 80, 80, 50])
         table.setStyle(TableStyle([
+            ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
@@ -689,6 +802,7 @@ class Test(object):
         p = Paragraph(ptext, centered)
         table2 = Table(data2, colWidths=[95, 120, 40, 40, 70, 40, 70, 40])
         table2.setStyle(TableStyle([
+            ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black), 
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data2),colors.lightgrey,colors.lightblue))
@@ -763,7 +877,7 @@ class Test(object):
                 hn_title_sub.keepWithNext = True
                 ## Create header with column names
                 d3 = []
-                hn_columns = ["Item Name", "Model Name", "Quantity", "Notes"]
+                hn_columns = ["Item Name", "Model Name", "Qty", "Notes"]
                 for text in hn_columns:
                     ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
                     p3 = Paragraph(ptext, centered)
@@ -845,8 +959,9 @@ class Test(object):
                         formatted_line_data.append(p3)
                     data3.append(formatted_line_data)
                     formatted_line_data = []
-                table3 = Table(data3, colWidths=[65, 160, 60, 155])
+                table3 = Table(data3, colWidths=[65, 175, 30, 170])
                 table3.setStyle(TableStyle([
+                    ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
                     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data3),colors.lightgrey,colors.lightblue))
@@ -1163,14 +1278,14 @@ class Test(object):
 
         ########################################All Parts' Serial Number summary##################################################
         self.story.append(PageBreak())
-        ptext_hn = """<a name="Archive"/><font color="black" size="12"><b>Archive: all parts' Serial Number (SN) and Firmware (FW)</b></font>"""
+        ptext_hn = """<a name="Archive"/><font color="black" size="12"><b>Archive: all parts' Part Number (PN), Serial Number (SN) and Firmware (FW)</b></font>"""
         hn_title = Paragraph(ptext_hn, centered)
         hn_title.keepWithNext = True
         self.story.append(hn_title) 
         self.story.append(p)
 
         ptext_hn_intro = """
-        Table below shows the parts' SN and FW for each part of every node:<br />
+        Table below shows the parts' PN, SN and FW for each part of every node:<br />
         """
         sn_node_intro = Paragraph(ptext_hn_intro, other_intro)
         sn_node_intro.keepWithNext = True
@@ -1183,7 +1298,7 @@ class Test(object):
                 sn_title_sub.keepWithNext = True
                 ## Create header with column names
                 d4 = []
-                sn_columns = ["Item", "Information"]
+                sn_columns = ["Item", "Information","Qty"]
                 for text in sn_columns:
                     ptext = "<font size=%s><b>%s</b></font>" % (font_size, text)
                     p4 = Paragraph(ptext, centered)
@@ -1198,16 +1313,24 @@ class Test(object):
                     print(mac.replace('-','').replace(':','').strip().lower())
                 
                 for cur_key in cur_sn.keys():
-                    if 'SN' not in cur_key and 'FW' not in cur_key and 'MAC' not in cur_key:
+                    if 'SN' not in cur_key and 'FW' not in cur_key and 'MAC' not in cur_key and 'PN' not in cur_key:
                         continue
+                    cur_quantity = str(cur_sn[cur_key].count(sn_seperator)) # count the number of items by counting the seporators
+                    if len(cur_sn[cur_key]) >= 1 and cur_sn[cur_key].endswith(sn_seperator):  # remove the tail seporator
+                        cur_box_content = cur_sn[cur_key][:-len(sn_seperator)]
+                    else:
+                        cur_box_content = cur_sn[cur_key]
                     ptext_key = "<font size=%s>%s</font>" % (font_size-2, cur_key)
-                    ptext_value = "<font size=%s>%s</font>" % (font_size-2, cur_sn[cur_key])
+                    ptext_value = "<font size=%s>%s</font>" % (auto_font_size(cur_box_content,sn_seperator,sn_seperator_real), cur_box_content)
+                    ptext_quantity = "<font size=%s>%s</font>" % (font_size-2, cur_quantity)
                     p4_key = Paragraph(ptext_key, centered)
                     p4_value = Paragraph(ptext_value, centered)
-                    data4.append([p4_key,p4_value])    
+                    p4_quantity = Paragraph(ptext_quantity, centered)
+                    data4.append([p4_key,p4_value,p4_quantity])    
                     
-                table4 = Table(data4, colWidths=[55, 385])
+                table4 = Table(data4, colWidths=[55, 355, 30])
                 table4.setStyle(TableStyle([
+                    ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
                     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data4),colors.lightgrey,colors.lightblue))

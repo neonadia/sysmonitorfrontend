@@ -57,7 +57,7 @@ def fetch_hardware_details(bmc_ip,hardware):
             for i in hardware_dict:
                 if i == "NICS":
                     for j in hardware_dict[i]:
-                        hw_dict[str(j)] = hardware_dict[i][str(j)]["Name"]
+                        hw_dict["Device " + str(j)] = hardware_dict[i][str(j)]
         elif hardware == "gpu":
             for i in hardware_dict:
                 if i == "Graphics":
@@ -84,7 +84,26 @@ def fetch_hardware_details(bmc_ip,hardware):
                 if i == "FANS":
                     for j in hardware_dict[i]:
                         hw_dict[hardware_dict[i][str(j)]["name"]] = hardware_dict[i][str(j)]["status"].upper()
-    
+        elif hardware == "system":
+            for i in hardware_dict:
+                if i == "System":
+                    for j in hardware_dict[i]:
+                        hw_dict["System " + str(j)] = {}
+                        hw_dict["System " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
+                        hw_dict["System " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                elif i == "Chassis":
+                    for j in hardware_dict[i]:
+                        hw_dict["Chassis " + str(j)] = {}
+                        hw_dict["Chassis " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
+                        hw_dict["Chassis " + str(j)]["Type"] = hardware_dict[i][str(j)]["Type"]
+                        hw_dict["Chassis " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                elif i == "Base Board":
+                    for j in hardware_dict[i]:
+                        hw_dict["Board " + str(j)] = {}
+                        hw_dict["Board " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
+                        hw_dict["Board " + str(j)]["Product Name"] = hardware_dict[i][str(j)]["Product Name"]
+                        hw_dict["Board " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+
     return hw_dict
 
 def get_hardwareData():
@@ -100,7 +119,8 @@ def get_hardwareData():
     HOSTNAMES = []
     PSU = []
     GPU = []
-    equalizer = {"HOSTNAMES":0,"CPU": 0,"MEMORY":0,"STORAGE":0,"NICS":0,"GPU":0,"PSU":0,"FANS":0} #Equalizer scoreboard to have a symmetrical 2D array
+    SYSTEMS = []
+    equalizer = {"HOSTNAMES":0,"CPU": 0,"MEMORY":0,"STORAGE":0,"NICS":0,"GPU":0,"PSU":0,"FANS":0,"SYSTEMS":0} #Equalizer scoreboard to have a symmetrical 2D array
     NoneType = type(None)
     for ip in bmc_ips:
         hardware_dict = hardware_collection.find_one({'bmc_ip':ip},{'_id':0})
@@ -186,6 +206,12 @@ def get_hardwareData():
                 elif "Hostname" in i:
                     HOSTNAMES.append(hardware_dict[i])
                     equalizer["HOSTNAMES"] += 1
+                elif "System" in i:
+                    system = ""
+                    for j in hardware_dict[i]:
+                        system = hardware_dict[i][str(j)]["Product Name"]
+                    SYSTEMS.append(system)
+                    equalizer["SYSTEMS"] += 1
         for i in equalizer:
             compare = equalizer[i]
             for j in equalizer:
@@ -205,6 +231,8 @@ def get_hardwareData():
                         GPU.append("N/A")
                     elif j == "PSU":
                         PSU.append("N/A")
+                    elif j == "SYSTEMS":
+                        SYSTEMS.append("N/A")
                     else:
                         FANS.append("N/A")
                 elif equalizer[j] > compare:
@@ -224,9 +252,11 @@ def get_hardwareData():
                         GPU.append("N/A")
                     elif i == "PSU":
                         PSU.append("N/A")
+                    elif j == "SYSTEMS":
+                        SYSTEMS.append("N/A")
                     else:
                         FANS.append("N/A")
-    data = zip(HOSTNAMES,bmc_ips,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)
+    data = zip(HOSTNAMES,bmc_ips,SYSTEMS,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)
     return data
 
 def find_ikvm(bmc_ip):

@@ -4,6 +4,8 @@ import json
 import pymongo
 import sys
 import math
+import xml.etree.ElementTree as ET
+
 mongoport = int(os.environ['MONGOPORT'])
 client = pymongo.MongoClient('localhost', mongoport)
 db = client.redfish
@@ -150,6 +152,7 @@ if found:
                             DevicePath = []
                             SerialNumber = []
                             PhysicalSize = []
+                            firmware = []
                             for line in hdd_data:
                                 if "product" in line:
                                     ModelNumber.append(line.split(":")[1].strip())
@@ -159,9 +162,11 @@ if found:
                                     SerialNumber.append(line.split(":")[1].strip())
                                 elif "size" in line and "GiB" in line:
                                     PhysicalSize.append(int(line.split(":")[1].strip().split()[1].strip("(GB)").strip())* 1000000000)
+                                elif "version" in line:
+                                    firmware.append(line.split(":")[1].strip())
                             j = len(storage_dict["Storage"])
                             for i in range(len(ModelNumber)):
-                                storage_dict["Storage"][str(j)] = {"DevicePath":DevicePath[i],"ModelNumber" : ModelNumber[i],"SerialNumber":SerialNumber[i],"PhysicalSize":PhysicalSize[i]}
+                                storage_dict["Storage"][str(j)] = {"DevicePath":DevicePath[i],"ModelNumber" : ModelNumber[i],"Firmware": firmware[i],"SerialNumber":SerialNumber[i],"PhysicalSize":PhysicalSize[i]}
                                 j += 1
                 ######## PARSE RAM specs ###########
                 elif 'memory' in file and 'txt' in file:
@@ -205,19 +210,60 @@ if found:
                             for i in range(len(size)):
                                 memory_data["Memory"]["Slots"]["DIMM" + str(i)] = {"Manufacturer" : manu[i],"Serial No.":serial_nums[i],"Part No.": pn[i],"Max Speed":max_speed[i],"Configured Speed": con_mem_speed[i],"Size":size[i],"Type":type[i]}
                             collection.update_one({"Hostname":hostname},{"$set":memory_data})
-                elif 'network' in file and 'txt' in file:
-                    if os.path.getsize(file) != 0: 
-                        with open(file,"r") as cur_file:
-                            lines = cur_file.readlines()
-                            net_dict = {"NICS":{}}
-                            i = 0
-                            for line in lines:
-                                if len(line) != 0:
-                                    bus = line.split(" ")[0].strip()
-                                    name = line.split("r:")[1].strip()
-                                    net_dict["NICS"][str(i)] = {"PCIe Bus" : bus, "Name" : name} 
-                                    i += 1
-                            collection.update_one({"Hostname":hostname},{"$set":net_dict})
+                elif 'network' in file and 'xml' in file:
+                    try:
+                        tree = ET.parse(file)
+                    except:
+                        print("Could not open xml file for network parsing",file=sys.stderr,flush=True)
+                    else:
+                        root = tree.getroot()
+                        net_dict = {"NICS":{}}
+                        pci_bus_nums = []
+                        for index,i in enumerate(root):
+                            if 'handle' in i.attrib: #### "handle" is attribute in the xml that denotes the PCIe bus, this excludes any virtual network connections.
+                                temp_dict = {'Name':"N/A","Part Number":"N/A","PCIe Bus":"N/A",'Firmware':"N/A","Vendor":"N/A","Serial":"N/A"}
+                                for j in i:
+                                    if j.tag == 'product':
+                                        temp_dict['Name'] = j.text
+                                    elif j.tag == 'businfo':
+                                        temp_dict["PCIe Bus"] = j.text.split("@")[1]
+                                        pci_bus_nums.append(j.text.split("@")[1])
+                                    elif j.tag == "vendor":
+                                        temp_dict['Vendor'] = j.text
+                                    elif j.tag == 'serial':
+                                        temp_dict['MAC'] = j.text
+                                    elif j.tag in 'logicalname':
+                                        temp_dict["Interface Name"] = j.text
+                                for j in i.find('configuration'):
+                                    if j.attrib['id'] == 'firmware':
+                                        temp_dict['Firmware'] = j.attrib['value'].split()[0].split(",")[0]
+                                net_dict["NICS"][str(index)] = temp_dict
+                        ###### Cross reference nics serial and insert to temporary dictionary before pushing
+                        ref_txt = inputdir + "/" + key + "/nic_serial_reference_" + hostname + ".txt"
+                        try:
+                            with open(ref_txt,"r") as r:
+                                lines = r.readlines()
+                                worker_bus = "" ###Bus number identifies nic card
+                                for x in lines:
+                                    if "Ethernet controller" in x: ###If bus number read, switch worker bus to this
+                                        for bus_num in pci_bus_nums:
+                                            if bus_num.strip("000:") in x.split(" ")[0]:
+                                                worker_bus = bus_num
+                                    elif "[PN] Part number" in x:
+                                        part_num = x.split(":")[1].strip()
+                                        for y in net_dict["NICS"]:
+                                            if net_dict["NICS"][str(y)]["PCIe Bus"] == worker_bus: # Cross reference bus number
+                                                net_dict["NICS"][str(y)]["Part Number"] = part_num
+                                                print("Inserting into dictionary: " + worker_bus + " === " + part_num)
+                                    elif "[SN] Serial number" in x:
+                                        serial_num = x.split(":")[1].strip()
+                                        for y in net_dict["NICS"]:
+                                            if net_dict["NICS"][str(y)]["PCIe Bus"] == worker_bus: # Cross reference bus number
+                                                net_dict["NICS"][str(y)]["Serial"] = serial_num
+                                                print("Inserting into dictionary: " + worker_bus + " === " + serial_num)
+                        except Exception as e:
+                            print(e,file=sys.stderr,flush=True)
+                        collection.update_one({"Hostname":hostname},{"$set":net_dict})
                 elif 'gpu' in file and 'csv' in file:
                     if os.path.getsize(file) != 0: 
                         if GPU == "AMD" or GPU == "amd":
@@ -238,7 +284,7 @@ if found:
                                             headers = line.split(",")
                                             for iter in range(len(headers)):
                                                 if 'device'in headers[iter]:
-                                                    columns.update({'Device':iter});
+                                                    columns.update({'Device':iter})
                                                 elif 'GPU ID' in headers[iter]:
                                                     columns.update({"GPU ID":iter})
                                                 elif 'VBIOS' in headers[iter]:
@@ -337,6 +383,73 @@ if found:
                                     fans["FANS"][str(i)] = {"name": line.split("|")[0].strip(),'status' :line.split("|")[2].strip(),"rpm":line.split("|")[1].strip() }
                                     i += 1
                             collection.update_one({"Hostname":hostname},{"$set":fans})
+                elif 'system' in file and ".log" in file:
+                    if os.path.getsize(file) != 0:
+                        with open(file,"r") as cur_file:
+                            lines = cur_file.readlines()
+                            current_component = ""
+                            baseboard_num = 0
+                            chassis_num = 0
+                            system_num = 0
+                            system_dict = {"System":{}}
+                            chassis_dict = {"Chassis": {}}
+                            baseboard_dict = {"Base Board":{}}
+                            for i in lines:
+                                if "Information" in i:
+                                    if "Base" in i:
+                                        current_component = i.split(" ")[0] + " " + i.split(" ")[1]
+                                    else:
+                                        current_component = i.split(" ")[0]
+    
+                                    if current_component == "System":
+                                        system_num += 1
+                                        system_dict['System'][str(system_num)] = {"Manufacturer":"N/A","Product Name":"N/A","Version":"N/A","Serial Number":"N/A","UUID":"N/A","Family":"N/A","SKU Number":"N/A"}
+                                    elif current_component == "Chassis":
+                                        chassis_num += 1
+                                        chassis_dict["Chassis"][str(chassis_num)] = {"Manufacturer":"N/A","Version":"N/A","Type":"N/A","Serial Number":"N/A"}
+                                    else:
+                                        baseboard_num += 1
+                                        baseboard_dict["Base Board"][str(baseboard_num)] = {"Manufacturer":"N/A","Product Name":"N/A","Version":"N/A","Serial Number":"N/A"}
+                                elif "Manufacturer" in i:
+                                    if current_component == "System":
+                                        system_dict[current_component][str(system_num)]['Manufacturer'] = i.split(":")[1].strip()
+                                    elif current_component == "Chassis":
+                                        chassis_dict[current_component][str(chassis_num)]['Manufacturer'] = i.split(":")[1].strip()
+                                    elif current_component == "Base Board":
+                                        baseboard_dict[current_component][str(baseboard_num)]['Manufacturer'] = i.split(":")[1].strip()
+                                elif "Product Name" in i:
+                                    if current_component == "System":
+                                        system_dict[current_component][str(system_num)]['Product Name'] = i.split(":")[1].strip()
+                                    elif current_component == "Chassis":
+                                        chassis_dict[current_component][str(chassis_num)]['Product Name'] = i.split(":")[1].strip()
+                                    elif current_component == "Base Board":
+                                        baseboard_dict[current_component][str(baseboard_num)]['Product Name'] = i.split(":")[1].strip()
+                                elif "Version" in i:
+                                    if current_component == "System":
+                                        system_dict[current_component][str(system_num)]['Version'] = i.split(":")[1].strip()
+                                    elif current_component == "Chassis":
+                                        chassis_dict[current_component][str(chassis_num)]['Version'] = i.split(":")[1].strip()
+                                    elif current_component == "Base Board":
+                                        baseboard_dict[current_component][str(baseboard_num)]['Version'] = i.split(":")[1].strip()
+                                elif "Serial Number" in i:
+                                    if current_component == "System":
+                                        system_dict[current_component][str(system_num)]['Serial Number'] = i.split(":")[1].strip()
+                                    elif current_component == "Chassis":
+                                        chassis_dict[current_component][str(chassis_num)]['Serial Number'] = i.split(":")[1].strip()
+                                    elif current_component == "Base Board":
+                                        baseboard_dict[current_component][str(baseboard_num)]['Serial Number'] = i.split(":")[1].strip()
+                                elif "UUID" in i:
+                                    system_dict[current_component][str(system_num)]['UUID'] = i.split(":")[1].strip()
+                                elif "SKU Number" in i:
+                                    system_dict[current_component][str(system_num)]['SKU Number'] = i.split(":")[1].strip()
+                                elif "Family" in i:
+                                    system_dict[current_component][str(system_num)]['Family'] = i.split(":")[1].strip()
+                                elif "Type" in i and "Wake-up" not in i:
+                                    chassis_dict[current_component][str(system_num)]['Type'] = i.split(":")[1].strip()
+                            
+                            collection.update_one({"Hostname":hostname},{"$set":system_dict})
+                            collection.update_one({"Hostname":hostname},{"$set":chassis_dict})
+                            collection.update_one({"Hostname":hostname},{"$set":baseboard_dict})
             if len(storage_dict["Storage"]) != 0: ##### If no storage logs were processed, do not update with empty dictionary.
                 collection.update_one({"Hostname":hostname},{"$set":storage_dict})
                 del storage_dict
