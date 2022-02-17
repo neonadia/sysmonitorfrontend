@@ -122,16 +122,19 @@ for i in range(len(benchmark_map)):
     benchmark_data.append(('N/A'))
     benchmark_unit.append([])
 
+printf("#####################benchmark_map#####################")
+printf(benchmark_map)
+printf("=======================================================")
 
 for i, bm in enumerate(list(benchmark_map.keys())):
     counter = 0
     skip = benchmark_map[bm][0]
     cur_benchmark_data = []
     for data in list(collection2.find({})):
-        if data['star'] == 1 and data['benchmark'] in bm and skip != 0:
+        if data['star'] == 1 and data['benchmark'] == bm.split('|')[0] and skip != 0:
             skip -= 1
             continue
-        elif data['star'] == 1 and data['benchmark'] in bm and counter < len(benchmark_map[bm]):
+        elif data['star'] == 1 and data['benchmark'] == bm.split('|')[0] and counter < len(benchmark_map[bm]):
             try:
                 benchmark_node[i].append(getSerialNumberFromOsip(data['os_ip'],0))
             except:
