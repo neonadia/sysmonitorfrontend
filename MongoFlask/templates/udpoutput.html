@@ -120,9 +120,9 @@
         <th class="align-middle" >END TIME</th>
         <th class="align-middle" >COMMAND</th>
         <th class="align-middle" >BENCHMARK</th>
-        <th class="align-middle" >FILE SIZE (bytes)</th>
         <th class="align-middle" >RESULT</th>
         <th class="align-middle" >DOWNLOAD LOG FILE</th>
+        <th class="align-middle" >FILE SIZE (bytes)</th>
         <th class="align-middle" >CONCLUSION</th>
         <th class="align-middle" >DELETE</th>
     </thead>
@@ -147,7 +147,6 @@
             <td class="align-middle font-weight-bold text-primary" >{{ done_date }}</td>
             <td class="align-middle font-weight-bold text-success" >{{ cmd }}</td> 
             <td class="align-middle font-weight-bold text-success" >{{ bm }}</td>
-            <td class="align-middle font-weight-bold text-primary" >{{ size }}</td>
             {% if conclusion == "PASS" %}
             <td class="align-middle font-weight-bold text-success" >{{ result }}</td>
             {% elif conclusion == "FAILED" %}
@@ -158,6 +157,7 @@
             <td class="align-middle font-weight-bold" >
             <a class="fas fa-file-alt" href="{{ url_for('udpsendlogfile') }}?var={{ id }}" style="font-weight-bold text-primary">&nbsp {{ file_name }}</a>
             </td>
+            <td class="align-middle font-weight-bold text-primary" >{{ size }}</td>
             {% if conclusion == "PASS" %}
             <td class="align-middle font-weight-bold text-success" >{{ conclusion }}</td>
             {% elif conclusion == "FAILED" %}
@@ -166,7 +166,7 @@
             <td class="align-middle font-weight-bold text-dark" >{{ conclusion }}</td>
             {% endif %}
             <td class="align-middle font-weight-bold" >
-            <a class="fas fa-trash-alt" href="{{ url_for('udpdeleteobject') }}?var={{ id }}" style="font-weight-bold text-danger"></a>
+            <a class="fas fa-trash-alt" href="javascript:void(0)" id= "del_{{id}}" style="font-weight-bold text-danger" onclick="trigger_del_one('{{id}}')"></a>
             </td>
             
             </tr>
@@ -422,6 +422,36 @@
                         console.log(key + ": " + data[key]);
                         button.classList.replace("btn-info","btn-danger")
                         button.innerHTML = "DELETE FAILED";
+                    } 
+                }
+            });
+        }
+
+        function trigger_del_one(id){
+            $.call_delone_script(id);
+        }
+        $.call_delone_script = function(id){
+            $.ajax({
+                url: '/udpdeleteobject',
+                data: {'var': id},
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    var button = document.getElementById(data['ID']);                   
+                    for(var key in data){
+                        console.log(key);
+                        console.log(data[key]);
+                    }
+                    if(data['Status'] == "success"){                   
+                        console.log("success delete");
+                        button.classList.replace("fa-trash-alt","fa-check")
+                        window.location.reload();
+                    }
+                    else{
+                        console.log("Delete failed");
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("fa-trash-alt","fa-circle-exclamation")
                     } 
                 }
             });

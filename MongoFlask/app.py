@@ -1548,6 +1548,7 @@ def udpsendlogfile():
 @app.route('/udpdeleteobject')
 def udpdeleteobject():
     data = request.args.get('var')
+    deleted_data = {'Status': 'success','ID': 'del_' + data}
     try:
         backup = list(udp_collection.find({'_id':ObjectId(data)}))[0]
         # unstar the obj before move to the dustbin
@@ -1555,8 +1556,9 @@ def udpdeleteobject():
         udp_deleted_collection.insert(backup)
         udp_collection.find_one_and_delete({'_id':ObjectId(data)},{})
     except Exception as e:
-        return render_template('error.html',error=e,rackname=rackname,rackobserverurl = rackobserverurl)
-    return redirect(url_for('udpoutput'))
+        deleted_data = {'Status': 'failed'}
+        printf(e)
+    return json.dumps(deleted_data)
 
 @app.route('/udpdeleteallobject')
 def udpdeleteallobject():
