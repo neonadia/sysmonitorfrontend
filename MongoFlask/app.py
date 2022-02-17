@@ -1510,11 +1510,14 @@ def udpserverinitialize():
 
 @app.route('/udpoutput')
 def udpoutput():
-    star, os_ip,start_date,done_date,cmd,content,content_size,benchmark,config,result,id,file_name,conclusion= [],[],[],[],[],[],[],[],[],[],[],[],[]
+    star,mac,ipmi,os_ip,start_date,done_date,cmd,content,content_size,benchmark,config,result,id,file_name,conclusion= [],[],[],[],[],[],[],[],[],[],[],[],[],[],[]
     benchmark_data = list(udp_collection.find({}))
     for i in benchmark_data:
         star.append(i['star'])
+        mac.append(i['mac'])
         os_ip.append(i['os_ip'])
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        ipmi.append(df_pwd[df_pwd['os_ip'] == i['os_ip']]['ip'].values[0])
         start_date.append(i['start_date'])
         done_date.append(i['done_date'])
         cmd.append(i['cmd'])
@@ -1525,7 +1528,8 @@ def udpoutput():
         id.append(str(i['_id']))
         file_name.append(i['file_name'])
         conclusion.append(i['conclusion'])
-    return render_template('udpoutput.html',rackname=rackname,data=zip(star, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id,rackobserverurl = rackobserverurl)
+    return render_template('udpoutput.html',rackname=rackname,\
+    data=zip(star, mac, ipmi, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id,rackobserverurl = rackobserverurl)
 
 
 @app.route('/udpsendlogfile')
@@ -2413,7 +2417,8 @@ def benchmark_result_parser():
         # Check MAC address for each dir, only read mac address belongs to the rack
             if os.path.isdir(inputdir + '/' + dirname) and clean_mac(dirname.split('_')[-1]) in mac_dict:
                 dirname_list.append(dirname)
-                cur_ip = mac_dict[clean_mac(dirname.split('_')[-1])]
+                cur_mac = dirname.split('_')[-1]
+                cur_ip = mac_dict[clean_mac(cur_mac)]
                 printf("###################################################### " + cur_ip + '||' + dirname + " #####################################################")
                 messages[cur_ip]  = dirname
                 for filename in os.listdir(inputdir + '/' + dirname):
@@ -2430,6 +2435,7 @@ def benchmark_result_parser():
                             if conclusionAndResult['conclusion'] != 'N/A':
                                 file_data = {\
                                         'os_ip':cur_ip,\
+                                        'mac':cur_mac,\
                                         'file_name':filename,\
                                         'start_date':"Self-inserted",\
                                         'done_date':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),\
@@ -2439,7 +2445,7 @@ def benchmark_result_parser():
                                         'category':config['category'],\
                                         'config':config['config'],\
                                         'cmd':config['prefix'] + " " + config['exe'] + " " + config['config'],\
-                                        'benchmark':config['exe'],\
+                                        'benchmark':config['log'],\
                                         'unit':config['unit'],\
                                         'raw_result':conclusionAndResult['raw_result'],\
                                         'star':-1}

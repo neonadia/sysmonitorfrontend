@@ -113,6 +113,8 @@
     <thead class="thead-dark" >
         <th class="align-middle" >ID</th>
         <th class="align-middle" >STARRED</th>
+        <th class="align-middle" >MAC</th>
+        <th class="align-middle" >IPMI</th>
         <th class="align-middle" >OS IP</th>
         <th class="align-middle" >START TIME</th>
         <th class="align-middle" >END TIME</th>
@@ -125,7 +127,7 @@
         <th class="align-middle" >DELETE</th>
     </thead>
     <tbody>
-        {% for star, os_ip, start_date, done_date, cmd, bm, size, result, id, file_name, conclusion in data %}
+        {% for star, mac, ipmi, os_ip, start_date, done_date, cmd, bm, size, result, id, file_name, conclusion in data %}
             <tr>
             <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
             
@@ -138,11 +140,12 @@
             </a>
             {% endif %}
             </td>
-            
+            <td class="align-middle font-weight-bold text-primary" >{{ mac }}</td>
+            <td class="align-middle font-weight-bold text-primary" >{{ ipmi }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ os_ip }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ start_date }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ done_date }}</td>
-            <td class="align-middle font-weight-bold text-success" >{{ cmd }}</td>
+            <td class="align-middle font-weight-bold text-success" >{{ cmd }}</td> 
             <td class="align-middle font-weight-bold text-success" >{{ bm }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ size }}</td>
             {% if conclusion == "PASS" %}
