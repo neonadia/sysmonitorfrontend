@@ -12,3 +12,4 @@ openpyxl==3.0.4
 matplotlib==3.3.3
 seaborn==0.11.1
 Flask-DebugToolbar==0.11.0
+itsdangerous==2.0.1
