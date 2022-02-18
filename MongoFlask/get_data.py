@@ -135,7 +135,7 @@ def get_hardwareData():
                             if hardware_dict[i][j] == "0":
                                 cpu_string = "N/A"
                             else:
-                                cpu_string += hardware_dict[i][j] + "x "
+                                cpu_string = hardware_dict[i][j] + "x " + cpu_string
                         elif j == "Model name":
                             cpu_string += hardware_dict[i][j]
                     cpu_string += add_string + speed_string 
