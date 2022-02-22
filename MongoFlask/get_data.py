@@ -24,21 +24,17 @@ def fetch_hardware_details(bmc_ip,hardware):
                             if j != "Flags" and "Vulnerability" not in j:
                                 hw_dict[j] = hardware_dict[i][j]
         elif hardware == "memory":
-            manufacturer = []
             for i in hardware_dict:
                 if i == "Memory":
-                    for j in hardware_dict["Memory"]["Slots"]:
-                        if len(manufacturer) == 0:
-                            manufacturer.append(hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"])
-                        else:
-                            for m in manufacturer:
-                                if m != hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"] and hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"] != "NO DIMM":  
-                                    manufacturer.append(hardware_dict["Memory"]["Slots"][str(j)]["Manufacturer"])
-            for i,company in enumerate(manufacturer):
-                if len(manufacturer) == 1:
-                    hw_dict["Manufacturer"] = company
-                else:
-                    hw_dict["Manufacturer"+ "(" + str(i) + ")"] = company
+                    for j in hardware_dict[i]["Slots"]:
+                        if "NO DIMM" not in hardware_dict[i]["Slots"][j]["Serial No."]:
+                            hw_dict[j] = {}
+                            hw_dict[j]["Manufacturer"] = hardware_dict[i]["Slots"][j]["Manufacturer"]
+                            hw_dict[j]["Serial No."] = hardware_dict[i]["Slots"][j]["Serial No."]
+                            try:
+                                hw_dict[j]["SMC DB handshake"] = hardware_dict[i]["Slots"][j]["SMC DB handshake"]
+                            except:
+                                hw_dict[j]["SMC DB handshake"] = "N/A"
         elif hardware == "storage":
             device_no = 0
             for i in hardware_dict:
@@ -52,12 +48,21 @@ def fetch_hardware_details(bmc_ip,hardware):
                                 hw_dict[temp_device_name]["Type"] = "NVMe"
                             else:
                                 hw_dict[temp_device_name]["Type"] = "HDD"
+                            hw_dict[temp_device_name]["Serial Number"] = hardware_dict[i][str(j)]["SerialNumber"]
                             hw_dict[temp_device_name]["Physical Size"] = str(int(hardware_dict[i][str(j)].get("PhysicalSize")) / 1000000000) + " GB"
+                            try:
+                                hw_dict[temp_device_name]["SMC DB handshake"] =  hardware_dict[i][str(j)]["SMC DB handshake"]
+                            except:
+                                hw_dict[temp_device_name]["SMC DB handshake"] =  "N/A"
         elif hardware == "nics":
             for i in hardware_dict:
                 if i == "NICS":
                     for j in hardware_dict[i]:
                         hw_dict["Device " + str(j)] = hardware_dict[i][str(j)]
+                        try:
+                            hw_dict["Device " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
+                        except:
+                            hw_dict["Device " + str(j)]["SMC DB handshake"] = "N/A"
         elif hardware == "gpu":
             for i in hardware_dict:
                 if i == "Graphics":
@@ -70,6 +75,10 @@ def fetch_hardware_details(bmc_ip,hardware):
                         hw_dict[temp_device_name]["PCI Bus"] = hardware_dict[i]["GPU"][str(j)]["PCI Bus"]
                         hw_dict[temp_device_name]["VBIOS"] = hardware_dict[i]["GPU"][str(j)]["VBIOS"]
                         hw_dict[temp_device_name]["Serial No."] = hardware_dict[i]["GPU"][str(j)]["Serial No."]
+                        try:
+                            hw_dict[temp_device_name]["SMC DB handshake"] = hardware_dict[i]["GPU"][str(j)]["SMC DB handshake"]
+                        except:
+                            hw_dict[temp_device_name]["SMC DB handshake"] = "N/A"
         elif hardware == "psu":
             for i in hardware_dict:
                 if i == "PSU":
@@ -79,6 +88,10 @@ def fetch_hardware_details(bmc_ip,hardware):
                             hw_dict[temp_device_name] = {}
                             hw_dict[temp_device_name]["Module No."] = hardware_dict[i][str(j)]["Module No."]
                             hw_dict[temp_device_name]["Serial No."] = hardware_dict[i][str(j)]["Serial No."]
+                            try:
+                                hw_dict[temp_device_name]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
+                            except:
+                                hw_dict[temp_device_name]["SMC DB handshake"] = "N/A"
         elif hardware == "fans":
             for i in hardware_dict:
                 if i == "FANS":
@@ -91,18 +104,31 @@ def fetch_hardware_details(bmc_ip,hardware):
                         hw_dict["System " + str(j)] = {}
                         hw_dict["System " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
                         hw_dict["System " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                        try:
+                            hw_dict["System " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
+                        except:
+                            hw_dict["System " + str(j)]["SMC DB handshake"] = "N/A"
                 elif i == "Chassis":
                     for j in hardware_dict[i]:
                         hw_dict["Chassis " + str(j)] = {}
                         hw_dict["Chassis " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
                         hw_dict["Chassis " + str(j)]["Type"] = hardware_dict[i][str(j)]["Type"]
                         hw_dict["Chassis " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                        try:
+                            hw_dict["Chassis " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
+                        except:
+                            hw_dict["Chassis " + str(j)]["SMC DB handshake"] = "N/A"
                 elif i == "Base Board":
                     for j in hardware_dict[i]:
                         hw_dict["Board " + str(j)] = {}
                         hw_dict["Board " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
                         hw_dict["Board " + str(j)]["Product Name"] = hardware_dict[i][str(j)]["Product Name"]
                         hw_dict["Board " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                        try:
+                            hw_dict["Board " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
+                        except:
+                            hw_dict["Board " + str(j)]["SMC DB handshake"] = "N/A"
+            
 
     return hw_dict
 
@@ -144,47 +170,76 @@ def get_hardwareData():
                 elif "Memory" in i:
                     dimm_no = ""
                     total_mem = ""
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         if 'DIMMS' in j:
                             dimm_no = hardware_dict[i][j]
                         elif "Total Memory" in j:
                             total_mem = hardware_dict[i][j]
-                    memory = dimm_no + " DIMMs; Total Memory: " + total_mem + "GB"
+                        elif "Slots" in j:
+                            for k in hardware_dict[i][j]:
+                                try:
+                                    if "False" in hardware_dict[i][j][str(k)]["SMC DB handshake"]:
+                                        SMC_handshake = "False"
+                                except:
+                                    SMC_handshake = "TBD"
+                    memory = [dimm_no + " DIMMs; Total Memory: " + total_mem + "GB",SMC_handshake]
                     MEMORY.append(memory)
                     equalizer["MEMORY"] += 1
                 elif "PSU" in i:
                     psu_num = ""
                     psu_string = ""
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         if "Number" in j:
                             psu_num = hardware_dict[str(i)][str(j)]
+                        else:
+                            for k in hardware_dict[i][str(j)]:
+                                try:
+                                    if "False" in hardware_dict[i][str(j)]["SMC DB handshake"]:
+                                        SMC_handshake = "False"
+                                except:
+                                    SMC_handshake = "TBD"
                     psu_string += str(psu_num) + " PSUs"  
-                    PSU.append(psu_string)
+                    PSU.append([psu_string,SMC_handshake])
                     equalizer["PSU"] += 1
                 elif "Storage" in i:
                     size = 0
                     no_drives = 0
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         for k in hardware_dict[i][j]:
                             if "PhysicalSize" in k:
                                 size += (hardware_dict[i][str(j)][k] / 1000000000)
                                 no_drives += 1
+                        try:
+                            if "False" in hardware_dict[i][str(j)]["SMC DB handshake"]:
+                                SMC_handshake = "False"
+                        except:
+                            SMC_handshake = "TBD"
                     gb_size = size
-                    storage = str(no_drives) + " drives; " + "Total System Storage: " + str(round(gb_size,1)) + " GB"
+                    storage = [str(no_drives) + " drives; " + "Total System Storage: " + str(round(gb_size,1)) + " GB", SMC_handshake]
                     STORAGE.append(storage)
                     equalizer["STORAGE"] += 1
                 elif "NICS" in i:
                     no_nics = 0
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         no_nics = int(j)
+                        try:
+                            if "False" in hardware_dict[i][str(j)]["SMC DB handshake"]:
+                                SMC_handshake = "False"
+                        except:
+                            SMC_handshake = "TBD"
                     no_nics += 1
-                    network = str(no_nics) + " network adapters"
+                    network = [str(no_nics) + " network adapters", SMC_handshake]
                     NICS.append(network)
                     equalizer["NICS"] += 1
                 elif "Graphics" in i:
                     no_gpus = 0
                     maker = ""
                     driver = ""
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         if "Number of GPUs" in j:
                             no_gpus = int(hardware_dict[i][j])
@@ -192,14 +247,21 @@ def get_hardwareData():
                             maker = hardware_dict[i][j]
                         elif "Driver Version" in j:
                             driver = hardware_dict[i][j]
-                    graphics = str(no_gpus) + " " + maker  + " GPUs w/ " + driver + " driver"
+                        elif "GPU" in j:
+                            for gpu in hardware_dict[i][j]:
+                                try:
+                                    if "False" in hardware_dict[i][j][str(gpu)]["SMC DB handshake"]:
+                                        SMC_handshake = "False"
+                                except:
+                                    SMC_handshake = "TBD"
+                    graphics = [str(no_gpus) + " " + maker  + " GPUs w/ " + driver + " driver",SMC_handshake]
                     GPU.append(graphics)
                     equalizer["GPU"] += 1
                 elif "FANS" in i:
                     no_fans = 0
                     for j in hardware_dict[i]:
-                        no_fans = int(j)
-                    no_fans += 1
+                        # no_fans = int(j)
+                        no_fans += 1
                     fans = "Number of fans: " + str(no_fans)
                     FANS.append(fans)
                     equalizer["FANS"] += 1
@@ -207,9 +269,33 @@ def get_hardwareData():
                     HOSTNAMES.append(hardware_dict[i])
                     equalizer["HOSTNAMES"] += 1
                 elif "System" in i:
-                    system = ""
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
-                        system = hardware_dict[i][str(j)]["Product Name"]
+                        try:
+                            if "False" in hardware_dict[i][str(j)]["SMC DB handshake"]:
+                                SMC_handshake = "False"
+                        except:
+                            SMC_handshake = "TBD"
+                        name = hardware_dict[i][str(j)]["Product Name"]
+                    try:
+                        for j in hardware_dict["Base Board"]:
+                            try:
+                                if "False" in hardware_dict["Base Board"][str(j)]["SMC DB handshake"]:
+                                    SMC_handshake = "False"
+                            except:
+                                SMC_handshake = "TBD"
+                    except:
+                        print("No Baseboard")
+                    try:
+                        for j in hardware_dict["Chassis"]:
+                            try:
+                                if "False" in hardware_dict["Chassis"][str(j)]["SMC DB handshake"]:
+                                    SMC_handshake = "False"
+                            except:
+                                SMC_handshake = "TBD"
+                    except:
+                        print("No Chassis")
+                    system = [name,SMC_handshake]
                     SYSTEMS.append(system)
                     equalizer["SYSTEMS"] += 1
         for i in equalizer:
@@ -220,19 +306,19 @@ def get_hardwareData():
                     if j == "CPU":
                         CPU.append("N/A")
                     elif j == "MEMORY":
-                        MEMORY.append("N/A")
+                        MEMORY.append(["N/A","N/A"])
                     elif j == "HOSTNAMES":
                         HOSTNAMES.append("N/A")
                     elif j == "STORAGE":
-                        STORAGE.append("N/A")
+                        STORAGE.append(["N/A","N/A"])
                     elif j == "NICS":
-                        NICS.append("N/A")
+                        NICS.append(["N/A","N/A"])
                     elif j == "GPU":
-                        GPU.append("N/A")
+                        GPU.append(["N/A","N/A"])
                     elif j == "PSU":
-                        PSU.append("N/A")
+                        PSU.append(["N/A","N/A"])
                     elif j == "SYSTEMS":
-                        SYSTEMS.append("N/A")
+                        SYSTEMS.append(["N/A","N/A"])
                     else:
                         FANS.append("N/A")
                 elif equalizer[j] > compare:
@@ -241,19 +327,19 @@ def get_hardwareData():
                     if i == "CPU":
                         CPU.append("N/A")
                     elif i == "MEMORY":
-                        MEMORY.append("N/A")
+                        MEMORY.append(["N/A","N/A"])
                     elif i == "HOSTNAMES":
                         HOSTNAMES.append("N/A")
                     elif i == "STORAGE":
-                        STORAGE.append("N/A")
+                        STORAGE.append(["N/A","N/A"])
                     elif i == "NICS":
-                        NICS.append("N/A")
+                        NICS.append(["N/A","N/A"])
                     elif i == "GPU":
-                        GPU.append("N/A")
+                        GPU.append(["N/A","N/A"])
                     elif i == "PSU":
-                        PSU.append("N/A")
+                        PSU.append(["N/A","N/A"])
                     elif j == "SYSTEMS":
-                        SYSTEMS.append("N/A")
+                        SYSTEMS.append(["N/A","N/A"])
                     else:
                         FANS.append("N/A")
     data = zip(HOSTNAMES,bmc_ips,SYSTEMS,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)

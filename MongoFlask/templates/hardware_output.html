@@ -51,14 +51,21 @@
         <i class="fas fa-home"></i>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
             <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+            {% for url in frontend_urls %}
+            <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+            {% endfor %}
         </div>
     </li>
     <li class='dropdown'>
-        <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" href="{{ url_for('udpserverupload') }}" target="_blank" type="button">
-            UDP SERVER v1.0
-        </a>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+         Hardware Table
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {% for url in frontend_urls %}
+            <a class="dropdown-item" href="{{ url[1] }}/hardware_output" target="_blank"> {{url[0]}} Hardware</a>
+            {% endfor %}
+        </div>
     </li>
     <li class='nav-item'>
         <a class="btn btn-primary btn-lg text-warning font-weight-bold"  href="{{ url_for('downloadClusterReport') }}" role="button">
@@ -95,6 +102,11 @@
             Load hardware data
         </button>
     </li>
+    <li class='nav-item'>
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="handshake" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_handshake()">
+            SMC Serial Number Handshake
+        </button>
+    </li>
 </ul>
 </nav>
 <div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
@@ -111,13 +123,13 @@
         <th class="align-middle" >GRAPHICS</th>
         <th class="align-middle" >PSU</th>
         <th class="align-middle" >FANS</th>
-		<th class="align-middle" >JSON</th>
+		<th class="align-middle" >FILES</th>
     </thead>
     <tbody>
         {% for hostname, bmc_ip, system, cpu, memory, storage, nics, gpu, psu, fans in data %}
             <tr>
                 <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
-                <td class="align-middle font-weight-bold " >{{ hostname }}</td>
+                <td class="align-middle font-weight-bold" >{{ hostname }}</td>
                 <td class="align-middle">
                     <div class="dropdown dropright">  
                         <a class="font-weight-bold"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -127,7 +139,7 @@
                             <li class= "dropdown-item align-items-center font-weight-bold" >Go to </li>
                             <div class="dropdown-divider"></div>
                             <li>
-                            <a class="dropdown-item align-middle " href="https://{{ bmc_ip }}" target="_blank">BMC Page</a>
+                            <a class="dropdown-item align-middle" href="https://{{ bmc_ip }}" target="_blank">BMC Page</a>
                             </li>
                             <li>
                             <a class="dropdown-item align-middle" href="javascript:void(0)" onclick="get_ikvm('{{bmc_ip}}')"> IKVM ({{bmc_ip}})</a>    
@@ -136,55 +148,98 @@
                     </div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_system')"> {{system}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_system_menu" style="width: max-content;"> 
+                    {%if "False" in system[1]%}
+					    <a class="font-weight-bold text-danger" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_system')"> {{system[0]}} </a>
+                    {%elif "True" in system[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_system')"> {{system[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_system')"> {{system[0]}} </a>
+                    {%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_system_menu" style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_system_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu}} </a>
+					<a class="font-weight-bold"  href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu}} </a>
 					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_cpu_menu" style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_cpu_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_memory_menu"  style="width: max-content;"> 
+                    {%if "False" in memory[1]%}
+					    <a class="font-weight-bold text-danger" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory[0]}} </a>
+                    {%elif "True" in memory[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory[0]}} </a>
+                    {%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_memory_menu"  style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_memory_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_storage')"> {{storage}} </a>
+                    {%if "False" in storage[1]%}
+					    <a class="font-weight-bold text-danger" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_storage')"> {{storage[0]}} </a>
+                    {%elif "True" in storage[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_storage')"> {{storage[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_storage')"> {{storage[0]}} </a>
+                    {%endif%}
 					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_storage_menu"  style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_storage_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_nics_menu" style="width: max-content;"> 
-						<ul id= "{{bmc_ip}}_nics_submenu" style="text-align: left; display: none"> </ul> 
-					</div>
+                    {%if "False" in nics[1]%}
+                        <a class="font-weight-bold text-danger" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>
+                    {%elif "True" in nics[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>
+                    {%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_nics_menu" style="width: max-content;"> 
+                        <ul id= "{{bmc_ip}}_nics_submenu" style="text-align: left; display: none"> </ul> 
+                    </div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_gpu')"> {{gpu}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_gpu_menu"  style="width: max-content;"> 
+                    {%if "False" in gpu[1]%}
+					    <a class="font-weight-bold text-danger" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_gpu')"> {{gpu[0]}} </a>
+                    {%elif "True" in gpu[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_gpu')"> {{gpu[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_gpu')"> {{gpu[0]}} </a>
+					{%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_gpu_menu"  style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_gpu_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_psu')"> {{psu}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_psu_menu"  style="width: max-content;"> 
+                    {%if "False" in psu[1]%}
+					<a class="font-weight-bold text-danger" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_psu')"> {{psu[0]}} </a>
+					{%elif "True" in psu[1]%}
+                        <a class="font-weight-bold text-success" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_psu')"> {{psu[0]}} </a>
+                    {%else%}
+                        <a class="font-weight-bold" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_psu')"> {{psu[0]}} </a>
+                    {%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_psu_menu"  style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_psu_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold" href="javascript:void(0)" aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_fans')"> {{fans}} </a>
+					<a class="font-weight-bold " href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_fans')"> {{fans}} </a>
 					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_fans_menu"  style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_fans_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
                 <td class="align-middle">
-                    <a class="fas fa-file-archive" style="font-size: 24px" href="{{ url_for('get_node_hardware_json') }}?var={{ bmc_ip }}"></a>
+                    <div class="dropdown dropleft"> 
+                        <a class="fas fa-file"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" href="{{ url_for('get_node_hardware_json') }}?var={{ bmc_ip }}" target="_self">JSON</a>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="checkSerialNumFileExists('{{ bmc_ip }}')">Serial Numbers</a>
+                        </div>
+                    </div>
                 </td>
             </tr>
         {% endfor %}
@@ -209,6 +264,31 @@
 </footer>
 <!-- Footer -->
 <script>
+    function checkSerialNumFileExists(val1){
+        bmc_ip = val1;
+        url = "{{ url_for('get_node_serialNums_txt') }}"
+        console.log(url);
+        $.backendCheckSerialNumFile(bmc_ip,url);
+    }
+    $.backendCheckSerialNumFile = function(bmc_ip,url){
+        $.ajax({
+            url: '/check_serial_num',
+            data: {ip: bmc_ip},
+            dataType : "JSON",
+            type : "GET",
+            success: function(result){
+                var data = result;
+                if (data['response'] == "OK"){
+                    url = url + "?file=" + data["file"]
+                    console.log(url)
+                    window.open(url,'_blank');
+                }
+                else{
+                    console.log("No file found");
+                }
+            }
+        });
+    }
     function show_details(val1){
         var substrings = val1.split('_');
         var bmc_ip = substrings[0];
@@ -244,29 +324,82 @@
                         }
                     }
                     else if(hardware == "memory"){
+                        var i = 0
                         for(var key in data){
-                            menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
-                        }                       
-                    }
-                    else if(hardware == "storage"){
-                        for(var key in data){
-                            var newkey = key+bmc_ip
+                            var newkey = "MEM"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial No."){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
                             }
-                        }                       
+                            i++;
+                        }                          
+                    }
+                    else if(hardware == "storage"){
+                        var i = 0
+                        for(var key in data){
+                            var newkey = "STORAGE"+ i + bmc_ip
+                            menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
+                            for (var subkey in data[key]){
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial Number"){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
+                            }
+                            i++;
+                        }                        
                     }
                     else if(hardware == "nics"){ 
                         var i = 0
                         for(var key in data){
-                            var newkey = "GPU"+ i + bmc_ip
+                            var newkey = "NICS"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial"){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
                             }
                             i++;
-                        }   
+                        }      
                     }
                     else if(hardware == "gpu"){
                         var i = 0
@@ -274,10 +407,25 @@
                             var newkey = "GPU"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial No."){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
                             }
                             i++;
-                        }   
+                        }       
                     }
                     else if(hardware == "psu"){
                         var i = 0
@@ -285,10 +433,25 @@
                             var newkey = "PSU"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial No."){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
                             }
                             i++;
-                        }   
+                        }      
                     }
                     else if(hardware == "fans"){
                         for(var key in data){
@@ -298,13 +461,28 @@
                     else if(hardware == "system"){
                         var i = 0
                         for(var key in data){
-                            var newkey = "System"+ i + bmc_ip
+                            var newkey = "SYS"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li style=bold>" + subkey + " : " + data[key][subkey] +"</li>");
+                                if (subkey != "SMC DB handshake"){
+                                    if(subkey == "Serial"){
+                                        if (data[key]["SMC DB handshake"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["SMC DB handshake"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else{
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                }
                             }
                             i++;
-                        }   
+                        }      
                     }
 
                 }
@@ -362,6 +540,43 @@
                         console.log(key + ": " + data[key]);
                         button.classList.replace("btn-info","btn-danger")
                         document.getElementById("parse_hardware").innerHTML = "ERROR";
+                    } 
+                }
+            }
+        });
+    }
+    function trigger_handshake(){
+        $.call_handshake_script();
+    }
+    $.call_handshake_script = function(){
+        $.ajax({
+            url: '/SMC_db_handshake',
+            dataType : "JSON",
+            type : "GET",
+            beforeSend: function(){ 
+                console.log("Executing...");
+                var button = document.getElementById("handshake");
+                document.getElementById("handshake").innerHTML = "Loading";
+                if(!button.classList.replace("btn-primary","btn-info")) {
+                    if(!button.classList.replace("btn-danger", "btn-info")){
+                        button.classList.replace("btn-success", "btn-info")
+                    }
+                }
+            },
+            success: function(result){
+                var data = result;
+                var button = document.getElementById("handshake");
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "Completed"){
+                        button.classList.replace("btn-info","btn-success")
+                        document.getElementById("handshake").innerHTML = "Completed";
+                        window.location.reload();
+                    }
+                    else{
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("btn-info","btn-danger")
+                        document.getElementById("handshake").innerHTML = "ERROR";
                     } 
                 }
             }

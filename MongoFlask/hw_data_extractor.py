@@ -457,7 +457,8 @@ if found:
                                             chassis_dict[current_component][str(chassis_num)]['Version'] = i.split(":")[1].strip()
                                         elif current_component == "Base Board":
                                             baseboard_dict[current_component][str(baseboard_num)]['Version'] = i.split(":")[1].strip()
-                                    elif "Serial Number" in i:
+                                    elif "Serial Number" in i and i.split(":")[1].strip() != "":
+
                                         if current_component == "System":
                                             system_dict[current_component][str(system_num)]['Serial Number'] = i.split(":")[1].strip()
                                         elif current_component == "Chassis":

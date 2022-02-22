@@ -2338,10 +2338,27 @@ def chart_othertemperatures(bmc_ip):
         else:
             return render_template('chart_othertemperatures.html', title='Other Temperatures',rackname=rackname,show_names = show_names, cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_othertemperatures",rackobserverurl = rackobserverurl)
 
+def get_frontend_urls():
+    files = os.listdir(os.environ['UPLOADPATH'])
+    frontend_urls = []
+    for i in files:
+        if 'port' in i and '.env' in i:
+            with open(os.environ["UPLOADPATH"] + i,'r') as file:
+                url_name = []
+                lines = file.readlines()
+                for line in lines:
+                    if 'FRONTPORT' in line:
+                        port = line.split("=")[1]
+                        url_name.append('http://' + get_ip() + ':' + str(port))
+                    elif 'RACKNAME' in line:
+                        url_name.append(line.split("=")[1])
+                frontend_urls.append(url_name)      
+    return frontend_urls #### (RACKNAME,FRONTEND_URL)                        
 @app.route("/hardware_output",methods=["GET","POST"])
 def hardware_output():
     data = get_data.get_hardwareData()
-    return render_template('hardware_output.html',data=data,rackname=rackname,rackobserverurl = rackobserverurl)
+    urls = get_frontend_urls()  
+    return render_template('hardware_output.html',data=data,rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = urls)
 
 @app.route('/get_node_hardware_json')
 def get_node_hardware_json():
@@ -2354,8 +2371,51 @@ def get_node_hardware_json():
             json.dump(cur_result,output)
     except:
         print("Error on downloading json",flush=True)
+    else:
+        return send_file(filename,as_attachment=True,cache_timeout=0)
+
+@app.route('/get_node_serialNums_txt')
+def get_node_serialNums_txt():
+    filename = request.args.get('file')
     return send_file(filename,as_attachment=True,cache_timeout=0)
 
+@app.route('/check_serial_num')
+def check_serial_num():
+    bmc_ip = request.args.get('ip')
+    cur_result = hardware_collection.find_one({'bmc_ip':bmc_ip},{'_id':0})
+    hostname = cur_result['Hostname']
+    hostname = hostname.replace("-","")
+    filename = ""
+    directory = os.environ['UPLOADPATH']
+    for folder in os.listdir(directory): ##### Get hw_data directory
+        if 'hw_data' in folder and os.path.isdir(directory + folder) == True:
+            directory += folder
+            break
+    try:
+        sys_serial = [] ############# Check if system serial number exists....
+        for i in cur_result['System']:
+            sys_serial.append(cur_result['System'][str(i)]['Serial Number'].lower())
+    except Exception as e: ######### If it does not exist, use ONLY hostname to check...
+        print(e,file=sys.stderr,flush=True)
+        for file in os.listdir(directory):
+            if file.split(".")[0].upper() == hostname.upper():
+                print("Found file",flush=True)
+                filename = directory +  "/" +  file
+                break
+    else: ######### If serial number exists, check with serial OR hostname
+        for file in os.listdir(directory):
+            for y in sys_serial:
+                if file.split(".")[0].upper() == y.upper() or file.split(".")[0].upper() == hostname.upper():
+                    print("Found file",flush=True)
+                    filename = directory +  "/" +  file
+                    break
+    if filename == "":
+        print("No file found: parsed with " + hostname + " " + sys_serial[0] + " " + directory ,file=sys.stderr,flush=True)
+        data = {"response":"Not found"}
+    else:
+        data = {"response": "OK","file":filename}
+    result = json.dumps(data)
+    return result                                                                    
 @app.route("/get_hardware_details")
 def get_hardware_details():
     bmc_ip = request.args.get('ip')
@@ -2363,6 +2423,19 @@ def get_hardware_details():
     details = get_data.fetch_hardware_details(bmc_ip,hardware)
     data = json.dumps(details)
     return data
+@app.route('/SMC_db_handshake')
+def SMC_db_handshake():
+    os.system("chmod +wx SMC_db_handshake.py")
+    compare = Popen("python3 SMC_db_handshake.py",shell=True,stdout=PIPE,stderr=PIPE)
+    stdout,stderr = compare.communicate()
+    if stderr.decode() != '':
+        feedback = {"response" : stderr.decode()}
+        data = json.dumps(feedback)
+        return data
+    else:
+        feedback = {"response":"Completed"}
+        data = json.dumps(feedback)
+        return data                                               
 
 @app.route('/hardware_parser')
 def hardware_parser():
