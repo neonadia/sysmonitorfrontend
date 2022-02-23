@@ -355,12 +355,21 @@ for item in all_hw_data:
         if 'GPU' in item['Graphics']:
             # verify the model name
             cur_model = 'N/A'
+            cur_fw = 'N/A'
             for index_g in item['Graphics']['GPU']:
                 if cur_model == 'N/A' and 'Model' in item['Graphics']['GPU'][index_g]:
                     cur_model = item['Graphics']['GPU'][index_g]['Model']
-                elif cur_model != 'N/A' and cur_model != item['Graphics']['GPU'][index_g]['Model']:
+                elif cur_model != 'N/A' and 'Model' in item['Graphics']['GPU'][index_g] and cur_model != item['Graphics']['GPU'][index_g]['Model']:
                     cur_model = "Different models found!"
+                if cur_fw == 'N/A' and 'VBIOS' in item['Graphics']['GPU'][index_g]:
+                    cur_fw = item['Graphics']['GPU'][index_g]['VBIOS']
+                elif cur_fw != 'N/A' and 'VBIOS' in item['Graphics']['GPU'][index_g] and cur_fw != item['Graphics']['GPU'][index_g]['VBIOS']:
+                    cur_fw = "Different VBIOS found!"
             parsed_data[-1]['gpu_model'] = cur_model
+            if parsed_data[-1]['gpu_note'] == 'N/A':
+                parsed_data[-1]['gpu_note'] = "VBIOS: "  +  cur_fw
+            else:
+                parsed_data[-1]['gpu_note'] += "<br/>VBIOS: "  +  cur_fw
     
     if 'NICS' in item:
         cur_nic = {}
