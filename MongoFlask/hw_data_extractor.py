@@ -81,30 +81,15 @@ print(OS + " " + GPU, file=sys.stdout, flush=True) #For debug
 if found:
     if OS == "ubuntu" or OS == "centos": #### FOR UBUNTU or CENTOS 
         print("Parsing hw info for..." + OS,flush = True)
+        x = collection.delete_many({})
+        print("Cleaning collection for new data.......",flush=True)
         for key in all_files.keys():
-            hostname = str(key).split("_")[2]
-            item = collection.find({},{"Hostname":1,"_id":0})
-            hostlist = list(item)
-            if len(hostlist) == 0:######## Search for existing document in mongo DB, if exists delete and create a new empty doc, or create a new empty doc if does not exist.
-                found = False
-                for i in range(len(inputhosts)):
-                        if inputhosts[i] == hostname:
-                            collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
-                            found = True
-            else:
-                found = False
-                for i in range(len(hostlist)):
-                    if hostname == hostlist[i]["Hostname"]:
-                        for j in range(len(inputhosts)):
-                            if inputhosts[j] == hostlist[i]["Hostname"]:
-                                collection.delete_one({"Hostname":hostname})
-                                collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[j]})
-                                found = True
-                if not found:
-                    for i in range(len(inputhosts)):
-                        if inputhosts[i] == hostname:
-                            collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
-                            found = True
+            hostname = str(key).split("_")[-1]
+            found = False
+            for i in range(len(inputhosts)):
+                    if inputhosts[i] == hostname:
+                        collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+                        found = True
             if found:
                 storage_dict = {"Storage":{}} ### Storage entry consists of two seperate file( nvme or hdd). Creating a variable to cover the scope of the following for loop
                 for file in all_files[key]:

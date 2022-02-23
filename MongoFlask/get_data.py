@@ -146,11 +146,13 @@ def get_hardwareData():
     PSU = []
     GPU = []
     SYSTEMS = []
+    bmc_ips_complete = []
     equalizer = {"HOSTNAMES":0,"CPU": 0,"MEMORY":0,"STORAGE":0,"NICS":0,"GPU":0,"PSU":0,"FANS":0,"SYSTEMS":0} #Equalizer scoreboard to have a symmetrical 2D array
     NoneType = type(None)
     for ip in bmc_ips:
         hardware_dict = hardware_collection.find_one({'bmc_ip':ip},{'_id':0})
-        if type(hardware_dict) != NoneType:
+        if type(hardware_dict) != NoneType and hardware_dict['bmc_ip'] == ip:
+            bmc_ips_complete.append(ip)###append bmc_ips that are founded in Mongo hardware collection
             for i in hardware_dict:
                 if "CPU" in i:
                     cpu_string = ""
@@ -342,7 +344,7 @@ def get_hardwareData():
                         SYSTEMS.append(["N/A","N/A"])
                     else:
                         FANS.append("N/A")
-    data = zip(HOSTNAMES,bmc_ips,SYSTEMS,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)
+    data = zip(HOSTNAMES,bmc_ips_complete,SYSTEMS,CPU,MEMORY,STORAGE,NICS,GPU,PSU,FANS)
     return data
 
 def find_ikvm(bmc_ip):
