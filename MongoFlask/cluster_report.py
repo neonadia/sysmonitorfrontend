@@ -665,7 +665,6 @@ class Test(object):
         """
         x, y = x * unit, self.height -  y * unit
         return x, y
-
     #----------------------------------------------------------------------
     def run(self):
         """
@@ -696,6 +695,21 @@ class Test(object):
         #p = Paragraph(header_text, centered)
         #p.wrapOn(self.c, self.width, self.height)
         #p.drawOn(self.c, *self.coord(0, 0, mm))
+        """
+        Add the page number
+        """
+        page_num = self.c.getPageNumber()
+        text = "%s" % page_num
+        self.c.setFillColorRGB(0,0,0)
+        self.c.setFont('Helvetica',10)
+        self.c.drawCentredString(self.width/2,self.height-760,text)
+        """
+        Add author
+        """
+        self.c.setFont('Helvetica',10)
+        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
+        self.c.drawString(20,self.height-760,datetime_text)
 
     #----------------------------------------------------------------------
     def myFirstPage(self, canvas, doc):
@@ -706,7 +720,6 @@ class Test(object):
         slogo = "ourSolutions.png"
         smclogo = "supermicro.jpg"
         ssiclogo = "SSIC.png"
-        datetime_text = "Generated at: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         p = Paragraph(introduction, normal)
         w, h = p.wrap(self.doc.width, self.doc.topMargin)
         self.c = canvas
@@ -714,11 +727,14 @@ class Test(object):
         self.c.drawImage(ssiclogo, self.width-200, self.height-765, 178, 30)
         self.c.setFont('Helvetica-Bold',16)
         self.c.drawCentredString(self.width/2.0, self.height-10, Title)
-        self.c.setFont('Helvetica',9)
         #self.c.drawCentredString(self.width/2.0, self.height-25, datetime_text)
-        self.c.drawString(10,47, "Report by: HPC & AI Team" )
-        self.c.drawString(10,37, "Email: reeann@supermicro.com")
-        self.c.drawString(10,27,datetime_text)
+        """
+        Add author
+        """
+        self.c.setFont('Helvetica',10)
+        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
+        self.c.drawString(20,self.height-760,datetime_text)
         p.drawOn(self.c, self.doc.leftMargin, self.height-75)
         self.c.drawCentredString(self.width/2, self.height-90, "Here are some examples of the benchmarks we have conducted:")
         self.c.drawImage(bmlogo, 75, self.height-300, 466, 200)
@@ -734,6 +750,15 @@ class Test(object):
         self.c.drawCentredString(self.width/2, self.height-595, "HPC & AI Benchmarks")
         self.c.linkURL('http://solution.supermicro.com/', (165,225,445,245),relative=0)
         self.c.linkURL('http://172.31.32.198:8080/', (225,190,385,210),relative=0)
+        """
+        Add the page number
+        """
+        page_num = self.c.getPageNumber()
+        text = "%s" % page_num
+        self.c.setFillColorRGB(0,0,0)
+        self.c.setFont('Helvetica',10)
+        self.c.drawCentredString(self.width/2,self.height-760,text)
+    
         
     #----------------------------------------------------------------------
     def createLineItems(self):
