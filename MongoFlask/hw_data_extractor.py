@@ -112,9 +112,12 @@ if found:
             found = False
             for i in range(len(inputhosts)):
                     if inputhosts[i] == hostname:
-                        collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
-                        current_bmc_ip = bmc_ips[i]
-                        found = True
+                        entry_find = collection.find({"Hostname":hostname,"bmc_ip":bmc_ips[i]},{"_id":0})
+                        result = list(entry_find)#####Check if entry already in mongo, collection should not contain it since its gets wiped before parsing. 
+                        if len(result) == 0: ##### If for some reason user has two folders with same hostname just ignore one.
+                            collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+                            current_bmc_ip = bmc_ips[i]
+                            found = True
             if found:
                 storage_dict = {"Storage":{}} ### Storage entry consists of two seperate file( nvme or hdd). Creating a variable to cover the scope of the following for loop
                 for file in all_files[key]:
