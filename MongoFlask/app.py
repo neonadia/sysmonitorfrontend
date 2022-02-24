@@ -174,7 +174,13 @@ def indexHelper(bmc_ip):
         bmc_details.append(cur_detail)
     if details == [''] or bmc_details == ['']:
         bmc_event = "OK"
-    elif any(w in " ".join(str(x) for x in details) for w in err_list):
+    elif any(w in " ".join(str(x) for x in details) for w in ["|||","only redfish sel log"]): # check if the redfish log exsist, if so check the severity
+        bmc_event = "WARNING"
+        for event in details:
+            if "Critical" in event.split("|")[2] or "critical" in event.split("|")[2] or "CRITICAL" in event.split("|")[2]:
+                bmc_event = "ERROR"
+                break
+    elif any(w in " ".join(str(x) for x in details) for w in err_list): # check if event contains any key from err_list
         bmc_event = "ERROR"
     else:
         bmc_event = "WARNING"
