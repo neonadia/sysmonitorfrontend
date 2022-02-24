@@ -606,8 +606,8 @@ for item in all_hw_data:
                     sn_data[-1]['Chassis SN'] += chas['Serial Number'] + sn_seperator
                 else:
                     sn_data[-1]['Chassis SN'] += 'N/A' + sn_seperator
-                if 'Product Name'  in chas:
-                    sn_data[-1]['Chassis PN'] += chas['Product Name'] + sn_seperator
+                if 'Part Number'  in chas:
+                    sn_data[-1]['Chassis PN'] += chas['Part Number'] + sn_seperator
                 else:
                     sn_data[-1]['Chassis PN'] += 'N/A' + sn_seperator
                 # chassis currently has no PN in dmidecode yet.

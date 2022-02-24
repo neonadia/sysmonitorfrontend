@@ -114,6 +114,7 @@ def fetch_hardware_details(bmc_ip,hardware):
                         hw_dict["Chassis " + str(j)]["Manufacturer"] = hardware_dict[i][str(j)]["Manufacturer"]
                         hw_dict["Chassis " + str(j)]["Type"] = hardware_dict[i][str(j)]["Type"]
                         hw_dict["Chassis " + str(j)]["Serial"] = hardware_dict[i][str(j)]["Serial Number"]
+                        hw_dict["Chassis " + str(j)]["PN"] = hardware_dict[i][str(j)]["Part Number"]
                         try:
                             hw_dict["Chassis " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
                         except:
@@ -128,8 +129,6 @@ def fetch_hardware_details(bmc_ip,hardware):
                             hw_dict["Board " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
                         except:
                             hw_dict["Board " + str(j)]["SMC DB handshake"] = "N/A"
-            
-
     return hw_dict
 
 def get_hardwareData():

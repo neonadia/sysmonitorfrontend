@@ -6,10 +6,33 @@ import pymongo
 import sys
 import math
 import xml.etree.ElementTree as ET
+import redfish
+import socket
 mongoport = int(os.environ['MONGOPORT'])
 client = pymongo.MongoClient('localhost', mongoport)
 db = client.redfish
 collection = db.hw_data ### MongoDB Collection
+
+def get_ChassisPartNum_redfish(bmc_ip):
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
+    REDFISH_OBJ = redfish.redfish_client(base_url='https://' + bmc_ip , username=current_auth[0] ,password=current_auth[1], default_prefix='/redfish/v1')
+    chassis_pn = "N/A"
+    try:
+        REDFISH_OBJ.login(auth="session")
+    except:
+        return chassis_pn
+    else:
+        api_version = ['/redfish/v1/Chassis/1'] #### Make array for future APIs ...... just add new api to array. You'll thank me later.
+        for i in api_version:
+            response = REDFISH_OBJ.get(i,None)
+            if response.status == 200:
+                for entry in response.dict:
+                    if "PartNumber" in entry and response.dict["PartNumber"] != "":
+                        chassis_pn = response.dict["PartNumber"]
+                        break
+        REDFISH_OBJ.logout()
+        return chassis_pn
 
 ### Get hostname from input file (.csv), insert dash to reflect, and get bmc_ip list
 df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
@@ -84,11 +107,13 @@ if found:
         x = collection.delete_many({})
         print("Cleaning collection for new data.......",flush=True)
         for key in all_files.keys():
+            current_bmc_ip = ""
             hostname = str(key).split("_")[-1]
             found = False
             for i in range(len(inputhosts)):
                     if inputhosts[i] == hostname:
                         collection.insert_one({"Hostname":hostname,'bmc_ip':bmc_ips[i]})
+                        current_bmc_ip = bmc_ips[i]
                         found = True
             if found:
                 storage_dict = {"Storage":{}} ### Storage entry consists of two seperate file( nvme or hdd). Creating a variable to cover the scope of the following for loop
@@ -411,13 +436,12 @@ if found:
                                             current_component = i.split(" ")[0] + " " + i.split(" ")[1]
                                         else:
                                             current_component = i.split(" ")[0]
-
                                         if current_component == "System":
                                             system_num += 1
                                             system_dict['System'][str(system_num)] = {"Manufacturer":"N/A","Product Name":"N/A","Version":"N/A","Serial Number":"N/A","UUID":"N/A","Family":"N/A","SKU Number":"N/A"}
                                         elif current_component == "Chassis":
                                             chassis_num += 1
-                                            chassis_dict["Chassis"][str(chassis_num)] = {"Manufacturer":"N/A","Version":"N/A","Type":"N/A","Serial Number":"N/A"}
+                                            chassis_dict["Chassis"][str(chassis_num)] = {"Manufacturer":"N/A","Version":"N/A","Type":"N/A","Serial Number":"N/A","Part Number":get_ChassisPartNum_redfish(current_bmc_ip)}
                                         else:
                                             baseboard_num += 1
                                             baseboard_dict["Base Board"][str(baseboard_num)] = {"Manufacturer":"N/A","Product Name":"N/A","Version":"N/A","Serial Number":"N/A"}
@@ -443,7 +467,6 @@ if found:
                                         elif current_component == "Base Board":
                                             baseboard_dict[current_component][str(baseboard_num)]['Version'] = i.split(":")[1].strip()
                                     elif "Serial Number" in i and i.split(":")[1].strip() != "":
-
                                         if current_component == "System":
                                             system_dict[current_component][str(system_num)]['Serial Number'] = i.split(":")[1].strip()
                                         elif current_component == "Chassis":
