@@ -1,16 +1,17 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle, TA_CENTER
-from reportlab.lib.units import inch, mm
+from reportlab.lib.units import inch, mm, cm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Table, SimpleDocTemplate, Spacer, Image, KeepTogether, LongTable, TableStyle, PageBreak
 from pymongo import MongoClient
+from reportlab.lib import utils
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 from reportlab.lib.colors import PCMYKColor, HexColor, blue, red
 from reportlab.graphics.shapes import Drawing, Line
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.textlabels import Label
-from reportlab.platypus.flowables import HRFlowable
+from reportlab.platypus.flowables import HRFlowable, Image
 from get_data import find_min_max_rack
 import os
 import pandas as pd
@@ -78,6 +79,12 @@ def auto_font_size(input_string,seperator_html, seperator_real):
     if font_size < 5:
         font_size = 5
     return font_size
+
+def get_image(path, height=1*cm):
+    img = utils.ImageReader(path)
+    iw, ih = img.getSize()
+    aspect = ih / float(iw)
+    return Image(path, width=height/aspect, height=height)
 
 mongoport = int(os.environ['MONGOPORT']) # using in jupyter: 8888
 rackname = os.environ['RACKNAME'].upper() 
@@ -647,7 +654,6 @@ printf('############sn_data############')
 for i in sn_data_sort:
     printf(i)
 
-
 class Test(object):
     """"""
 
@@ -665,6 +671,7 @@ class Test(object):
         """
         x, y = x * unit, self.height -  y * unit
         return x, y
+    
     #----------------------------------------------------------------------
     def run(self):
         """
@@ -768,6 +775,20 @@ class Test(object):
         spacer = ConditionalSpacer(width=0, height=35)
         spacer_median = ConditionalSpacer(width=0, height=10)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
+        #Cluster photos
+        image_front = "N/A"
+        image_rear = "N/A"
+        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
+            for file in sorted(files):
+                if file.startswith("front.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    image_front = os.environ['UPLOADPATH'] + "/" + file
+                elif file.startswith("rear.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    image_rear = os.environ['UPLOADPATH'] + "/" + file
+        if image_front != "N/A" and image_rear != "N/A":
+            self.story.append(PageBreak())
+            self.story.append(get_image(image_front, height=12*cm))
+            self.story.append(get_image(image_rear, height=12*cm))
+        #self.story.append(PageBreak())
         #Summary and Hardware Tables
         ## column names
         text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
