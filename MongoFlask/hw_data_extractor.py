@@ -39,18 +39,7 @@ df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','
 hostname_list = df_pwd['mac'] #### Get mac address from pwd#.txt
 new_hostname_list = []
 for i in hostname_list: ### Convert MAC address to xx-xx-xx-xx-xx format
-    if ":" in i:
-        new = i.replace(":","-")
-        new_hostname_list.append(new.lower())
-    elif ":" not in i and "-" not in i: 
-        new = ""
-        for x in range(len(i)):
-            if x == 2 or x == 4 or x == 6 or x == 8 or x == 10:
-                new += "-"
-                new += i[x]
-            else:
-                new += i[x]
-        new_hostname_list.append(new.lower())
+    new_hostname_list.append(i.lower().replace("-","").replace(":",""))
 inputhosts = new_hostname_list
 bmc_ips = list(df_pwd['ip'])  #### Get BMC_IPs from pwd#.txt
 # inputdir = "/app/RACK/"  i.e example path
@@ -102,16 +91,16 @@ print("'found' is :" + str(found), file=sys.stdout, flush=True)
 print(OS + " " + GPU, file=sys.stdout, flush=True) #For debug
 ##### GET HOST NAMES FROM DIRECTORIES and Parse through data
 if found:
-    if OS == "ubuntu" or OS == "centos": #### FOR UBUNTU or CENTOS 
+    if OS == "ubuntu" or OS == "centos" or OS == "fedora" or OS == "rocky linux": #### Supported distribution in this case 
         print("Parsing hw info for..." + OS,flush = True)
         x = collection.delete_many({})
         print("Cleaning collection for new data.......",flush=True)
         for key in all_files.keys():
             current_bmc_ip = ""
-            hostname = str(key).split("_")[-1]
+            hostname = str(key).split("_")[-1].lower()
             found = False
             for i in range(len(inputhosts)):
-                    if inputhosts[i] == hostname:
+                    if inputhosts[i] == str(key).split("_")[-1].lower().replace("-","").replace(":",""):
                         entry_find = collection.find({"Hostname":hostname,"bmc_ip":bmc_ips[i]},{"_id":0})
                         result = list(entry_find)#####Check if entry already in mongo, collection should not contain it since its gets wiped before parsing. 
                         if len(result) == 0: ##### If for some reason user has two folders with same hostname just ignore one.
