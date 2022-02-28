@@ -80,11 +80,17 @@ def auto_font_size(input_string,seperator_html, seperator_real):
         font_size = 5
     return font_size
 
-def get_image(path, height=1*cm):
+def get_image(path, height=1*cm, width=1*cm): # maximize the size of photo
     img = utils.ImageReader(path)
     iw, ih = img.getSize()
     aspect = ih / float(iw)
-    return Image(path, width=height/aspect, height=height)
+    if width*aspect > height:
+        new_width = height/aspect
+        new_height = height
+    else:
+        new_width = width
+        new_height = width*aspect        
+    return Image(path, width=new_width, height=new_height)
 
 mongoport = int(os.environ['MONGOPORT']) # using in jupyter: 8888
 rackname = os.environ['RACKNAME'].upper() 
@@ -772,27 +778,10 @@ class Test(object):
         """
         Create the line items
         """
+        #General settings
         spacer = ConditionalSpacer(width=0, height=35)
         spacer_median = ConditionalSpacer(width=0, height=10)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
-        #Cluster photo
-        image_cluster = "N/A"
-        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
-            for file in sorted(files):
-                if file.startswith("img_cluster.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    image_cluster = os.environ['UPLOADPATH'] + "/" + file
-        if image_cluster != "N/A":
-            self.story.append(PageBreak())
-            self.story.append(ConditionalSpacer(width=0, height=6*cm))
-            self.story.append(get_image(image_cluster, height=12*cm))
-        #self.story.append(PageBreak())
-        #Summary and Hardware Tables
-        ## column names
-        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
-        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
-
-        d = []
-        d2 = []
         font_size = 10
         centered = ParagraphStyle(name="centered", alignment=TA_CENTER)
         centered_bm = ParagraphStyle(name="centered_bm", fontSize=12, alignment=TA_CENTER)
@@ -801,6 +790,20 @@ class Test(object):
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
+        # Looking for cluster photo
+        image_cluster = "N/A"
+        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
+            for file in sorted(files):
+                if file.startswith("img_cluster.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    image_cluster = os.environ['UPLOADPATH'] + "/" + file
+        #self.story.append(PageBreak())
+        #Summary and Hardware Tables
+        ## column names
+        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
+        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
+
+        d = []
+        d2 = []
         ## Create header with column names
         for text in text_data:
             ptext = "<font size=%s><b>%s</b></font>" % (font_size-2, text)
@@ -869,6 +872,22 @@ class Test(object):
         paragraph2.keepWithNext = True
         p.keepWithNext = True
         
+        #Append cluster photo
+        if image_cluster != "N/A":
+            self.story.append(PageBreak())
+            ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Architecture Schema for """ + rackname + """</b></font>"""
+            paragraph_schema = Paragraph(ptext_schema, centered)
+            self.story.append(paragraph_schema)
+            self.story.append(p)
+            ptext_schema_intro = """
+            The image below is the architecture of the cluster rack.<br />
+            Our cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
+            For more information about architecture, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
+            """
+            cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
+            self.story.append(cluster_schema_intro)
+            self.story.append(ConditionalSpacer(width=0, height=1*cm))
+            self.story.append(get_image(image_cluster, height=18*cm, width=18*cm))        
         #start by appending a pagebreak to separate first page from rest of document
         self.story.append(PageBreak())
         #table1 title
