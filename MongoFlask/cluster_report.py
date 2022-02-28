@@ -775,19 +775,16 @@ class Test(object):
         spacer = ConditionalSpacer(width=0, height=35)
         spacer_median = ConditionalSpacer(width=0, height=10)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
-        #Cluster photos
-        image_front = "N/A"
-        image_rear = "N/A"
+        #Cluster photo
+        image_cluster = "N/A"
         for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
             for file in sorted(files):
-                if file.startswith("front.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    image_front = os.environ['UPLOADPATH'] + "/" + file
-                elif file.startswith("rear.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    image_rear = os.environ['UPLOADPATH'] + "/" + file
-        if image_front != "N/A" and image_rear != "N/A":
+                if file.startswith("img_cluster.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    image_cluster = os.environ['UPLOADPATH'] + "/" + file
+        if image_cluster != "N/A":
             self.story.append(PageBreak())
-            self.story.append(get_image(image_front, height=12*cm))
-            self.story.append(get_image(image_rear, height=12*cm))
+            self.story.append(ConditionalSpacer(width=0, height=6*cm))
+            self.story.append(get_image(image_cluster, height=12*cm))
         #self.story.append(PageBreak())
         #Summary and Hardware Tables
         ## column names
