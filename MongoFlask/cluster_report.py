@@ -704,6 +704,15 @@ class Test(object):
         ssiclogo = "SSIC.png"
         self.c.drawImage(smclogo, self.width-85, self.height, 62, 30)
         self.c.drawImage(ssiclogo, self.width-200, self.height-765, 178, 30)
+        # show customer logo if have
+        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
+            for file in sorted(files):
+                if file.startswith("cuslogo.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    cuslogo = os.environ['UPLOADPATH'] + "/" + file
+                    cur_img = utils.ImageReader(cuslogo)
+                    cur_iw, cur_ih = cur_img.getSize()
+                    cur_ratio = cur_iw/cur_ih
+                    self.c.drawImage(cuslogo, 20, self.height, 30*cur_ratio, 30)        
         #header_text = """<a name="TOP"/><strong>RACK REPORT: """ + rackname + """</strong>"""
         #p = Paragraph(header_text, centered)
         #p.wrapOn(self.c, self.width, self.height)
@@ -733,10 +742,19 @@ class Test(object):
         slogo = "ourSolutions.png"
         smclogo = "supermicro.jpg"
         ssiclogo = "SSIC.png"
+        self.c = canvas
+        # show customer logo if have
+        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
+            for file in sorted(files):
+                if file.startswith("cuslogo.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
+                    cuslogo = os.environ['UPLOADPATH'] + "/" + file
+                    cur_img = utils.ImageReader(cuslogo)
+                    cur_iw, cur_ih = cur_img.getSize()
+                    cur_ratio = cur_iw/cur_ih
+                    self.c.drawImage(cuslogo, 20, self.height + 10, 30*cur_ratio, 30)
         p = Paragraph(introduction, normal)
         w, h = p.wrap(self.doc.width, self.doc.topMargin)
-        self.c = canvas
-        self.c.drawImage(smclogo, self.width-85, self.height, 62, 30)
+        self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
         self.c.drawImage(ssiclogo, self.width-200, self.height-765, 178, 30)
         self.c.setFont('Helvetica-Bold',16)
         self.c.drawCentredString(self.width/2.0, self.height-10, Title)
