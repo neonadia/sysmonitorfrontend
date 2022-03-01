@@ -875,15 +875,15 @@ class Test(object):
         #Append cluster photo
         if image_cluster != "N/A":
             self.story.append(PageBreak())
-            ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Architecture Schema for """ + rackname + """</b></font>"""
+            ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Showcase for """ + rackname + """</b></font>"""
             paragraph_schema = Paragraph(ptext_schema, centered)
             self.story.append(paragraph_schema)
             self.story.append(p)
             ptext_schema_intro = """
-            The image below is the architecture of the cluster rack.<br />
-            Our cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
-            For more information about architecture, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
-            """
+            SMC HPC cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
+            The image below is a showcase of {}. Followed by the hardware information and benchmark results.<br />
+            For more information about this product, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
+            """.format(rackname)
             cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
             self.story.append(cluster_schema_intro)
             self.story.append(ConditionalSpacer(width=0, height=1*cm))
