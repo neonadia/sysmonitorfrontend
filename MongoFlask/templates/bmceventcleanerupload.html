@@ -6,24 +6,29 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>BMC Event Cleaner</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
-    <!-- <script src='static/knockout-3.5.1.js' type='text/javascript'></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/gh/alfg/ping.js@0.2.2/dist/ping.min.js" type="text/javascript"></script> -->
-    <!-- <script src="static/ping.js" type="text/javascript"></script> -->
 
 </head>
-
 <style>
     ul span {
     color: green;
-}
+    }
+    /* CSS For the terminal window, made scroll incase output is too large */
+    div.scroll {
+        background-color: black;
+        width: 400px;
+        height: 350px;
+        max-height: 600px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        text-align: left;
+        padding: 20px;
+    }
 </style>
-
 <body>
-
     <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
         <ul class="navbar-nav">
             <li class='nav-item'>
@@ -48,58 +53,67 @@
                     <a class="dropdown-item">Beta Version 1.0</a> 
                 </div>
             </li>
-            <li class='dropdown'>
-                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <li class='dropdown' id="display_ips">
+                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="display_ips">
                 Current Selected IPs
                 </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" >
                     {% for ip, indicator in data %}
                     {% if indicator == 1 %}
-                    <a class="dropdown-item text-success font-weight-bold">{{ ip }}</a>
+                    <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
                     {% else %}
-                    <a class="dropdown-item">{{ ip }}</a>
+                    <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
                     {% endif %}
                     {% endfor %}
                 </div>
             </li>
-                    
+            <li class="dropdown">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Advanced Features
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ url_for('biosupload') }}" target="_blank">BIOS Update</a>
+                        <a class="dropdown-item" href="{{ url_for('bmcupload') }}" target="_blank">BMC Update</a>
+                        <a class="dropdown-item" href="{{ url_for('systemresetupload') }}" target="_blank">Power Reset Test</a>
+                        <a class="dropdown-item" href="{{ url_for('bmceventcleanerupload') }}" target="_blank">BMC Events Cleaner</a>
+                        <a class="dropdown-item" href="{{ url_for('ipmitoolcommandlineupload') }}" target="_blank">IPMI CLI</a>
+                        <a class="dropdown-item" href="{{ url_for('checkipmisensor') }}" target="_blank">IPMI Sensor Check</a>
+                        <a class="dropdown-item" href="{{ url_for('bioscomparisonoutput') }}" target="_blank">BIOS Comparison</a>
+                        <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
+                        <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
+                        <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+                        <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
+                        <a class="dropdown-item" href="{{ url_for('hardware_output') }}" target="_blank">Rack Hardware Data</a>
+                    </div>
+            </li>           
             {% include "documentationButton.html" %}
-
         </ul>
     </nav>
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
         <div class ="row">
             <div class="col">
-
-                <form action="/bmceventcleanerupload" method="POST" enctype="multipart/form-data" id = "fileform">
-
+                <form id = "fileform">
                     <div class="form-group">
                         <h3>Step 1: Config Input IPs</h3>
                         <br>
                         <h4>Option 1: Upload a text file of the BMC IPs</h4>
                         <label>Choose your text file</label>
                         <div class="custom-file">
-                            <input type="file" class="form-control-file form-primary" name="file" id="file" required>
+                            <input type="file" class="form-control-file form-primary" name="file" id="file" required> 
                             <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> BMC IPs, one IP per line
                             </small>
                             <output id="list"></output>
                         </div>
                     </div>
-
-                    <button id="uploadbutton" type="submit" class="btn btn-primary">UPLOAD FILE</button>                                        
-                    <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
-
                 </form>
+                <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                        
+                <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
             </div>
         </div>
-        
-        <br>
-        
+        <br>    
         <div class ="row">
-            <div class="col">
-
-                <form action="/advanceinputgenerator" method="POST" enctype="multipart/form-data" id = "inputform">
-
+            <div class="col-auto">
+                <form id = "inputform">
                     <div class="form-group">
                         <h4>Option 2: Input IPs</h4>
                         <label>Input IP range</label>
@@ -111,102 +125,292 @@
                             <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
                             </div>
                             <input type="hidden" id="inputtype" name="inputtype" value="bmceventcleanerip">
-                            <input type="hidden" id="redirectpage" name="redirectpage" value="bmceventcleanerupload">
                             <input type="hidden" id="iptype" name="iptype" value="ipmi">                            
                             </div>
                     </div>
-
-                    <button id="inputbutton" type="submit" class="btn btn-primary">CREATE FILE</button>                                        
-                    <small id="help1" class="form-text text-muted">Input file will be created.</small>
-
-                </form>
+                </form>        
+                <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
+                <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>                                        
+                <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
+            </div>
+            <div class="col auto" style="padding-left: 10%; font-weight: bolder;">
+                Terminal Output :
+                <div class="col-auto scroll" id = "upload_terminal" style="background-color: black; color: chartreuse; width: 55%; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;">
+                </div>
             </div>
         </div>
-        
         <hr>
         
         <div class ="row">
             <div class="col">  
-                <form action="/bmceventcleanerstart" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form  id = "fileform">
                     <h3>Step 2: Run the cleaner</h3>
                     <small id="help" class="form-text text-muted">
                         Selecting "RUN CLEANER" will clean the BMC events for all the BMC IPs listed in the text file.
                     </small>
                     <br>
-                    <button id="runcleanerbutton" type="submit" class="btn btn-danger">RUN CLEANER</button>
                 </form>
+                <button id="runcleanerbutton"  onclick="callCleaner()" class="btn btn-danger">RUN CLEANER</button>
             </div>
         </div>       
     </div>
-
     <!-- Footer -->
     <footer class="page-footer font-small teal pt-4 bg-primary text-white">
-
         <!-- Footer Text -->
         <div class="container-fluid text-center text-md-left">
-    
-    
-    
             <!-- Content -->
             <p>LINUX CLUSTER MONITOR TESTING MODULE is currently under construction.  
             </p>
-    
-    
-    
         </div>
         <!-- Footer Text -->
-    
         <!-- Copyright  class="footer-copyright text-center py-3" -->
         <div class="text-center text-light bg-dark">Copyright © 2021 
             <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
             All Rights Reserved
         </div>
         <!-- Copyright -->
-  
     </footer>
-    <!-- Footer -->
-    
-    <script type="text/javascript">       
+    <!-- Footer -->    
+    <script type="text/javascript">
+        var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var cleaner = document.getElementById('runcleanerbutton'); /// Run cleaner button to disable and enable
+        document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
+            $.CheckIPMIs();
+        }, false);
+        function callCleaner(){ ////Function to call AJAX bmc_cleaner function
+            terminal.innerHTML = "";
+            terminal.insertAdjacentHTML('beforeend'," <ul> > Initiating BMC Event Cleaner..... good luck </ul>");
+            $.RunCleaner();
+        }
+        $.RunCleaner = function(){
+            $.ajax({
+                url: '/bmceventcleanerstart', //// Url name for the event cleaner in app.py
+                dataType : "JSON", /// Server list of ips cleaned in JSON datatype {0: bmc_ip}
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    events_cleaned = false /// Check if event
+                    for(var key in data){
+                        if (key == "ERROR"){ ///Check if key is ERROR {"ERROR": Error message}
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > BMC Event Cleaner Error </ul>");
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server Message: " + data[key] + " </ul>");
+                        }
+                        else{
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > " + data[key] + ": Events cleaned  </ul>");
+                            events_cleaned = true
+                        }
+                    }
+                    if (events_cleaned == true){
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > IP File deleted  </ul>");
+                        $.CheckIPMIs() ///Check file again to deselect the ip in  the Current Selected IPS
+                    }
+                }
+            });
+        }
+        function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var ipstart = document.getElementById('inputform')['ipstart'].value;
+            var ipend = document.getElementById('inputform')['ipend'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            terminal.innerHTML = ""
+            terminal.insertAdjacentHTML('beforeend'," <ul> > Getting IP Range from " + ipstart + " to " + ipend + "</ul>");
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
+        }
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtpye,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtpye, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            cleaner.disabled = true;
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Could not get range from server... </ul>");
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
+                        $.CheckIPMIs()
+                    }
+                }        
+            }); 
+        }
+        function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            terminal.innerHTML = ""
+            terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting all the IPs ... </ul>");
+            $.CallAdvancedAllGenerator(inputtype,iptype);
+        }
+        $.CallAdvancedAllGenerator = function(inputtpye,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_all_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtpye, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            cleaner.disabled = true;
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Could not generate the file... </ul>");
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
+                        $.CheckIPMIs()
+                    }
+                }        
+            }); 
+        }          
+        function uploadFile(){
+            terminal.innerHTML = ""
+            var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
+            terminal.insertAdjacentHTML('beforeend'," <ul> > Uploading " + file_name + " to server....  </ul>");
+            $.UploadFiletoServer();
+        }
+        $.CheckIPMIs = function(){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+            $.ajax({
+                url: '/checkSelectedIPs',
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    var hasIPs = false;
+                    terminal.insertAdjacentHTML('beforeend'," <ul> > Reading file with selected IPs </ul>");
+                    for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
+                        var ip = document.getElementById(key)
+                        if (data[key] == 'true'){
+                            hasIPs = true;
+                            ip.classList.add("text-success");
+                            ip.classList.add("font-weight-bold");
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting " + key + ".... </ul>");
+                            document.getElementById("runcleanerbutton").disabled = false;
+                        }
+                        else{
+                            ip.classList.remove("text-success");
+                            ip.classList.remove("font-weight-bold");
+                        }
+                    }
+                    if (hasIPs === false){
+                        cleaner.disabled = true;
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > No IPs selected from this Rack </ul>");
+                    }
+                    else{
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Current Selected IPs has been updated </ul>");
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Run the Cleaner when ready... </ul>");
+                        ips = document.getElementById("display_ips")
+                        ips.classList.add("show")
+                    }
+                }
+            });
+        }
+        $.UploadFiletoServer = function(){
+            $.ajax({
+                url: '/uploadbmcCleanerFile', 
+                type: 'POST',
+                data: new FormData($('#fileform')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                terminal.insertAdjacentHTML('beforeend'," <ul> > Upload Completed, file parsed succesfully...</ul>"); 
+                $.CheckIPMIs();///Once form has been uploaded and saved by server. Run the CheckIPMI ajax function to read the file from the server and update the Current Selected IPs
+                input_field = document.getElementById('file');
+                input_field.value = '';
+                var button = document.getElementById('uploadbutton');
+                button.disabled = true;
+
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                terminal.insertAdjacentHTML('beforeend'," <ul> > Upload Failed...</ul>");
+                input_field = document.getElementById('file');
+                input_field.value = '';
+                var button = document.getElementById('uploadbutton');
+                button.disabled = true;
+            });
+        }     
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
-
-            if (file) {
-                var reader = new FileReader();
-                reader.readAsText(file, "UTF-8");
-                reader.onload = function (evt) {
-                    const inputarray = evt.target.result.split("\n");
-                    var output = "";
-                    for(i = 0; i < inputarray.length; i++ ){
-                        if (inputarray[i].split(",").length != 1) {
-                            output = output + '<div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>';
-                            continue;
-                        }
-
-                        var iparray = inputarray[i].split(",")[0];
-                        if (iparray.length == 0){
-                            output = output + ' <div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>'
-                            continue;
-                        }
-                        else {          
-                            if (ValidateIPaddress(iparray)){
-                                output = output + iparray + ' <a style="color:green">VALID IP</a><br>';
+            input_field = document.getElementById('file');
+            var button = document.getElementById('uploadbutton');
+            if (file['name'].includes(".txt")){ //// File type must be in .txt format. This avoids erroneos output when parsing data for valid ips
+                if (file) {
+                    var fileChecker = true;
+                    var reader = new FileReader();
+                    console.log(file)
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = function (evt) {
+                        const inputarray = evt.target.result.split("\n");
+                        var output = "";
+                        for(i = 0; i < inputarray.length; i++ ){
+                            if (inputarray[i].split(",").length != 1) {
+                                output = output + '<div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>';
+                                fileChecker = false
+                                continue;
                             }
-                            else {
-                                output = output + iparray + ' <a style="color:red">INVALID IP</a><br>';
+                            var iparray = inputarray[i].split(",")[0];
+                            if (iparray.length == 0){
+                                output = output + ' <div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>'
+                                fileChecker = false
+                                continue;
                             }
-                        }   
+                            else {          
+                                if (ValidateIPaddress(iparray)){
+                                    output = output + iparray + ' <a style="color:green">VALID IP</a><br>';
+                                }
+                                else {
+                                    output = output + iparray + ' <a style="color:red">INVALID IP</a><br>';
+                                    fileChecker = false
+                                }
+                            }   
+                        }
+                        if (fileChecker){ ////If valid ips found enable the upload button.
+                            button.disabled = false;
+                        }
+                        else{
+                            input_field.value = ''; /// If a single invalid ip, disable upload button
+                            button.disabled = true;
+                        }
+                        output = "<strong>FOUND IPMI IP:<br />" + output;
+                        document.getElementById("list").innerHTML = output;
                     }
-                    output = "<strong>FOUND IPMI IP:<br />" + output;
-                    document.getElementById("list").innerHTML = output;
-                }
-                reader.onerror = function (evt) {
-                    document.getElementById("list").innerHTML = "error reading file";
+                    reader.onerror = function (evt) {
+                        document.getElementById("list").innerHTML = "error reading file";
+                        fileChecker = false
+                        input_field.value = '';
+                        button.disabled = true;
+                    }
                 }
             }
+            else{
+                console.log("Wrong file type, only accept .txt");
+                output = ' <div style="color:red"> File format incompatible, please upload .txt file !</div>'
+                document.getElementById("list").innerHTML = output;
+                fileChecker = false;
+                input_field.value = '';
+                button.disabled = true;
+            }
         }
-
         document.getElementById('file').addEventListener('change', handleFileSelect, false);
-        
         function ValidateIPaddress(ipaddress) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
             {
@@ -217,4 +421,3 @@
     </script>
 </body>
 </html>
-

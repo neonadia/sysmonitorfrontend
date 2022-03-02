@@ -853,7 +853,7 @@ def firmwareupdatestatus():
         data = ['Not Started Yet']
     return render_template('firmwareupdatestatus.html',data=data,rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/bmceventcleanerupload',methods=["GET","POST"])
+@app.route('/bmceventcleanerupload')
 def bmceventcleanerupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -869,23 +869,57 @@ def bmceventcleanerupload():
             indicators.append(1)
         else:
             indicators.append(0)
+    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+@app.route('/checkSelectedIPs')
+def checkSelectedIps():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
+    allips = list(df_pwd['ip'])
+    try:
+        df_input = pd.read_csv(savepath+"bmceventcleanerip.txt",header=None,names=['ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+        response = {}
+        for ip in allips:
+            response[ip] = "false"
+        if os.path.exists(savepath+"bmceventcleanerip.txt"):
+            os.remove(savepath+"bmceventcleanerip.txt")
+        return json.dumps(response)
+    else:
+        allips = list(df_pwd['ip'])
+        indicators = {}
+        for i in range(len(allips)):
+            if allips[i] in inputips:
+                indicators[allips[i]] = "true"
+            else:
+                indicators[allips[i]] = "false"
+        response = json.dumps(indicators)
+        return response
+
+@app.route('/uploadbmcCleanerFile',methods=["POST"])
+def uploadbmcIPs():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     if request.method == "POST":
         if request.files:
             bmcipfile = request.files["file"]
             if bmcipfile.filename == "":
                 printf("Input file must have a filename")
-                return redirect(url_for('bmceventcleanerupload'))
-            bmcipfile.save(savepath+"bmceventcleanerip.txt")
-            printf("{} has been saved as bmceventcleanerip.txt".format(bmcipfile.filename))
-            return redirect(url_for('bmceventcleanerupload'))
-    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+                response = {"response":"Error: Input file must have a filename"}
+            else:
+                bmcipfile.save(savepath+"bmceventcleanerip.txt")
+                printf("bmcipfile has been saved as bmceventcleanerip.txt".format(bmcipfile.filename))
+                response = {"response": "bmcipfile has been saved as bmceventcleanerip.txt" }
+            response = json.dumps(response)
+            return response
 
-@app.route('/bmceventcleanerstart',methods=["GET","POST"])
+@app.route('/bmceventcleanerstart',methods=["GET"])
 def bmceventcleanerstart():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    if request.method == "POST":
+    if request.method == "GET":
         if fileEmpty(savepath+"bmceventcleanerip.txt"):
-            return render_template('error.html',error="No input IP found!")
+            response = {"ERROR":"No file found, try inserting the IPs again...."}
+            return json.dumps(response)
         df_cleaner = pd.read_csv(savepath+"bmceventcleanerip.txt",names=['ip'])
         '''
         try:
@@ -899,7 +933,8 @@ def bmceventcleanerstart():
         data = []
         for i in range(len(iplist)):
             if iplist[i] not in iplist_rack:
-                return render_template('error.html',error="Assigned ip " + iplist[i] + " not belongs current rack!")
+                response = {"ERROR": "Assigned ip " + iplist[i] + " not belongs current rack!"}
+                return json.dumps(response)
             else:
                 data.append([])
                 data[i].append(iplist[i])
@@ -910,7 +945,11 @@ def bmceventcleanerstart():
         messages = []
         messages.append("BMC events has been cleaned up for the following IPs:")
         messages += iplist
-        return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
+        response = {}
+        for i,ip in enumerate(iplist):
+            response[str(i)] = ip
+        return json.dumps(response)
+        
 
 @app.route('/ipmitoolcommandlineupload',methods=["GET","POST"])
 def ipmitoolcommandlineupload():
@@ -1068,7 +1107,11 @@ def IPRangeToList(start, end):
         end_int = int(ip_address(end).packed.hex(), 16)
     except:
         return(0)
-    return [ip_address(ip).exploded for ip in range(start_int, end_int)]
+    else:
+        if end_int - start_int > 500:
+            return(1)
+        else:
+            return [ip_address(ip).exploded for ip in range(start_int, end_int)]
     
 @app.route('/advanceinputgenerator',methods=['GET', 'POST'])
 def advanceinputgenerator():
@@ -1079,8 +1122,10 @@ def advanceinputgenerator():
         iplist = IPRangeToList(ipstart,ipend)
         if iplist == 0:
             return render_template('error.html',error="Invalid input format!")
+        elif iplist == 1:
+            return render_template('error.html',error="Range too large!")
         elif len(iplist) == 0:
-            return render_template('error.html',error="No input IP obtained!")        
+            return render_template('error.html',error="No input IP obtained!") 
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
         ipmi_list = list(df_pwd['ip'])
         osip_list = list(df_pwd['os_ip'])
@@ -1095,6 +1140,63 @@ def advanceinputgenerator():
                 elif request.form['iptype'] == "os" and ip in osip_list:
                     cleanerinput.write(ip + '\n')
         return redirect(url_for(request.form['redirectpage']))
+
+@app.route('/advanceinputgenerator_ajaxVersion', methods=["GET"])
+def advanceinputgenerator_ajaxVerison():
+    if request.method == "GET":
+        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        ipstart = request.args.get('ipstart')
+        ipend = request.args.get('ipend')
+        iplist = IPRangeToList(ipstart,ipend)
+        if iplist == 0:
+            response = {"ERROR":"ERROR: Invalid input format! "}
+            response = json.dumps(response)
+            return response
+        elif iplist == 1:
+            response = {"ERROR":"ERROR: Range too large! "}
+            response = json.dumps(response)
+            return response
+        elif len(iplist) == 0:
+            response = {"ERROR":"ERROR: No input IP obtained! "}
+            response = json.dumps(response)
+            return response 
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
+        ipmi_list = list(df_pwd['ip'])
+        osip_list = list(df_pwd['os_ip'])
+        with open(savepath,"w") as cleanerinput:
+            for ip in iplist:
+                if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
+                    current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                    if 'suminput' in savepath:
+                        cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
+                    else:
+                        cleanerinput.write(ip + '\n')
+                elif request.args.get('iptype') == "os" and ip in osip_list:
+                    cleanerinput.write(ip + '\n')
+            response = {"response" : "SUCCESS: saved file: " + savepath}
+            print("Saved file...",flush=True)
+            return json.dumps(response)
+
+@app.route('/advanceinputgenerator_all_ajaxVersion', methods=["GET"])
+def advanceinputgenerator_all_ajaxVerison():
+    if request.method == "GET":
+        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
+        ip_list = list(df_pwd['ip'])
+        osip_list = list(df_pwd['os_ip'])
+        with open(savepath,"w") as cleanerinput:
+            for ip, osip in zip(ip_list, osip_list):
+                if request.args.get('iptype') == "ipmi":
+                    current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                    if 'suminput' in savepath:
+                        cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
+                    else:
+                        cleanerinput.write(ip + '\n')
+                elif request.args.get('iptype') == "os":
+                    cleanerinput.write(osip + '\n')
+            response = {"response" : "SUCCESS: saved file: " + savepath}
+            print("Saved file...",flush=True)
+            return json.dumps(response)
         
 @app.route('/sumlogpage',methods=['GET', 'POST'])
 def sumlogpage():
