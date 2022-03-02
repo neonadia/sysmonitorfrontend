@@ -702,17 +702,9 @@ class Test(object):
         
         smclogo = "supermicro.jpg"
         ssiclogo = "SSIC.png"
-        self.c.drawImage(smclogo, self.width-85, self.height, 62, 30)
-        self.c.drawImage(ssiclogo, self.width-200, self.height-765, 178, 30)
-        # show customer logo if have
-        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
-            for file in sorted(files):
-                if file.startswith("cuslogo.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    cuslogo = os.environ['UPLOADPATH'] + "/" + file
-                    cur_img = utils.ImageReader(cuslogo)
-                    cur_iw, cur_ih = cur_img.getSize()
-                    cur_ratio = cur_iw/cur_ih
-                    self.c.drawImage(cuslogo, 20, self.height, 30*cur_ratio, 30)        
+        self.c.drawImage(ssiclogo, 20, self.height + 10, 119, 20)
+        self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
+        self.c.drawImage(ssiclogo, self.width-141, self.height-765, 119, 20)        
         #header_text = """<a name="TOP"/><strong>RACK REPORT: """ + rackname + """</strong>"""
         #p = Paragraph(header_text, centered)
         #p.wrapOn(self.c, self.width, self.height)
@@ -743,19 +735,11 @@ class Test(object):
         smclogo = "supermicro.jpg"
         ssiclogo = "SSIC.png"
         self.c = canvas
-        # show customer logo if have
-        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
-            for file in sorted(files):
-                if file.startswith("cuslogo.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    cuslogo = os.environ['UPLOADPATH'] + "/" + file
-                    cur_img = utils.ImageReader(cuslogo)
-                    cur_iw, cur_ih = cur_img.getSize()
-                    cur_ratio = cur_iw/cur_ih
-                    self.c.drawImage(cuslogo, 20, self.height + 10, 30*cur_ratio, 30)
         p = Paragraph(introduction, normal)
         w, h = p.wrap(self.doc.width, self.doc.topMargin)
+        self.c.drawImage(ssiclogo, 20, self.height + 10, 119, 20)
         self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
-        self.c.drawImage(ssiclogo, self.width-200, self.height-765, 178, 30)
+        self.c.drawImage(ssiclogo, self.width-141, self.height-765, 119, 20)
         self.c.setFont('Helvetica-Bold',16)
         self.c.drawCentredString(self.width/2.0, self.height-10, Title)
         #self.c.drawCentredString(self.width/2.0, self.height-25, datetime_text)
@@ -809,11 +793,7 @@ class Test(object):
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         # Looking for cluster photo
-        image_cluster = "N/A"
-        for root,dirs,files in os.walk(os.environ['UPLOADPATH']):
-            for file in sorted(files):
-                if file.startswith("img_cluster.") and os.path.exists(os.environ['UPLOADPATH'] + "/" + file):
-                    image_cluster = os.environ['UPLOADPATH'] + "/" + file
+        image_cluster = "img_cluster.jpg"
         #self.story.append(PageBreak())
         #Summary and Hardware Tables
         ## column names
@@ -891,21 +871,20 @@ class Test(object):
         p.keepWithNext = True
         
         #Append cluster photo
-        if image_cluster != "N/A":
-            self.story.append(PageBreak())
-            ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Showcase for """ + rackname + """</b></font>"""
-            paragraph_schema = Paragraph(ptext_schema, centered)
-            self.story.append(paragraph_schema)
-            self.story.append(p)
-            ptext_schema_intro = """
-            SMC HPC cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
-            The image below is a showcase of {}. Followed by the hardware information and benchmark results.<br />
-            For more information about this product, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
-            """.format(rackname)
-            cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
-            self.story.append(cluster_schema_intro)
-            self.story.append(ConditionalSpacer(width=0, height=1*cm))
-            self.story.append(get_image(image_cluster, height=18*cm, width=18*cm))        
+        self.story.append(PageBreak())
+        ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster showcase during L12 testing</b></font>"""
+        paragraph_schema = Paragraph(ptext_schema, centered)
+        self.story.append(paragraph_schema)
+        self.story.append(p)
+        ptext_schema_intro = """
+        SMC HPC cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
+        The image below is a showcase of cluster during L12 testing. Followed by the hardware information and benchmark results.<br />
+        For more information about this product, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
+        """.format(rackname)
+        cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
+        self.story.append(cluster_schema_intro)
+        self.story.append(ConditionalSpacer(width=0, height=1*cm))
+        self.story.append(get_image(image_cluster, height=18*cm, width=18*cm))        
         #start by appending a pagebreak to separate first page from rest of document
         self.story.append(PageBreak())
         #table1 title
