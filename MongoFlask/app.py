@@ -874,17 +874,23 @@ def bmceventcleanerupload():
 def checkSelectedIps():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
-    allips = list(df_pwd['ip'])
+    if request.args.get('iptype') == 'osip':
+        allips = list(df_pwd['os_ip'])
+    else:
+        allips = list(df_pwd['ip'])
     try:
-        df_input = pd.read_csv(savepath+"bmceventcleanerip.txt",header=None,names=['ip'])
+        if 'sum' in request.args.get('filetype'): # sum input file is different
+            df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip','user','pwd'])
+        else:
+            df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
     except:
         inputips = []
         response = {}
         for ip in allips:
             response[ip] = "false"
-        if os.path.exists(savepath+"bmceventcleanerip.txt"):
-            os.remove(savepath+"bmceventcleanerip.txt")
+        if os.path.exists(savepath+ request.args.get('filetype') +".txt"):
+            os.remove(savepath+ request.args.get('filetype') +".txt")
         return json.dumps(response)
     else:
         allips = list(df_pwd['ip'])
@@ -897,19 +903,20 @@ def checkSelectedIps():
         response = json.dumps(indicators)
         return response
 
-@app.route('/uploadbmcCleanerFile',methods=["POST"])
-def uploadbmcIPs():
+@app.route('/uploadinputipsfileforall',methods=["POST"]) # used for all input file upload
+def uploadinputipsfileforall():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    filetype = request.args.get('var')
     if request.method == "POST":
         if request.files:
-            bmcipfile = request.files["file"]
-            if bmcipfile.filename == "":
+            ipfile = request.files["file"]
+            if ipfile.filename == "":
                 printf("Input file must have a filename")
                 response = {"response":"Error: Input file must have a filename"}
             else:
-                bmcipfile.save(savepath+"bmceventcleanerip.txt")
-                printf("bmcipfile has been saved as bmceventcleanerip.txt".format(bmcipfile.filename))
-                response = {"response": "bmcipfile has been saved as bmceventcleanerip.txt" }
+                ipfile.save(savepath+ filetype +".txt")
+                printf("Input ip file has been saved as " + filetype + ".txt".format(ipfile.filename))
+                response = {"response": "inputfile has been saved as " + filetype + ".txt" }
             response = json.dumps(response)
             return response
 

@@ -289,7 +289,7 @@
         }
         $.CheckIPMIs = function(){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
             $.ajax({
-                url: '/checkSelectedIPs',
+                url: '/checkSelectedIPs?filetype=bmceventcleanerip&iptype=ipmi',
                 dataType : "JSON",
                 type : "GET",
                 success: function(result){
@@ -325,7 +325,7 @@
         }
         $.UploadFiletoServer = function(){
             $.ajax({
-                url: '/uploadbmcCleanerFile', 
+                url: '/uploadinputipsfileforall?var=bmceventcleanerip', 
                 type: 'POST',
                 data: new FormData($('#fileform')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
                 processData: false,
