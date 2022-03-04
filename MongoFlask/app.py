@@ -879,8 +879,8 @@ def checkSelectedIps():
     else:
         allips = list(df_pwd['ip'])
     try:
-        if 'sum' in request.args.get('filetype'): # sum input file is different
-            df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip','user','pwd'])
+        if request.args.get('filetype') == "suminput": # sum input file is different
+            df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,sep='\s+',names=['ip','user','pwd'])
         else:
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
@@ -906,7 +906,12 @@ def checkSelectedIps():
 @app.route('/uploadinputipsfileforall',methods=["POST"]) # used for all input file upload
 def uploadinputipsfileforall():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    filetype = request.args.get('var')
+    filetype = request.args.get('filetype')
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
+    if request.args.get('iptype') == 'osip':
+        allips = list(df_pwd['os_ip'])
+    else:
+        allips = list(df_pwd['ip'])    
     if request.method == "POST":
         if request.files:
             ipfile = request.files["file"]
@@ -914,8 +919,14 @@ def uploadinputipsfileforall():
                 printf("Input file must have a filename")
                 response = {"response":"Error: Input file must have a filename"}
             else:
-                ipfile.save(savepath+ filetype +".txt")
+                ipfile.save(savepath+ filetype +".txt.bak")
+                if filetype == "suminput":
+                    df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
+                else:
+                    df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,names=['ip'])
+                df_input[df_input['ip'].isin(allips)].to_csv(savepath+ request.args.get('filetype') + ".txt",header=None,index=None,sep=' ')
                 printf("Input ip file has been saved as " + filetype + ".txt".format(ipfile.filename))
+                os.remove(savepath+ filetype +".txt.bak")
                 response = {"response": "inputfile has been saved as " + filetype + ".txt" }
             response = json.dumps(response)
             return response
@@ -1235,16 +1246,17 @@ def sumtoolboxupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    if request.method == "POST":
-        if request.files:
-            suminputipfile = request.files["file"]
-            if suminputipfile.filename == "":
-                printf("Input file must have a filename")
-                return redirect(url_for('sumtoolboxupload'))
-            suminputipfile.save(savepath + "suminput.txt")
-            printf("{} has been saved as suminput.txt".format(suminputipfile.filename))
-            return redirect(url_for('sumtoolboxupload'))   
     return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+#    if request.method == "POST":
+#        if request.files:
+#            suminputipfile = request.files["file"]
+#            if suminputipfile.filename == "":
+#                printf("Input file must have a filename")
+#                return redirect(url_for('sumtoolboxupload'))
+#            suminputipfile.save(savepath + "suminput.txt")
+#            printf("{} has been saved as suminput.txt".format(suminputipfile.filename))
+#            return redirect(url_for('sumtoolboxupload'))   
+#    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/sumbioscompoutput',methods=['GET', 'POST'])
 def sumbioscompoutput():

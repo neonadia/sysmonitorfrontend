@@ -325,7 +325,7 @@
         }
         $.UploadFiletoServer = function(){
             $.ajax({
-                url: '/uploadinputipsfileforall?var=bmceventcleanerip', 
+                url: '/uploadinputipsfileforall?filetype=bmceventcleanerip&iptype=ipmi', 
                 type: 'POST',
                 data: new FormData($('#fileform')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
                 processData: false,
