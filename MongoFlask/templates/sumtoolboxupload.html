@@ -152,7 +152,6 @@
         
         <div class ="row">
             <div class="col">
-                <form action="/sumbioscompoutput" method="POST" enctype="multipart/form-data" id = "fileform">
                     <h3><u class="font-weight-bold text-primary">STEP 2:</u> Run SUM Processes</h3>
                     <br>
                     <h4>Option 1: BIOS Settings Comparison</h4>
@@ -161,8 +160,7 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Commands above will be sent to target systems and comparison will be made.</small>
                           <br>
-                    <button id="sumbutton1" type="submit" class="btn btn-success" disabled target="_blank">COMPARE</button>
-                </form>
+                    <a id="sumbutton1" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbioscompoutput') }}" target="_blank">COMPARE</a>
             </div>
             <div class="col">
                 <form action="/sumbootorderdownload" method="POST" enctype="multipart/form-data" id = "fileform">
@@ -198,7 +196,7 @@
                           <small id="help1" class="form-text text-muted">Please upload the BIOS image before start updating.</small>
                           <br>
                     <button id="uploadimage1" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a id="sumbutton3" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiosupdateoutput') }}" disabled>UPATE</a>
+                    <a id="sumbutton3" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiosupdateoutput') }}">UPATE</a>
                 </form>
             </div>
             <div class="col">
@@ -451,7 +449,7 @@
             }); 
         }        
         function enableSUMButtons(){
-            document.getElementById('sumbutton1').disabled = false;
+            document.getElementById('sumbutton1').classList.remove('disabled');
             document.getElementById('sumbutton2').disabled = false;
             document.getElementById('sumbutton3').classList.remove('disabled');
             document.getElementById('sumbutton4').classList.remove('disabled');
@@ -461,7 +459,7 @@
         }
 
         function disableSUMButtons(){
-            document.getElementById('sumbutton1').disabled = true;
+            document.getElementById('sumbutton1').classList.add('disabled');
             document.getElementById('sumbutton2').disabled = true;
             document.getElementById('sumbutton3').classList.add('disabled');
             document.getElementById('sumbutton4').classList.add('disabled');
