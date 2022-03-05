@@ -31,9 +31,9 @@
     /* CSS For the terminal window, made scroll incase output is too large */
     div.scroll {
         background-color: black;
-        width: 400px;
-        height: 350px;
-        max-height: 600px;
+        width: 800px;
+        height: 500px;
+        max-height: 800px;
         overflow-x: hidden;
         overflow-y: auto;
         text-align: left;
@@ -91,60 +91,63 @@
     </nav>
 
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
-        <div class ="row">
-            <div class="col">
-                <form id = "fileform">
-                    <div class="form-group">
-                        <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
-                        <br>
-                        <h4>Option 1: Upload a text file of the BMC IPs</h4>
-                        <label>Choose your text file</label>
-                        <div class="custom-file">
-                            <input type="file" class="form-control-file form-primary" name="file" id="file" required>
-                            <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> BMC IPs, USER NAME and PASSWORD seperated by space.
-                            </small>
-                            <output id="list"></output>
-                        </div>
+    <div class ="row">
+            <div class="col"> 
+                <div class ="row">
+                    <div class="col">
+                        <form id = "fileform">
+                            <div class="form-group">
+                                <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
+                                <br>
+                                <h4>Option 1: Upload a text file of the BMC IPs</h4>
+                                <label>Choose your text file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="form-control-file form-primary" name="file" id="file" required>
+                                    <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> BMC IPs, USER NAME and PASSWORD seperated by space.
+                                    </small>
+                                    <output id="list"></output>
+                                </div>
+                            </div>
+                            
+                            <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                           
+                            <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
+                        </form>
                     </div>
-                    
-                    <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                           
-                    <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
-                </form>
-            </div>
-        </div>
-        
-        <br>
-        
-        <div class ="row">
-            <div class="col">
+                </div>      
+            <br>
+            
+                <div class ="row">
+                    <div class="col">
 
-                <form id = "inputform">
+                        <form id = "inputform">
 
-                    <div class="form-group">
-                        <h4>Option 2: Input IPs</h4>
-                        <label>Input IP range</label>
-                            <div class ="row">
-                            <div class="col-auto">
-                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                            <div class="form-group">
+                                <h4>Option 2: Input IPs</h4>
+                                <label>Input IP range</label>
+                                    <div class ="row">
+                                    <div class="col-auto">
+                                    <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)">
+                                    </div>
+                                    <div class="col-auto">
+                                    <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)">
+                                    </div>
+                                    <input type="hidden" id="inputtype" name="inputtype" value="suminput">
+                                    <input type="hidden" id="iptype" name="iptype" value="ipmi">
+                                    </div>
                             </div>
-                            <div class="col-auto">
-                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
-                            </div>
-                            <input type="hidden" id="inputtype" name="inputtype" value="suminput">
-                            <input type="hidden" id="iptype" name="iptype" value="ipmi">
-                            </div>
+                            <button id="inputbutton" type="submit" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
+                            <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>                                        
+                            <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
+                        </form>
                     </div>
-                    <button id="inputbutton" type="submit" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
-                    <small id="help1" class="form-text text-muted">Input file will be created.</small>
-                    <div class="col auto" style="padding-left: 10%; font-weight: bolder;">
-                        Terminal Output :
-                        <div class="col-auto scroll" id = "upload_terminal" style="background-color: black; color: chartreuse; width: 55%; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;">
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
-        
+            <div class="col auto" style="font-weight: bolder;">
+                  Terminal Output :
+                 <div class="col-auto scroll" id = "upload_terminal" style="background-color: black; color: chartreuse; width: 55%; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;">
+                 </div>
+            </div>
+        </div> 
         <hr class="solid">
         
         <div class ="row">
@@ -158,7 +161,7 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Commands above will be sent to target systems and comparison will be made.</small>
                           <br>
-                    <button id="testrunbutton" type="submit" class="btn btn-success" target="_blank">COMPARE</button>
+                    <button id="sumbutton1" type="submit" class="btn btn-success" disabled target="_blank">COMPARE</button>
                 </form>
             </div>
             <div class="col">
@@ -172,7 +175,7 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Commands above will be sent to target systems and boot order table will be sent.</small>
                           <br>
-                    <button id="testrunbutton" type="submit" class="btn btn-success">DOWNLOAD</button>
+                    <button id="sumbutton2" type="submit" class="btn btn-success" disabled>DOWNLOAD</button>
                 </form>
             </div>
         </div>
@@ -194,8 +197,8 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Please upload the BIOS image before start updating.</small>
                           <br>
-                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a class="btn btn-success mr-1" href="{{ url_for('sumbiosupdateoutput') }}">UPATE</a>
+                    <button id="uploadimage1" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
+                    <a id="sumbutton3" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiosupdateoutput') }}" disabled>UPATE</a>
                 </form>
             </div>
             <div class="col">
@@ -212,8 +215,8 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Please upload the BMC image before submit.</small>
                           <br>
-                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a class="btn btn-success mr-1" href="{{ url_for('sumbmcupdateoutput') }}">UPATE</a>
+                    <button id="uploadimage2" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
+                    <a id="sumbutton4" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbmcupdateoutput') }}" disabled>UPATE</a>
                 </form>
             </div>
         </div>
@@ -230,7 +233,7 @@
                           </div>
                           <small id="help1" class="form-text text-muted">The BIOS settings are downloaded as tar file.</small>
                           <br>
-                    <a class="btn btn-success mr-1" href="{{ url_for('sumdownloadbiossettings') }}">DOWNLOAD</a>
+                    <a id="sumbutton5" class="btn btn-success mr-1 disabled" href="{{ url_for('sumdownloadbiossettings') }}">DOWNLOAD</a>
             </div>
             <div class="col">
                 <form action="/sumbiossettingsupload" method="POST" enctype="multipart/form-data" id = "fileform">
@@ -247,7 +250,7 @@
                           <small id="help1" class="form-text text-muted">Please upload BIOS settings before start changing.</small>
                           <br>
                     <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD SETTINGS</button>
-                    <a class="btn btn-success mr-1" href="{{ url_for('sumbiossettingschangeoutput') }}">CHANGE</a>
+                    <a id="sumbutton6" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiossettingschangeoutput') }}">CHANGE</a>
                 </form>
             </div>
         </div>
@@ -256,6 +259,7 @@
         
         <div class ="row">
             <div class="col">
+                <form action="/sumdownloaddmi" method="POST" enctype="multipart/form-data" id = "fileform">
                     <h4>Option 7: Get DMI Infomation</h4>
                           <div class="form-group row">                         
                             <label class="col-auto col-form-label text-left font-weight-bold text-primary">
@@ -264,7 +268,8 @@
                           </div>
                           <small id="help1" class="form-text text-muted">The DMI files are downloaded as tar file.</small>
                           <br>
-                    <a class="btn btn-success mr-1" href="{{ url_for('sumdownloaddmi') }}">DOWNLOAD</a>
+                    <button id="sumbutton7" class="btn btn-success mr-1" disabled >DOWNLOAD</button>
+                </form>
             </div>
         </div>
         
@@ -272,12 +277,22 @@
         
         <hr class="solid">
         
-        <div class ="row">
+        <div class="row">
+            <!--
             <div class="col">                
                     <h3><u class="font-weight-bold text-primary">STEP 3:</u> Show SUM Running Status</h3>
                     <small id="help1" class="form-text text-muted">Read sum log file with the current running process pid.</small>
                     <br>
                     <a class="btn btn-success mr-1" href="{{ url_for('sumlogpage') }}" target="_blank">SUM STATUS</a>
+            </div>
+            -->
+            <div class="col">
+            <h3><u class="font-weight-bold text-primary">STEP 3:</u> SUM LOG OUTPUT</h3>
+            <div class="col auto" style="font-weight: bolder;">
+                 <small id="help1" class="form-text text-muted">Read sum log file with the current running process pid.</small>
+                 <div class="col-auto scroll" id = "sum_terminal" style="background-color: black; color: chartreuse; width: 55%; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;">
+                 </div>
+            </div>
             </div>
         </div>       
         
@@ -312,6 +327,7 @@
     
     <script type="text/javascript">
         var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var sum_terminal = document.getElementById('sum_terminal');
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             $.CheckIPMIs();
         }, false);
@@ -339,12 +355,14 @@
                     }
                     if (hasIPs === false){
                         terminal.insertAdjacentHTML('beforeend'," <ul> > No IPs selected from this Rack </ul>");
+                        disableSUMButtons()
                     }
                     else{
                         terminal.insertAdjacentHTML('beforeend'," <ul> > Current Selected IPs has been updated </ul>");
                         terminal.insertAdjacentHTML('beforeend'," <ul> > Run the commands when ready... </ul>");
                         ips = document.getElementById("display_ips")
                         ips.classList.add("show")
+                        enableSUMButtons()
                     }
                 }
             });
@@ -402,7 +420,56 @@
                     }
                 }        
             }); 
-        } 
+        }
+        $.CallAdvancedAllGenerator = function(inputtpye,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_all_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtpye, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            cleaner.disabled = true;
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Could not generate the file... </ul>");
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
+                        $.CheckIPMIs()
+                    }
+                }        
+            }); 
+        }        
+        function enableSUMButtons(){
+            document.getElementById('sumbutton1').disabled = false;
+            document.getElementById('sumbutton2').disabled = false;
+            document.getElementById('sumbutton3').classList.remove('disabled');
+            document.getElementById('sumbutton4').classList.remove('disabled');
+            document.getElementById('sumbutton5').classList.remove('disabled');
+            document.getElementById('sumbutton6').classList.remove('disabled');
+            document.getElementById('sumbutton7').disabled = false;
+        }
+
+        function disableSUMButtons(){
+            document.getElementById('sumbutton1').disabled = true;
+            document.getElementById('sumbutton2').disabled = true;
+            document.getElementById('sumbutton3').classList.add('disabled');
+            document.getElementById('sumbutton4').classList.add('disabled');
+            document.getElementById('sumbutton5').classList.add('disabled');
+            document.getElementById('sumbutton6').classList.add('disabled');
+            document.getElementById('sumbutton7').disabled = true;
+        }
+        
         function uploadFile(){
             terminal.innerHTML = ""
             var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
@@ -417,6 +484,13 @@
             terminal.innerHTML = ""
             terminal.insertAdjacentHTML('beforeend'," <ul> > Getting IP Range from " + ipstart + " to " + ipend + "</ul>");
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
+        }
+        function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            terminal.innerHTML = ""
+            terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting all the IPs ... </ul>");
+            $.CallAdvancedAllGenerator(inputtype,iptype);
         }
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
@@ -454,7 +528,7 @@
                     if (fileChecker){ ////If valid ips found enable the upload button.
                         button.disabled = false;
                     }
-                    else{
+                    else {
                     /// If a single invalid ip, disable upload button
                         button.disabled = true;
                     }
@@ -478,6 +552,34 @@
             }
             return (false);
         }
+        
+        function sumoutputtoterminal(){
+            $.sumjQuery();
+        };
+        $.sumjQuery = function(){
+            $.ajax({
+                url: '/sumlogtermial',
+                dataType: "JSON",
+                timeout: 1000,
+                type: 'GET',
+                success: function(response){
+                var data = response;
+                const inputarray = data['log_lines']
+                if (data['status'] == 0){ 
+                    sum_terminal.innerHTML = ""
+                    for(i = 0; i < inputarray.length; i++ ){
+                        sum_terminal.insertAdjacentHTML('beforeend',inputarray[i]); 
+                    }
+                
+                }
+                }
+            });
+        };
+        sum_terminal.innerHTML = ""
+        sum_terminal.insertAdjacentHTML('beforeend',' <ul> > SUM is IDLE ... </ul>');      
+        sumoutputtoterminal();
+        setInterval(sumoutputtoterminal, 1000);
+        
     </script>
 </body>
 </html>

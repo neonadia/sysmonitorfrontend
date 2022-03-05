@@ -1221,15 +1221,35 @@ def sumlogpage():
     sumlogout = sumLogOutput()
     if sumlogout == 1:
         return render_template("sumLog.html", sumloglines = ['SUM is not running!!'],rackname=rackname,rackobserverurl = rackobserverurl)
-    elif sumlogout == 1:
-        return render_template("sumLog.html", sumloglines = ['Multiple SUM processes are detected, no output can display!!'],rackname=rackname,rackobserverurl = rackobserverurl)
+    elif sumlogout == 2:
+        return render_template("sumLog.html", sumloglines = ['Multiple SUM processes are detected, no output can be displayed!!'],rackname=rackname,rackobserverurl = rackobserverurl)
     sumloglines = ["SUM is running!!"]
     with open(sumlogout, "r") as sumlogfile:
         for line in sumlogfile:
             line = line.strip()
             sumloglines.append(line)
     return render_template("sumLog.html", sumloglines = sumloglines,rackname=rackname,rackobserverurl = rackobserverurl)
-        
+
+@app.route('/sumlogtermial')
+def sumlogtermial():
+    sumlogout = sumLogOutput()
+    response = {'status':-1,'log_lines':[]}
+    if sumlogout == 1:
+        response['status'] = 1
+        response['log_lines'] = [' <ul> > SUM is IDLE ... </ul>']
+        return json.dumps(response)
+    elif sumlogout == 2:
+        response['status'] = 2
+        response['log_lines'] = [' <ul> > Error: multiple SUM processes are detected, no output can be displayed!! </ul>']
+        return json.dumps(response)
+    response['status'] = 0
+    response['log_lines'] = [' <ul> > SUM is RUNNING NOW, Please do not submit multiple SUM request ... </ul>']
+    with open(sumlogout, "r") as sumlogfile:
+        for line in sumlogfile:
+            line = line.strip()
+            response['log_lines'].append(' <ul> >  '+ line +'  </ul>')
+    return json.dumps(response)
+ 
 @app.route('/sumtoolboxupload',methods=['GET', 'POST'])
 def sumtoolboxupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
