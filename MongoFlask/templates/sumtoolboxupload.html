@@ -84,6 +84,25 @@
                 </div>
             </li>
             
+            <li class="dropdown">
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Advanced Features
+                </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ url_for('biosupload') }}" target="_blank">BIOS Update</a>
+                        <a class="dropdown-item" href="{{ url_for('bmcupload') }}" target="_blank">BMC Update</a>
+                        <a class="dropdown-item" href="{{ url_for('systemresetupload') }}" target="_blank">Power Reset Test</a>
+                        <a class="dropdown-item" href="{{ url_for('bmceventcleanerupload') }}" target="_blank">BMC Events Cleaner</a>
+                        <a class="dropdown-item" href="{{ url_for('ipmitoolcommandlineupload') }}" target="_blank">IPMI CLI</a>
+                        <a class="dropdown-item" href="{{ url_for('checkipmisensor') }}" target="_blank">IPMI Sensor Check</a>
+                        <a class="dropdown-item" href="{{ url_for('bioscomparisonoutput') }}" target="_blank">BIOS Comparison</a>
+                        <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
+                        <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
+                        <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+                        <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
+                        <a class="dropdown-item" href="{{ url_for('hardware_output') }}" target="_blank">Rack Hardware Data</a>
+                    </div>
+            </li>
             
             {% include "documentationButton.html" %}
 
@@ -109,7 +128,7 @@
                                 </div>
                             </div>
                             
-                            <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                           
+                            <a id="uploadbutton" class="btn btn-primary text-white disabled" onclick="uploadFile()">UPLOAD FILE</a>                                           
                             <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
                         </form>
                     </div>
@@ -131,12 +150,14 @@
                                     <div class="col-auto">
                                     <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)">
                                     </div>
+                                    <input type="hidden" id="ip" name="ip" value="all">
                                     <input type="hidden" id="inputtype" name="inputtype" value="suminput">
                                     <input type="hidden" id="iptype" name="iptype" value="ipmi">
                                     </div>
                             </div>
-                            <button id="inputbutton" type="submit" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
-                            <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>                                        
+                            <a id="uploadRange" class="btn btn-primary text-white" name="uploadRange" onclick="uploadIPs()">SELECT RANGE</a>                                        
+                            <a id="uploadall" class="btn btn-primary text-white" name="uploadall" onclick="uploadallIPs()">SELECT ALL</a>
+                            <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>                             
                             <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
                         </form>
                     </div>
@@ -214,7 +235,7 @@
                           <small id="help1" class="form-text text-muted">Please upload the BMC image before submit.</small>
                           <br>
                     <button id="uploadimage2" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a id="sumbutton4" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbmcupdateoutput') }}" disabled>UPATE</a>
+                    <a id="sumbutton4" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbmcupdateoutput') }}">UPATE</a>
                 </form>
             </div>
         </div>
@@ -379,7 +400,7 @@
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
-                button.disabled = true;
+                button.classList.add('disabled');
 
             }).fail(function(){
                 console.log("An error occurred, the file couldn't be sent!");
@@ -387,7 +408,7 @@
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
-                button.disabled = true;
+                button.classList.add('disabled');
             });
         }
         $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtpye,iptype){
@@ -403,7 +424,7 @@
                         if (key === "ERROR"){ ///If error in key report output to terminal
                             console.log(data[key]);
                             complete = false;
-                            cleaner.disabled = true;
+                            disableSUMButtons();
                             terminal.insertAdjacentHTML('beforeend'," <ul> > Could not get range from server... </ul>");
                             terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
                             break;
@@ -432,7 +453,7 @@
                         if (key === "ERROR"){ ///If error in key report output to terminal
                             console.log(data[key]);
                             complete = false;
-                            cleaner.disabled = true;
+                            disableSUMButtons();
                             terminal.insertAdjacentHTML('beforeend'," <ul> > Could not generate the file... </ul>");
                             terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
                             break;
@@ -456,6 +477,7 @@
             document.getElementById('sumbutton5').classList.remove('disabled');
             document.getElementById('sumbutton6').classList.remove('disabled');
             document.getElementById('sumbutton7').disabled = false;
+            document.getElementById('unselectall').classList.remove('disabled');
         }
 
         function disableSUMButtons(){
@@ -466,6 +488,7 @@
             document.getElementById('sumbutton5').classList.add('disabled');
             document.getElementById('sumbutton6').classList.add('disabled');
             document.getElementById('sumbutton7').disabled = true;
+            document.getElementById('unselectall').classList.add('disabled');
         }
         
         function uploadFile(){
@@ -524,11 +547,11 @@
                         }   
                     }
                     if (fileChecker){ ////If valid ips found enable the upload button.
-                        button.disabled = false;
+                        button.classList.remove('disabled');
                     }
                     else {
                     /// If a single invalid ip, disable upload button
-                        button.disabled = true;
+                        button.classList.add('disabled');
                     }
                     output = "<strong>FOUND IPMI IP:<br />" + output;
                     document.getElementById("list").innerHTML = output;
@@ -536,12 +559,44 @@
                 reader.onerror = function (evt) {
                     document.getElementById("list").innerHTML = "error reading file";
                     fileChecker = false
-                    button.disabled = true;
+                    button.classList.add('disabled');
                 }
             }
         }
 
         document.getElementById('file').addEventListener('change', handleFileSelect, false);
+
+        /// Clear selected IPs function. Takes a single IP or "all" to unselect all.
+        function CallIPCleaner(){
+            var ip = document.getElementById('inputform')['ip'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            $.clearIPs(inputtype,ip,iptype);
+        }
+        $.clearIPs = function(inputtype,ip,iptype){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/deselectIP', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, ip: ip, iptype: iptype},
+                beforeSend: function(){ 
+                    terminal.innerHTML = ""
+                    terminal.insertAdjacentHTML('beforeend'," <ul> >Modifying Selection...</ul>") 
+                },
+                success: function(result){
+                    var data = result;                    
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "Success"){
+                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>")
+                            $.CheckIPMIs(inputtype,iptype);
+                        }
+                        else{
+                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>") 
+                        }
+                    }
+                }        
+            }); 
+        }
         
         function ValidateIPaddress(ipaddress) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))

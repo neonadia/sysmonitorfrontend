@@ -124,13 +124,15 @@
                             <div class="col-auto">
                             <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)">
                             </div>
+                            <input type="hidden" id="ip" name="ip" value="all">
                             <input type="hidden" id="inputtype" name="inputtype" value="bmceventcleanerip">
                             <input type="hidden" id="iptype" name="iptype" value="ipmi">                            
                             </div>
                     </div>
                 </form>        
                 <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
-                <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>                                        
+                <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
+                <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>                     
                 <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
             </div>
             <div class="col auto" style="padding-left: 10%; font-weight: bolder;">
@@ -174,6 +176,7 @@
     <script type="text/javascript">
         var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var cleaner = document.getElementById('runcleanerbutton'); /// Run cleaner button to disable and enable
+        var unselectButton = document.getElementById('unselectall');
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             $.CheckIPMIs();
         }, false);
@@ -312,12 +315,14 @@
                     }
                     if (hasIPs === false){
                         cleaner.disabled = true;
+                        unselectButton.classList.add("disabled")
                         terminal.insertAdjacentHTML('beforeend'," <ul> > No IPs selected from this Rack </ul>");
                     }
                     else{
                         terminal.insertAdjacentHTML('beforeend'," <ul> > Current Selected IPs has been updated </ul>");
                         terminal.insertAdjacentHTML('beforeend'," <ul> > Run the Cleaner when ready... </ul>");
                         ips = document.getElementById("display_ips")
+                        unselectButton.classList.remove("disabled")
                         ips.classList.add("show")
                     }
                 }
@@ -348,6 +353,37 @@
                 button.disabled = true;
             });
         }     
+        /// Clear selected IPs function. Takes a single IP or "all" to unselect all.
+        function CallIPCleaner(){
+            var ip = document.getElementById('inputform')['ip'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            $.clearIPs(inputtype,ip,iptype);
+        }
+        $.clearIPs = function(inputtype,ip,iptype){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/deselectIP', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, ip: ip, iptype: iptype},
+                beforeSend: function(){ 
+                    terminal.innerHTML = ""
+                    terminal.insertAdjacentHTML('beforeend'," <ul> >Modifying Selection...</ul>") 
+                },
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "Success"){
+                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>")
+                            $.CheckIPMIs(inputtype,iptype);
+                        }
+                        else{
+                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>") 
+                        }
+                    }
+                }        
+            }); 
+        }
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
             input_field = document.getElementById('file');
@@ -409,7 +445,7 @@
                 input_field.value = '';
                 button.disabled = true;
             }
-        }
+        }        
         document.getElementById('file').addEventListener('change', handleFileSelect, false);
         function ValidateIPaddress(ipaddress) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))

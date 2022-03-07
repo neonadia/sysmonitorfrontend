@@ -903,6 +903,57 @@ def checkSelectedIps():
         response = json.dumps(indicators)
         return response
 
+@app.route('/deselectIP', methods=["GET"])
+def deselectIPs():
+    if request.method == "GET":
+        sel_ip = request.args.get('ip')
+        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        if "all" in sel_ip:
+            if os.path.isfile(savepath):
+                os.remove(savepath)
+                response = {"Success": "Cleared all IPs"}
+                return json.dumps(response)
+            else:
+                response = {"Error" : "No IPs to be cleared"}
+                return json.dumps(response)
+        else:
+            if os.path.isfile(savepath):
+                if request.args.get('inputtype') == "suminput":
+                    df_ipmi = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
+                else:
+                    df_ipmi = pd.read_csv(savepath,names=['ip'])
+                selected_ips = list(df_ipmi['ip'])
+                if sel_ip in selected_ips:
+                    selected_ips.remove(sel_ip)
+                else:
+                    response = {"Error": "Error: IP was not selected initially"}
+                    return json.dumps(response)
+                os.remove(savepath)
+                iplist = selected_ips
+                df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
+                ipmi_list = list(df_pwd['ip'])
+                osip_list = list(df_pwd['os_ip'])
+                with open(savepath,"w") as fileinput:
+                    for ip in iplist:
+                        if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
+                            current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                            if 'suminput' in savepath:
+                                fileinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
+                            else:
+                                fileinput.write(ip + '\n')
+                        elif request.args.get('iptype') == "os" and ip in osip_list:
+                            fileinput.write(ip + '\n')
+                    response = {"Success" : "Removed " + sel_ip + " from selection"}
+                    print("Saved file...",flush=True)
+                if os.path.isfile(savepath):
+                    return json.dumps(response)
+                else:
+                    response = {"Error": "Error: Could not remove IP from selection, error saving file"}
+                    return json.dumps(response)
+            else:
+                response = {"Error": "Error: Could not remove IP from selection, no IPs selected"}
+                return json.dumps(response)
+
 @app.route('/uploadinputipsfileforall',methods=["POST"]) # used for all input file upload
 def uploadinputipsfileforall():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
