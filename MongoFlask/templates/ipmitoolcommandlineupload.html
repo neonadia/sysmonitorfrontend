@@ -293,6 +293,7 @@
                                 }
                             }
                             addLine("============================== End of Response from " + key +" =========================");
+                            addLine("");
                         }
                     }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
@@ -524,7 +525,10 @@
                 addHistory(CMD); /// Add command to history array.
                 //// Parse command and check for internal console command, if not send to server to process as ipmitool commmand.
                 //// INTERNAL CONSOLE COMMANDS ARE HERE!.  Modify or add commands in this area. The else statement sends command to LCM server. ///////////////////////////////
-                if(CMD == "clear" ){ /// Clear function clears console output.
+                if (CMD.trim() === ""){ /// For no input.
+                    addLine("");
+                }                    
+                else if(CMD == "clear" ){ /// Clear function clears console output.
                     document.getElementById("console").innerHTML = "";
                     document.getElementById("console").insertAdjacentHTML('beforeend',"<p id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: min-content; max-width: max-content;''></p>")
                     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
@@ -639,7 +643,12 @@
             var sentence = document.getElementById(output_counter); /// Acquire html element with ID
             var text = sentence.textContent; /// Get text from html element
             //// Format key words in the html element's text with REGEX
-            var replaceWord = text.replace(/(Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)/g,"<span class='error'>$&</span>").replace(/(OK|Successfully|ok|Ok|oK|true|TRUE|True|Response|SUCCESS)/g,"<span class='ok'>$&</span>").replace(/(Information|information|INFO|info)/g,"<span class='info'>$&</span>");
+            let reError = /\b(Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
+            let reSuccess = /\b(OK|Successfully|ok|Ok|oK|true|TRUE|True|Response|SUCCESS)\b/g;
+            let reInfo = /\b(Information|information|INFO|info)\b/g;
+            let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+            var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
+            var replaceWord = replaceWord.replace(reIP,"<span style='color:#FF00FF;font-weight:bold'>$&</span>");
             sentence.innerHTML = replaceWord; /// Replace string in html element
             output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
             document.getElementById("textinput").value = ""; /// Set your console input to nothing
