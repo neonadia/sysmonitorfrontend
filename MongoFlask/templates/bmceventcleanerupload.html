@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
-
 </head>
 <style>
     ul span {
@@ -26,6 +25,12 @@
         overflow-y: auto;
         text-align: left;
         padding: 20px;
+    }
+    .dropright .dropdown-menu{
+            width: min-content;
+            height: min-content;
+            text-align: center;
+            margin: 0%;
     }
 </style>
 <body>
@@ -212,7 +217,7 @@
                     }
                     if (events_cleaned == true){
                         terminal.insertAdjacentHTML('beforeend'," <ul> > IP File deleted  </ul>");
-                        $.CheckIPMIs() ///Check file again to deselect the ip in  the Current Selected IPS
+                        $.CheckIPMIs(); ///Check file again to deselect the ip in  the Current Selected IPS
                     }
                 }
             });
@@ -246,11 +251,12 @@
                         }
                         else{
                             console.log(data[key]);
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > "+ data[key]  +" </ul>");
                         }
                     }
                     if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
-                        $.CheckIPMIs()
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Gettting IP range from server.... </ul>");
+                        $.CheckIPMIs();
                     }
                 }        
             }); 
@@ -282,11 +288,12 @@
                         }
                         else{
                             console.log(data[key]);
+                            terminal.insertAdjacentHTML('beforeend'," <ul> > "+ data[key]  +" </ul>");
                         }
                     }
                     if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
-                        $.CheckIPMIs()
+                        terminal.insertAdjacentHTML('beforeend'," <ul> > Getting IP range from server.... </ul>");
+                        $.CheckIPMIs();
                     }
                 }        
             }); 

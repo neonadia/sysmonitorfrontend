@@ -1018,9 +1018,8 @@ def bmceventcleanerstart():
         for i,ip in enumerate(iplist):
             response[str(i)] = ip
         return json.dumps(response)
-        
 
-@app.route('/ipmitoolcommandlineupload',methods=["GET","POST"])
+@app.route('/ipmitoolcommandlineupload')
 def ipmitoolcommandlineupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -1036,23 +1035,15 @@ def ipmitoolcommandlineupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    if request.method == "POST":
-        if request.files:
-            ipmitoolipfile = request.files["file"]
-            if ipmitoolipfile.filename == "":
-                printf("Input file must have a filename")
-                return redirect(url_for('ipmitoolcommandlineupload'))
-            ipmitoolipfile.save(savepath + "ipmitoolip.txt")
-            printf("{} has been saved as ipmitoolip.txt".format(ipmitoolipfile.filename))
-            return redirect(url_for('ipmitoolcommandlineupload'))   
-    return render_template('ipmitoolcommandlineupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('ipmitoolcommandlineupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
 
-@app.route('/ipmitoolstart',methods=["GET","POST"])
-def ipmitoolstart():
+@app.route('/ipmitoolstart',methods=["GET"])
+def ipmitoolstart(): ### Take a command for processing and distribution to servers
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    if request.method == "POST":
+    if request.method == "GET":
         if fileEmpty(savepath+"ipmitoolip.txt"):
-            return render_template('error.html',error="No input IP found!")
+            response = {"ERROR": "No input IP found!"}
+            return json.dumps(response)
         df_ipmi = pd.read_csv(savepath+"ipmitoolip.txt",names=['ip'])
         '''
         try:
@@ -1066,35 +1057,52 @@ def ipmitoolstart():
         data = []
         for i in range(len(iplist)):
             if iplist[i] not in iplist_rack:
-                return render_template('error.html',error="Assigned ip " + iplist[i] + " not belongs current rack!")
+                response = {"ERROR": "Assigned ip " + iplist[i] + " not belongs current rack!"}
+                return json.dumps(response)
             else:
                 data.append([])
                 data[i].append(iplist[i])
                 data[i].append(df_pwd[df_pwd['ip'] == iplist[i]]['pwd'].values[0])
-                data[i].append(request.form['ipmicmd'])
+                data[i].append(request.args.get('command'))
         #with Pool() as p:
-        #    ipmioutput = p.map(ipmistartone, data)
-        ipmistdout = []
-        ipmistderr = []
-        for i in range(len(data)):
-            ipmistdout.append(ipmistartone(data[i])[0])
-            ipmistderr.append(ipmistartone(data[i])[1])
-        #os.remove(savepath+"ipmitoolip.txt")
-        return render_template('ipmitoolcommandlineoutput.html', ipmistdout = ipmistdout, ipmistderr = ipmistderr,rackname=rackname,rackobserverurl = rackobserverurl)
+        #    ipmioutput = p.map(ipmistartone, data) #### Will implement later.
+        response = {}
+        for i in range(len(data)):### Execute command in all server linearly. Will implement multiprocessing later.
+            response[data[i][0]] = ipmistartone(data[i])
+        for ip in response:
+            for typeOfoutput in response[ip]:
+                for output in response[ip][typeOfoutput]: ###Check for key words in command that denote an error from the IPMITOOL response. Display only one error for all servers.
+                    if "Invalid" in response[ip][typeOfoutput][output] or "No&nbsp;command&nbsp;provided!" in response[ip][typeOfoutput][output] or "Commands:"  in response[ip][typeOfoutput][output]:
+                        error_response = {}
+                        error_response["IPMI Tool Error Response"] = response[ip]
+                        return json.dumps(error_response)
+                    elif "ipmitool&nbsp;version" in response[ip][typeOfoutput][output]:
+                        help_response = {}
+                        help_response["IPMI Tool Help"] = response[ip]
+                        return json.dumps(help_response)
+                    else: ###tReturn original response for all servers.
+                        return json.dumps(response) ### Response JSON is in the form of {"IP":{"STDOUT":{"0":"outputLine0","1":"outputLine1"}}}
 
-def ipmistartone(data_list):
+def ipmistartone(data_list): ###Execute IPMItool command. data_list is a list in the form of [[ip,pwd,cmd],[ip,pwd,cmd]]
     ip = data_list[0]
     pwd = data_list[1]
     ipmicmd = data_list[2]
-    process = Popen('ipmitool ' + ' -H ' +  ip + ' -U ' + 'ADMIN' + ' -P ' + pwd + ' ' + ipmicmd, shell=True, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = process.communicate()
-    out = ["["+ip+"] start here!!"]
-    err = ["["+ip+"] start here!!"]
-    out += stdout.decode("utf-8").split('\n')
-    out.append("["+ip+"] end here!!")
-    err += stderr.decode("utf-8").split('\n')
-    err.append("["+ip+"] end here!!")
-    return([out,err])
+    response = {}
+    try:
+        process = Popen('ipmitool ' + ' -H ' +  ip + ' -U ' + 'ADMIN' + ' -P ' + pwd + ' ' + ipmicmd, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate(timeout=2)
+    except:
+        response = {"STDERR":{"0":"No response from BMC"}}
+    else: ### Create a dictionary style response in the form of {"STDOUT":{"0":"outputLine0","1":"outputLine1"}}. This is because it will be sent to the HTML web page for processing in JSON format.
+        if stdout.decode() == '':
+            response = {"STDERR":{}}
+            for i,line in enumerate(stderr.decode().split('\n')):
+                response["STDERR"][str(i)] = line.replace(" ","&nbsp;")
+        else:
+            response = {"STDOUT":{}}
+            for i,line in enumerate(stdout.decode().split('\n')):
+                response["STDOUT"][str(i)] = line.replace(" ","&nbsp;")
+    return response
 
 def bmceventcleanerone(data_list):
     ip = data_list[0]
@@ -1392,7 +1400,6 @@ def sumdownloaddmi():
         time.sleep(1)
     return send_file(tarpath, as_attachment=False, cache_timeout=0)
 
-
 @app.route('/sumbiosimageupload',methods=['GET', 'POST'])
 def sumbiosimageupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1514,7 +1521,6 @@ def pwdoutput():
     new_path = os.environ['OUTPUTPATH'].replace(".txt","auth.txt")
     df_pwd[['ip','user','pwd']].to_csv(new_path,header=None,index=None,sep=' ')
     return send_file(new_path, as_attachment=True, cache_timeout=0)
-
 
 def list_helper(input_list,list_index):
     if list_index < len(input_list):
