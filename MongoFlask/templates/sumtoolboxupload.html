@@ -39,6 +39,39 @@
         text-align: left;
         padding: 20px;
     }
+    /* Background contains everything that is the console */
+    #background {
+        position: fixed;
+        background-color: black;
+        width: 800px;
+        height: 350px;
+        max-height: 600px;
+        overflow-y: auto;
+        text-align: left;
+    }
+    /* Console output formatting */
+    pre {
+        color: rgb(255, 255, 255);
+        margin: 0px 0px 0px 0px;
+    }
+    /* More console input formatting to make input box larger */
+    input#textinput {
+        width: 950px;
+    }
+    /* CSS classes for key word highlighting in the console output */
+    .error{
+        color:red;
+    }
+    .ok{
+        color:chartreuse;
+    }
+    .info{
+        color:aqua;
+    }
+    .ip{
+        color:#FF00FF;
+        font-weight:bold;
+    }
 </style>
 
 <body>
@@ -354,6 +387,10 @@
     <script type="text/javascript">
         var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var sum_terminal = document.getElementById('sum_terminal');
+        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
+        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success)\b/g;
+        var reInfo = /\b(Information|information|INFO|info)\b/g;
+        var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             $.CheckIPMIs();
         }, false);
@@ -365,14 +402,14 @@
                 success: function(result){
                     var data = result;
                     var hasIPs = false;
-                    terminal.insertAdjacentHTML('beforeend'," <ul> > Reading file with selected IPs </ul>");
+                    addLine('Reading file with selected IPs');
                     for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
                         var ip = document.getElementById(key)
                         if (data[key] == 'true'){
                             hasIPs = true;
                             ip.classList.add("text-success");
                             ip.classList.add("font-weight-bold");
-                            terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting " + key + ".... </ul>");
+                            addLine('Selecting ' + key + '...');
                         }
                         else{
                             ip.classList.remove("text-success");
@@ -380,12 +417,12 @@
                         }
                     }
                     if (hasIPs === false){
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > No IPs selected from this Rack </ul>");
+                        addLine('No IPs selected from this Rack');
                         disableSUMButtons()
                     }
                     else{
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Current Selected IPs has been updated </ul>");
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Run the commands when ready... </ul>");
+                        addLine('Current Selected IPs has been updated');
+                        addLine('Run the commands when ready...');
                         ips = document.getElementById("display_ips")
                         ips.classList.add("show")
                         enableSUMButtons()
@@ -402,7 +439,7 @@
                 contentType: false                    // Using FormData, no need to process data.
             }).done(function(){
                 console.log("Success: File sent!");
-                terminal.insertAdjacentHTML('beforeend'," <ul> > Upload Completed, file parsed succesfully...</ul>"); 
+                addLine('Upload Completed, file parsed succesfully...');
                 $.CheckIPMIs();///Once form has been uploaded and saved by server. Run the CheckIPMI ajax function to read the file from the server and update the Current Selected IPs
                 input_field = document.getElementById('file');
                 input_field.value = '';
@@ -411,7 +448,7 @@
 
             }).fail(function(){
                 console.log("An error occurred, the file couldn't be sent!");
-                terminal.insertAdjacentHTML('beforeend'," <ul> > Upload Failed...</ul>");
+                addLine('Upload Failed...');
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
@@ -432,8 +469,8 @@
                             console.log(data[key]);
                             complete = false;
                             disableSUMButtons();
-                            terminal.insertAdjacentHTML('beforeend'," <ul> > Could not get range from server... </ul>");
-                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
+                            addLine('Could not get range from server...');
+                            addLine('Server response: ' + data[key]);
                             break;
                         }
                         else{
@@ -441,7 +478,7 @@
                         }
                     }
                     if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
+                        addLine('Got IP range from server...');
                         $.CheckIPMIs()
                     }
                 }        
@@ -461,8 +498,8 @@
                             console.log(data[key]);
                             complete = false;
                             disableSUMButtons();
-                            terminal.insertAdjacentHTML('beforeend'," <ul> > Could not generate the file... </ul>");
-                            terminal.insertAdjacentHTML('beforeend'," <ul> > Server response: " + data[key] + " </ul>");
+                            addLine('Could not generate the file...');
+                            addLine('Server response: ' + data[key]);
                             break;
                         }
                         else{
@@ -470,7 +507,7 @@
                         }
                     }
                     if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        terminal.insertAdjacentHTML('beforeend'," <ul> > Got IP range from server.... </ul>");
+                        addLine('Getting IP range from server...');
                         $.CheckIPMIs()
                     }
                 }        
@@ -501,7 +538,7 @@
         function uploadFile(){
             terminal.innerHTML = ""
             var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
-            terminal.insertAdjacentHTML('beforeend'," <ul> > Uploading " + file_name + " to server....  </ul>");
+            addLine('Uploading ' + file_name + ' to server...');
             $.UploadFiletoServer();
         }
         function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
@@ -510,14 +547,14 @@
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = ""
-            terminal.insertAdjacentHTML('beforeend'," <ul> > Getting IP Range from " + ipstart + " to " + ipend + "</ul>");
+            addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
         }
         function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = ""
-            terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting all the IPs ... </ul>");
+            addLine('Selecting all the IPs ...');
             $.CallAdvancedAllGenerator(inputtype,iptype);
         }
         function handleFileSelect(evt) {
@@ -588,22 +625,34 @@
                 data: {inputtype: inputtype, ip: ip, iptype: iptype},
                 beforeSend: function(){ 
                     terminal.innerHTML = ""
-                    terminal.insertAdjacentHTML('beforeend'," <ul> >Modifying Selection...</ul>") 
+                    addLine('Modifying selections...');
                 },
                 success: function(result){
                     var data = result;                    
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                         if (key == "SUCCESS"){
-                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>")
+                            addLine(data[key]);
                             $.CheckIPMIs(inputtype,iptype);
                         }
                         else{
-                            terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>") 
+                            addLine(data[key]);
                         }
                     }
                 }        
             }); 
         }
+        
+        function addLine(line) {
+            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
+            var line = line.replace(reIP,"<span class='ip'>$&</span>");
+            terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
+        }
+
+        function addLineSum(line) {
+            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
+            var line = line.replace(reIP,"<span class='ip'>$&</span>");
+            sum_terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
+        }         
         
         function ValidateIPaddress(ipaddress) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
@@ -624,19 +673,20 @@
                 type: 'GET',
                 success: function(response){
                 var data = response;
-                const inputarray = data['log_lines']
+                const inputarray = data['log_lines'];
                 if (data['status'] == 0){ 
-                    sum_terminal.innerHTML = ""
+                    sum_terminal.innerHTML = "";
                     for(i = 0; i < inputarray.length; i++ ){
-                        sum_terminal.insertAdjacentHTML('beforeend',inputarray[i]); 
+                        console.log(inputarray[i]);
+                        addLineSum(inputarray[i]);
                     }
                 
                 }
                 }
             });
         };
-        sum_terminal.innerHTML = ""
-        sum_terminal.insertAdjacentHTML('beforeend',' <ul> > SUM is IDLE ... </ul>');      
+        sum_terminal.innerHTML = "";
+        addLineSum('SUM is IDLE ...');    
         sumoutputtoterminal();
         setInterval(sumoutputtoterminal, 1000);
         

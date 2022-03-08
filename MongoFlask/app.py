@@ -1303,18 +1303,18 @@ def sumlogtermial():
     response = {'status':-1,'log_lines':[]}
     if sumlogout == 1:
         response['status'] = 1
-        response['log_lines'] = [' <ul> > SUM is IDLE ... </ul>']
+        response['log_lines'] = ['SUM is IDLE ...']
         return json.dumps(response)
     elif sumlogout == 2:
         response['status'] = 2
-        response['log_lines'] = [' <ul> > Error: multiple SUM processes are detected, no output can be displayed!! </ul>']
+        response['log_lines'] = ['Error: multiple SUM processes are detected, no output can be displayed!!']
         return json.dumps(response)
     response['status'] = 0
-    response['log_lines'] = [' <ul> > SUM is RUNNING NOW, Please do not submit multiple SUM request ... </ul>']
+    response['log_lines'] = ['SUM is RUNNING NOW, Please do not submit multiple SUM request ...']
     with open(sumlogout, "r") as sumlogfile:
         for line in sumlogfile:
             line = line.strip()
-            response['log_lines'].append(' <ul> >  '+ line +'  </ul>')
+            response['log_lines'].append(line)
     return json.dumps(response)
  
 @app.route('/sumtoolboxupload',methods=['GET', 'POST'])
