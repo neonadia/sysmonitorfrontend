@@ -1064,11 +1064,21 @@ def ipmitoolstart(): ### Take a command for processing and distribution to serve
                 data[i].append(iplist[i])
                 data[i].append(df_pwd[df_pwd['ip'] == iplist[i]]['pwd'].values[0])
                 data[i].append(request.args.get('command'))
-        #with Pool() as p:
-        #    ipmioutput = p.map(ipmistartone, data) #### Will implement later.
         response = {}
-        for i in range(len(data)):### Execute command in all server linearly. Will implement multiprocessing later.
-            response[data[i][0]] = ipmistartone(data[i])
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            future_to_output = {executor.submit(ipmistartone, ip_com): ip_com for ip_com in data}
+            for future in concurrent.futures.as_completed(future_to_output):
+                output = future.result()                
+                for ip in output:
+                    response[ip] = output[ip]
+        ordered_response = {}
+        for ordered_ip in data:
+            ip = ordered_ip[0]
+            for bmc_ip in response:
+                if ip == bmc_ip:
+                    ordered_response[ip] = response[ip]
+        del response
+        response = ordered_response
         for ip in response:
             for typeOfoutput in response[ip]:
                 for output in response[ip][typeOfoutput]: ###Check for key words in command that denote an error from the IPMITOOL response. Display only one error for all servers.
@@ -1092,16 +1102,16 @@ def ipmistartone(data_list): ###Execute IPMItool command. data_list is a list in
         process = Popen('ipmitool ' + ' -H ' +  ip + ' -U ' + 'ADMIN' + ' -P ' + pwd + ' ' + ipmicmd, shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate(timeout=2)
     except:
-        response = {"STDERR":{"0":"No response from BMC"}}
+        response = {ip : {"output":{"0":"No response from BMC"}}}
     else: ### Create a dictionary style response in the form of {"STDOUT":{"0":"outputLine0","1":"outputLine1"}}. This is because it will be sent to the HTML web page for processing in JSON format.
         if stdout.decode() == '':
-            response = {"STDERR":{}}
+            response = {ip : {"output":{}}}
             for i,line in enumerate(stderr.decode().split('\n')):
-                response["STDERR"][str(i)] = line.replace(" ","&nbsp;")
+                response[ip]["output"][str(i)] = line.replace(" ","&nbsp;")
         else:
-            response = {"STDOUT":{}}
+            response = {ip : { "output":{}}}
             for i,line in enumerate(stdout.decode().split('\n')):
-                response["STDOUT"][str(i)] = line.replace(" ","&nbsp;")
+                response[ip]["output"][str(i)] = line.replace(" ","&nbsp;")
     return response
 
 def bmceventcleanerone(data_list):

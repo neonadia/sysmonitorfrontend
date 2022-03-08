@@ -280,6 +280,7 @@
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
                     addLine("Successfully got server response")
                     for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
                         if (key == "ERROR"){
@@ -628,7 +629,7 @@
                 else{
                     if (cmdLineSubmit.disabled == true){ /// Check if IPs are selected by checking the command submit button.
                         addLine(CMD);
-                        addLine("Please select IPs first....");
+                        addLine("Error: Please select IPs first");
                     }
                     else{
                         document.getElementById('commandForm')['ipmicmd'].value = document.getElementById("textinput").value;
@@ -647,12 +648,13 @@
             var sentence = document.getElementById(output_counter); /// Acquire html element with ID
             var text = sentence.textContent; /// Get text from html element
             //// Format key words in the html element's text with REGEX
-            let reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
-            let reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success)\b/g;
+            let reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+            let reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
             let reInfo = /\b(Information|information|INFO|info)\b/g;
             let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+            let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
             var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
-            var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>");
+            var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
             sentence.innerHTML = replaceWord; /// Replace string in html element
             output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
             document.getElementById("textinput").value = ""; /// Set your console input to nothing
