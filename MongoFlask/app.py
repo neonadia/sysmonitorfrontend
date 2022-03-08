@@ -869,7 +869,7 @@ def bmceventcleanerupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
 @app.route('/checkSelectedIPs')
 def checkSelectedIps():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -911,10 +911,10 @@ def deselectIPs():
         if "all" in sel_ip:
             if os.path.isfile(savepath):
                 os.remove(savepath)
-                response = {"Success": "Cleared all IPs"}
+                response = {"SUCCESS": "Cleared all IPs"}
                 return json.dumps(response)
             else:
-                response = {"Error" : "No IPs to be cleared"}
+                response = {"ERROR" : "No IPs to be cleared"}
                 return json.dumps(response)
         else:
             if os.path.isfile(savepath):
@@ -926,7 +926,7 @@ def deselectIPs():
                 if sel_ip in selected_ips:
                     selected_ips.remove(sel_ip)
                 else:
-                    response = {"Error": "Error: IP was not selected initially"}
+                    response = {"ERROR": "Error: IP was not selected initially"}
                     return json.dumps(response)
                 os.remove(savepath)
                 iplist = selected_ips
@@ -943,15 +943,15 @@ def deselectIPs():
                                 fileinput.write(ip + '\n')
                         elif request.args.get('iptype') == "os" and ip in osip_list:
                             fileinput.write(ip + '\n')
-                    response = {"Success" : "Removed " + sel_ip + " from selection"}
+                    response = {"SUCCESS" : "Removed " + sel_ip + " from selection"}
                     print("Saved file...",flush=True)
                 if os.path.isfile(savepath):
                     return json.dumps(response)
                 else:
-                    response = {"Error": "Error: Could not remove IP from selection, error saving file"}
+                    response = {"ERROR": "Error: Could not remove IP from selection, error saving file"}
                     return json.dumps(response)
             else:
-                response = {"Error": "Error: Could not remove IP from selection, no IPs selected"}
+                response = {"ERROR": "Error: Could not remove IP from selection, no IPs selected"}
                 return json.dumps(response)
 
 @app.route('/uploadinputipsfileforall',methods=["POST"]) # used for all input file upload
@@ -1244,6 +1244,10 @@ def advanceinputgenerator_ajaxVerison():
                     cleanerinput.write(ip + '\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)
+        if os.path.isfile(savepath):
+            return json.dumps(response)
+        else:
+            response = {"ERROR": "ERROR: could not save file " + savepath}
             return json.dumps(response)
 
 @app.route('/advanceinputgenerator_all_ajaxVersion', methods=["GET"])
@@ -1265,6 +1269,10 @@ def advanceinputgenerator_all_ajaxVerison():
                     cleanerinput.write(osip + '\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)
+        if os.path.isfile(savepath):
+            return json.dumps(response)
+        else:
+            response = {"ERROR": "ERROR: could not save file " + savepath}
             return json.dumps(response)
         
 @app.route('/sumlogpage',methods=['GET', 'POST'])
@@ -1317,17 +1325,7 @@ def sumtoolboxupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
-#    if request.method == "POST":
-#        if request.files:
-#            suminputipfile = request.files["file"]
-#            if suminputipfile.filename == "":
-#                printf("Input file must have a filename")
-#                return redirect(url_for('sumtoolboxupload'))
-#            suminputipfile.save(savepath + "suminput.txt")
-#            printf("{} has been saved as suminput.txt".format(suminputipfile.filename))
-#            return redirect(url_for('sumtoolboxupload'))   
-#    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
 
 @app.route('/sumbioscompoutput',methods=['GET', 'POST'])
 def sumbioscompoutput():

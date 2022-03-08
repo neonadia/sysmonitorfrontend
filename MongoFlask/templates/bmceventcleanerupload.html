@@ -36,14 +36,21 @@
                 <i class="fas fa-home"></i>
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
                     <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                    {% for url in frontend_urls %}
+                    <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                    {% endfor %}
                 </div>
             </li>
-            <li class='nav-item'>
-                <a class="btn btn-primary btn-lg text-white"  href="" role="button">
-                <i class="fas fa-eraser"></i>
-                </a>
+            <li class='dropdown'>
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-eraser"></i>
+                </button>
+                <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+                    {% for url in frontend_urls %}
+                    <a class="dropdown-item" href="{{ url[1] }}/bmceventcleanerupload" target="_blank"> {{url[0]}} BMC Event Cleaner</a>
+                    {% endfor %}
+                </div>
             </li>
             <li class='dropdown'>
                 <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -219,12 +226,12 @@
             terminal.insertAdjacentHTML('beforeend'," <ul> > Getting IP Range from " + ipstart + " to " + ipend + "</ul>");
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
         }
-        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtpye,iptype){
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype){
             $.ajax({
                 url: '/advanceinputgenerator_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtpye, iptype: iptype}, // Send the variables to create a IP file.
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -255,12 +262,12 @@
             terminal.insertAdjacentHTML('beforeend'," <ul> > Selecting all the IPs ... </ul>");
             $.CallAdvancedAllGenerator(inputtype,iptype);
         }
-        $.CallAdvancedAllGenerator = function(inputtpye,iptype){
+        $.CallAdvancedAllGenerator = function(inputtype,iptype){
             $.ajax({
                 url: '/advanceinputgenerator_all_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {inputtype: inputtpye, iptype: iptype}, // Send the variables to create a IP file.
+                data: {inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -373,7 +380,7 @@
                 success: function(result){
                     var data = result;
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
-                        if (key == "Success"){
+                        if (key == "SUCCESS"){
                             terminal.insertAdjacentHTML('beforeend',"<ul> >" + data[key] + "</ul>")
                             $.CheckIPMIs(inputtype,iptype);
                         }
