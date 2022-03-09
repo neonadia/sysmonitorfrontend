@@ -18,13 +18,17 @@
     /* CSS For the terminal window, made scroll incase output is too large */
     div.scroll {
         background-color: black;
-        width: 400px;
-        height: 350px;
-        max-height: 600px;
+        color: chartreuse;
+        width: 70%;
+        padding: 10px;
+        border: 2px solid greenyellow;
+        font-weight: normal;
+        margin-left: 0%;
+        height: 500px;
+        max-height: 500px;
         overflow-x: hidden;
         overflow-y: auto;
-        text-align: left;
-        padding: 20px;
+        border-radius: 15px;
     }
     .dropright .dropdown-menu{
             width: min-content;
@@ -40,7 +44,6 @@
         width: 800px;
         height: 350px;
         max-height: 600px;
-        overflow-y: auto;
         text-align: left;
     }
     /* Console output formatting */
@@ -137,7 +140,9 @@
     </nav>
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
         <div class ="row">
-            <div class="col">
+         <div class="col auto">
+            <div class ="row">
+                <div class="col">
                 <form id = "fileform">
                     <div class="form-group">
                         <h3>Step 1: Config Input IPs</h3>
@@ -151,14 +156,14 @@
                             <output id="list"></output>
                         </div>
                     </div>
-                </form>
                 <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                        
                 <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
+                </form>
+                </div>
             </div>
-        </div>
-        <br>    
-        <div class ="row">
-            <div class="col-auto">
+            <br>    
+            <div class ="row">
+                <div class="col">
                 <form id = "inputform">
                     <div class="form-group">
                         <h4>Option 2: Input IPs</h4>
@@ -174,19 +179,21 @@
                             <input type="hidden" id="inputtype" name="inputtype" value="bmceventcleanerip">
                             <input type="hidden" id="iptype" name="iptype" value="ipmi">                            
                             </div>
-                    </div>
-                </form>        
+                    </div>      
                 <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
                 <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
                 <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>                     
                 <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
-            </div>
-            <div class="col auto" style="padding-left: 10%; font-weight: bolder;">
-                Terminal Output :
-                <div class="col-auto scroll" id = "upload_terminal" style="background-color: black; color: chartreuse; width: 55%; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;">
+                </form>
                 </div>
             </div>
         </div>
+        <div class="col auto">
+            Terminal Output :
+            <div class="col-auto scroll" id = "upload_terminal">
+            </div>
+        </div>
+        </div> 
         <hr>
         
         <div class ="row">
