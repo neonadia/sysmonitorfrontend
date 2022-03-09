@@ -640,6 +640,11 @@
                     }
                 }
             }
+            else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
+                var CMD = document.getElementById("textinput").value;
+                addHistory(CMD);
+                addLine(CMD);
+            }
         }
         ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
         ////Do not tamper unless you know what you are doing.
