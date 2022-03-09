@@ -156,7 +156,7 @@
                             <output id="list"></output>
                         </div>
                     </div>
-                <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                        
+                <a id="uploadbutton" class="btn btn-primary text-white disabled"  onclick="uploadFile()">UPLOAD FILE</a>                                        
                 <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
                 </form>
                 </div>
@@ -180,8 +180,8 @@
                             <input type="hidden" id="iptype" name="iptype" value="ipmi">                            
                             </div>
                     </div>      
-                <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
-                <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
+                <a id="uploadRange"class="btn btn-primary text-white" name="uploadRange" onclick="uploadIPs()">SELECT RANGE</a>                                        
+                <a id="uploadall" class="btn btn-primary text-white" name="uploadall" onclick="uploadallIPs()">SELECT ALL</a>  
                 <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>                     
                 <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
                 </form>
@@ -401,7 +401,7 @@
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
-                button.disabled = true;
+                button.classList.add("disabled");
 
             }).fail(function(){
                 console.log("An error occurred, the file couldn't be sent!");
@@ -409,7 +409,7 @@
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
-                button.disabled = true;
+                button.classList.add("disabled");
             });
         }     
         /// Clear selected IPs function. Takes a single IP or "all" to unselect all.
@@ -484,11 +484,11 @@
                             }   
                         }
                         if (fileChecker){ ////If valid ips found enable the upload button.
-                            button.disabled = false;
+                            button.classList.remove("disabled");
                         }
                         else{
                             input_field.value = ''; /// If a single invalid ip, disable upload button
-                            button.disabled = true;
+                            button.classList.add("disabled");
                         }
                         output = "<strong>FOUND IPMI IP:<br />" + output;
                         document.getElementById("list").innerHTML = output;
@@ -497,7 +497,7 @@
                         document.getElementById("list").innerHTML = "error reading file";
                         fileChecker = false
                         input_field.value = '';
-                        button.disabled = true;
+                        button.classList.add("disabled");
                     }
                 }
             }
