@@ -874,7 +874,7 @@ def bmceventcleanerupload():
 def checkSelectedIps():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
-    if request.args.get('iptype') == 'osip':
+    if request.args.get('iptype') == 'os':
         allips = list(df_pwd['os_ip'])
     else:
         allips = list(df_pwd['ip'])
@@ -893,7 +893,6 @@ def checkSelectedIps():
             os.remove(savepath+ request.args.get('filetype') +".txt")
         return json.dumps(response)
     else:
-        allips = list(df_pwd['ip'])
         indicators = {}
         for i in range(len(allips)):
             if allips[i] in inputips:
@@ -1617,7 +1616,7 @@ def event():
     else:
         return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/udpserverupload',methods=["GET","POST"])
+@app.route('/udpserverupload')
 def udpserverupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -1633,16 +1632,7 @@ def udpserverupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    if request.method == "POST":
-        if request.files:
-            udpipfile = request.files["file"]
-            if udpipfile.filename == "":
-                printf("Input file must have a filename")
-                return redirect(url_for('udpserverupload'))
-            udpipfile.save(savepath+"udpserveruploadip.txt")
-            printf("{} has been saved as udpserveruploadip.txt".format(udpipfile.filename))
-            return redirect(url_for('udpserverupload'))
-    return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
     
 @app.route('/udpserversendfileandrun',methods=["GET","POST"])
 def udpserversendfileandrun():
@@ -1788,7 +1778,6 @@ def udpdeleteallobject():
         printf(e)
     data = json.dumps(deleted_data)
     return data
-
 
 @app.route('/udpstarobject')
 def udpstarobject():
