@@ -642,7 +642,9 @@
             }
             else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
                 var CMD = document.getElementById("textinput").value;
-                addHistory(CMD);
+                if (CMD.trim() !== ""){ /// For no input.
+                    addHistory(CMD);
+                }
                 addLine(CMD);
             }
         }
@@ -681,10 +683,10 @@
         function PosEnd(end) {
             var len = end.value.length;
             // Mostly for Web Browsers
-            if (end.setSelectionRange) {
+            if (document.getSelection().toString().length == 0){ // if nothing selected
                 end.focus();
-                end.setSelectionRange(len, len);
-            } else if (end.createTextRange) {
+            }
+            else if (end.createTextRange) {
                 var t = end.createTextRange();
                 t.collapse(true);
                 t.moveEnd('character', len);
@@ -757,13 +759,13 @@
                     break;
             }
         });
-        var t = '';
-        function gText(e) {
-            t = (document.all) ? document.selection.createRange().text : document.getSelection();
-            navigator.clipboard.writeText(t);
-        }
-        document.onmouseup = gText;
-        if (!document.all) document.captureEvents(Event.MOUSEUP);
+//        var t = '';
+//        function gText(e) {
+//            t = (document.all) ? document.selection.createRange().text : document.getSelection();
+//            navigator.clipboard.writeText(t);
+//        }
+//        document.onmouseup = gText;
+//        if (!document.all) document.captureEvents(Event.MOUSEUP);
     </script>
 </body>
 </html>
