@@ -128,7 +128,7 @@
                     {% endfor %}
                 </div>
             </li>
-            
+
             <li class="dropdown">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Advanced Features
@@ -202,7 +202,8 @@
                             </div>
                             <a id="uploadRange" class="btn btn-primary text-white" name="uploadRange" onclick="uploadIPs()">SELECT RANGE</a>                                        
                             <a id="uploadall" class="btn btn-primary text-white" name="uploadall" onclick="uploadallIPs()">SELECT ALL</a>
-                            <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>                             
+                            <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>
+                            <a id="buttonlocker"  class="btn btn-danger text-white" name="buttonlocker"  onclick="toggleButtonLocker()">UPDATE LOCKED</a>                          
                             <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
                         </form>
                     </div>
@@ -390,11 +391,12 @@
     <!-- Footer -->
     
     <script type="text/javascript">
+        var locker_flag = 1;
         var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var sum_terminal = document.getElementById('sum_terminal');
-        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
-        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success)\b/g;
-        var reInfo = /\b(Information|information|INFO|info)\b/g;
+        var reError = /\b(Locked|locked|Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
+        var reSuccess = /\b(Unlocked|unlocked|Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success)\b/g;
+        var reInfo = /\b(Info|Information|information|INFO|info)\b/g;
         var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             $.CheckIPMIs();
@@ -432,6 +434,12 @@
                         ips.classList.add("show")
                         enableSUMButtons()
                     }
+                    if (locker_flag === 1){
+                        addLine('Info: update buttons are locked.');
+                    }
+                    else{
+                        addLine('Info: update buttons are unlocked.');
+                    }                                                      
                 }
             });
         }
@@ -518,13 +526,35 @@
                 }        
             }); 
         }        
+        function toggleButtonLocker(){
+            if (locker_flag === 1){
+            document.getElementById('buttonlocker').classList.remove('btn-danger');
+            document.getElementById('buttonlocker').classList.add('btn-success');
+            document.getElementById('buttonlocker').innerHTML = "UPDATE UNLOCK";
+            terminal.innerHTML = ""
+            $.CheckIPMIs();            
+            locker_flag = 0;
+            }
+            else {
+            document.getElementById('buttonlocker').classList.remove('btn-success');
+            document.getElementById('buttonlocker').classList.add('btn-danger');
+            document.getElementById('buttonlocker').innerHTML = "UPDATE LOCKED";
+            document.getElementById('sumbutton3').classList.add('disabled');
+            document.getElementById('sumbutton4').classList.add('disabled');
+            document.getElementById('sumbutton6').classList.add('disabled');      
+            addLine('Info: update buttons are locked.');
+            locker_flag = 1;
+            }
+        }
         function enableSUMButtons(){
+            if (locker_flag === 0){ /// Only if unlock the button, the update can be used.
+                document.getElementById('sumbutton3').classList.remove('disabled');
+                document.getElementById('sumbutton4').classList.remove('disabled');
+                document.getElementById('sumbutton6').classList.remove('disabled');
+            }
             document.getElementById('sumbutton1').classList.remove('disabled');
             document.getElementById('sumbutton2').disabled = false;
-            document.getElementById('sumbutton3').classList.remove('disabled');
-            document.getElementById('sumbutton4').classList.remove('disabled');
             document.getElementById('sumbutton5').classList.remove('disabled');
-            document.getElementById('sumbutton6').classList.remove('disabled');
             document.getElementById('sumbutton7').disabled = false;
             document.getElementById('unselectall').classList.remove('disabled');
         }
@@ -538,8 +568,7 @@
             document.getElementById('sumbutton6').classList.add('disabled');
             document.getElementById('sumbutton7').disabled = true;
             document.getElementById('unselectall').classList.add('disabled');
-        }
-        
+        }      
         function uploadFile(){
             terminal.innerHTML = ""
             var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'

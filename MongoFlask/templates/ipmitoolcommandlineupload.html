@@ -539,6 +539,7 @@
                 }                    
                 else if(CMD == "clear" ){ /// Clear function clears console output.
                     document.getElementById("console").innerHTML = "";
+                    $.CheckIPMIs(inputtype,iptype);
                     document.getElementById("console").insertAdjacentHTML('beforeend',"<p id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: min-content; max-width: max-content;''></p>")
                     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
                     PosEnd(document.getElementById('textinput'));
