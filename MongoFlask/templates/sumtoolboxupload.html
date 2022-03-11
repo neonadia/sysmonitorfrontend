@@ -249,7 +249,7 @@
         
         <div class ="row">
             <div class="col">
-                <form action="/sumbiosimageupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form class="form-group" id = "biosform">
                     <h4>Option 3: BIOS Update</h4>
                         <div class="custom-file">
                             <input type="file" class="form-control-file form-primary" name="biosimage" id="biosimage" required>
@@ -262,12 +262,12 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Please upload the BIOS image before start updating.</small>
                           <br>
-                    <button id="uploadimage1" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a id="sumbutton3" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiosupdateoutput') }}">UPATE</a>
+                    <a id="uploadimage1" class="btn btn-primary text-white" onclick="uploadBIOSImage()">UPLOAD IMAGE</a>
+                    <a id="sumbutton3" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiosupdateoutput') }}">UPDATE</a>
                 </form>
             </div>
             <div class="col">
-                <form action="/sumbmcimageupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form class="form-group" id = "bmcform">
                     <h4>Option 4: BMC Update</h4>
                         <div class="custom-file">
                             <input type="file" class="form-control-file form-primary" name="bmcimage" id="bmcimage" required>
@@ -280,8 +280,8 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Please upload the BMC image before submit.</small>
                           <br>
-                    <button id="uploadimage2" type="submit" class="btn btn-primary">UPLOAD IMAGE</button>
-                    <a id="sumbutton4" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbmcupdateoutput') }}">UPATE</a>
+                    <a id="uploadimage2" class="btn btn-primary text-white" onclick="uploadBMCImage()">UPLOAD IMAGE</a>
+                    <a id="sumbutton4" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbmcupdateoutput') }}">UPDATE</a>
                 </form>
             </div>
         </div>
@@ -301,7 +301,7 @@
                     <a id="sumbutton5" class="btn btn-success mr-1 disabled" href="{{ url_for('sumdownloadbiossettings') }}">DOWNLOAD</a>
             </div>
             <div class="col">
-                <form action="/sumbiossettingsupload" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form class="form-group" id = "settingsform">
                     <h4>Option 6: Change BIOS Settings</h4>
                         <div class="custom-file">
                             <input type="file" class="form-control-file form-primary" name="biossettings" id="biossettings" required>
@@ -314,7 +314,7 @@
                           </div>
                           <small id="help1" class="form-text text-muted">Please upload BIOS settings before start changing.</small>
                           <br>
-                    <button id="testrunbutton" type="submit" class="btn btn-primary">UPLOAD SETTINGS</button>
+                    <a id="uploadsettingsbutton" class="btn btn-primary text-white" onclick="uploadBIOSSettings()">UPLOAD SETTINGS</a>
                     <a id="sumbutton6" class="btn btn-success mr-1 disabled" href="{{ url_for('sumbiossettingschangeoutput') }}">CHANGE</a>
                 </form>
             </div>
@@ -409,14 +409,14 @@
                 success: function(result){
                     var data = result;
                     var hasIPs = false;
-                    addLine('Reading file with selected IPs');
+                    addLine('Info: Reading file with selected IPs');
                     for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
                         var ip = document.getElementById(key)
                         if (data[key] == 'true'){
                             hasIPs = true;
                             ip.classList.add("text-success");
                             ip.classList.add("font-weight-bold");
-                            addLine('Selecting ' + key + '...');
+                            addLine('Info: Selecting ' + key + '...');
                         }
                         else{
                             ip.classList.remove("text-success");
@@ -424,12 +424,12 @@
                         }
                     }
                     if (hasIPs === false){
-                        addLine('No IPs selected from this Rack');
+                        addLine('Warning: No IPs selected from this Rack');
                         disableSUMButtons()
                     }
                     else{
-                        addLine('Current Selected IPs has been updated');
-                        addLine('Run the commands when ready...');
+                        addLine('Info: Current Selected IPs has been updated');
+                        addLine('Info: Run the commands when ready...');
                         ips = document.getElementById("display_ips")
                         ips.classList.add("show")
                         enableSUMButtons()
@@ -452,7 +452,7 @@
                 contentType: false                    // Using FormData, no need to process data.
             }).done(function(){
                 console.log("Success: File sent!");
-                addLine('Upload Completed, file parsed succesfully...');
+                addLine('Info: Upload Completed, file parsed successfully...');
                 $.CheckIPMIs();///Once form has been uploaded and saved by server. Run the CheckIPMI ajax function to read the file from the server and update the Current Selected IPs
                 input_field = document.getElementById('file');
                 input_field.value = '';
@@ -461,11 +461,92 @@
 
             }).fail(function(){
                 console.log("An error occurred, the file couldn't be sent!");
-                addLine('Upload Failed...');
+                addLine('Info: Upload Failed...');
                 input_field = document.getElementById('file');
                 input_field.value = '';
                 var button = document.getElementById('uploadbutton');
                 button.classList.add('disabled');
+            });
+        }
+        $.UploadBIOSImagetoServer = function(){
+            $.ajax({
+                url: '/sumbiosimageupload', 
+                type: 'POST',
+                data: new FormData($('#biosform')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                addLine('Info: BIOS image has been uploaded successfully...');
+                document.getElementById("uploadimage1").innerHTML = "UPLOAD IMAGE";
+                input_field = document.getElementById('biosimage');
+                document.getElementById("uploadimage1").classList.remove('disabled')
+                document.getElementById("uploadimage1").classList.remove('btn-warning')
+                document.getElementById("uploadimage1").classList.add('btn-primary')
+                input_field.value = '';
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                addLine('Info: BIOS image uploading failed...');
+                input_field = document.getElementById('biosimage');
+                input_field.value = '';
+                document.getElementById("uploadimage1").innerHTML = "UPLOAD IMAGE";
+                document.getElementById("uploadimage1").classList.remove('disabled')
+                document.getElementById("uploadimage1").classList.remove('btn-warning')
+                document.getElementById("uploadimage1").classList.add('btn-primary')
+            });
+        }
+        $.UploadBMCImagetoServer = function(){
+            $.ajax({
+                url: '/sumbmcimageupload', 
+                type: 'POST',
+                data: new FormData($('#bmcform')[0]), // The form with the file inputs. 'bmcform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                addLine('Info: BMC image has been uploaded successfully...');
+                document.getElementById("uploadimage2").innerHTML = "UPLOAD IMAGE";
+                input_field = document.getElementById('bmcimage');
+                document.getElementById("uploadimage2").classList.remove('disabled')
+                document.getElementById("uploadimage2").classList.remove('btn-warning')
+                document.getElementById("uploadimage2").classList.add('btn-primary')
+                input_field.value = '';
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                addLine('Info: BMC image uploading failed...');
+                input_field = document.getElementById('bmcimage');
+                input_field.value = '';
+                document.getElementById("uploadimage2").innerHTML = "UPLOAD IMAGE";
+                document.getElementById("uploadimage2").classList.remove('disabled')
+                document.getElementById("uploadimage2").classList.remove('btn-warning')
+                document.getElementById("uploadimage2").classList.add('btn-primary')
+            });
+        }
+        $.UploadBIOSSettingstoServer = function(){
+            $.ajax({
+                url: '/sumbiossettingsupload', 
+                type: 'POST',
+                data: new FormData($('#settingsform')[0]), // The form with the file inputs. 'bmcform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                addLine('Info: BIOS settings file has been uploaded successfully...');
+                document.getElementById("uploadsettingsbutton").innerHTML = "UPLOAD SETTINGS";
+                input_field = document.getElementById('biossettings');
+                document.getElementById("uploadsettingsbutton").classList.remove('disabled')
+                document.getElementById("uploadsettingsbutton").classList.remove('btn-warning')
+                document.getElementById("uploadsettingsbutton").classList.add('btn-primary')
+                input_field.value = '';
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                addLine('Info: BIOS settings file uploading failed...');
+                input_field = document.getElementById('biossettings');
+                input_field.value = '';
+                document.getElementById("uploadsettingsbutton").innerHTML = "UPLOAD SETTINGS";
+                document.getElementById("uploadsettingsbutton").classList.remove('disabled')
+                document.getElementById("uploadsettingsbutton").classList.remove('btn-warning')
+                document.getElementById("uploadsettingsbutton").classList.add('btn-primary')
             });
         }
         $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype){
@@ -482,16 +563,16 @@
                             console.log(data[key]);
                             complete = false;
                             disableSUMButtons();
-                            addLine('Could not get range from server...');
-                            addLine('Server response: ' + data[key]);
+                            addLine('Error: Could not get range from server...');
+                            addLine('Error: Server response: ' + data[key]);
                             break;
                         }
                         else{
                             console.log(data[key]);
                         }
                     }
-                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        addLine('Got IP range from server...');
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates successful execution of the Generator. Report to terminal
+                        addLine('Info: Got IP range from server...');
                         $.CheckIPMIs()
                     }
                 }        
@@ -511,16 +592,16 @@
                             console.log(data[key]);
                             complete = false;
                             disableSUMButtons();
-                            addLine('Could not generate the file...');
-                            addLine('Server response: ' + data[key]);
+                            addLine('Error: Could not generate the file...');
+                            addLine('Error: Server response: ' + data[key]);
                             break;
                         }
                         else{
                             console.log(data[key]);
                         }
                     }
-                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
-                        addLine('Getting IP range from server...');
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates successful execution of the Generator. Report to terminal
+                        addLine('Info: Getting IP range from server...');
                         $.CheckIPMIs()
                     }
                 }        
@@ -572,8 +653,50 @@
         function uploadFile(){
             terminal.innerHTML = ""
             var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
-            addLine('Uploading ' + file_name + ' to server...');
+            addLine('Info: Uploading ' + file_name + ' to server...');
             $.UploadFiletoServer();
+        }
+        function uploadBIOSImage(){
+            if(!(document.getElementById("biosimage").files[0])) {
+                addLine('Error: No BIOS image file found. Please select your image file first!');
+            }
+            else {
+                var file_name = document.getElementById("biosimage").files[0]['name']; ///Upload file from the form element 'biosimage'
+                addLine('Info: Uploading BIOS image file: ' + file_name + ' to server...');
+                document.getElementById("uploadimage1").innerHTML = "UPLOADING...";
+                document.getElementById("uploadimage1").classList.remove('btn-primary')
+                document.getElementById("uploadimage1").classList.add('btn-warning')
+                document.getElementById("uploadimage1").classList.add('disabled')
+                $.UploadBIOSImagetoServer();
+           }
+        }
+        function uploadBMCImage(){
+            if(!(document.getElementById("bmcimage").files[0])) {
+                addLine('Error: No BMC image file found. Please select your image file first!');
+            }
+            else {
+                var file_name = document.getElementById("bmcimage").files[0]['name']; ///Upload file from the form element 'biosimage'
+                addLine('Info: Uploading BMC image file: ' + file_name + ' to server...');
+                document.getElementById("uploadimage2").innerHTML = "UPLOADING...";
+                document.getElementById("uploadimage2").classList.remove('btn-primary')
+                document.getElementById("uploadimage2").classList.add('btn-warning')
+                document.getElementById("uploadimage2").classList.add('disabled')
+                $.UploadBMCImagetoServer();
+           }
+        }
+        function uploadBIOSSettings(){
+            if(!(document.getElementById("biossettings").files[0])) {
+                addLine('Error: No BIOS settings file found. Please select your image file first!');
+            }
+            else {
+                var file_name = document.getElementById("biossettings").files[0]['name']; ///Upload file from the form element 'biosimage'
+                addLine('Info: Uploading BIOS settings file: ' + file_name + ' to server...');
+                document.getElementById("uploadsettingsbutton").innerHTML = "UPLOADING...";
+                document.getElementById("uploadsettingsbutton").classList.remove('btn-primary')
+                document.getElementById("uploadsettingsbutton").classList.add('btn-warning')
+                document.getElementById("uploadsettingsbutton").classList.add('disabled')
+                $.UploadBIOSSettingstoServer();
+           }
         }
         function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var ipstart = document.getElementById('inputform')['ipstart'].value;
@@ -581,19 +704,20 @@
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = ""
-            addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
+            addLine('Info: Getting IP Range from ' + ipstart + ' to ' + ipend);
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
         }
         function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = ""
-            addLine('Selecting all the IPs ...');
+            addLine('Info: Selecting all the IPs ...');
             $.CallAdvancedAllGenerator(inputtype,iptype);
         }
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
             var button = document.getElementById('uploadbutton');
+            input_field = document.getElementById('file');
             if (file) {
                 var fileChecker = true;
                 var reader = new FileReader();
@@ -629,6 +753,7 @@
                     }
                     else {
                     /// If a single invalid ip, disable upload button
+                        input_field.value = '';
                         button.classList.add('disabled');
                     }
                     output = "<strong>FOUND IPMI IP:<br />" + output;
@@ -636,7 +761,8 @@
                 }
                 reader.onerror = function (evt) {
                     document.getElementById("list").innerHTML = "error reading file";
-                    fileChecker = false
+                    fileChecker = false;
+                    input_field.value = '';
                     button.classList.add('disabled');
                 }
             }
@@ -659,17 +785,17 @@
                 data: {inputtype: inputtype, ip: ip, iptype: iptype},
                 beforeSend: function(){ 
                     terminal.innerHTML = ""
-                    addLine('Modifying selections...');
+                    addLine('Info: Modifying selections...');
                 },
                 success: function(result){
                     var data = result;                    
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                         if (key == "SUCCESS"){
-                            addLine(data[key]);
+                            addLine('Info:  ' + data[key]);
                             $.CheckIPMIs(inputtype,iptype);
                         }
                         else{
-                            addLine(data[key]);
+                            addLine('Error:  ' + data[key]);
                         }
                     }
                 }        

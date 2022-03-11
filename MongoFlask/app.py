@@ -1412,15 +1412,18 @@ def sumdownloaddmi():
 @app.route('/sumbiosimageupload',methods=['GET', 'POST'])
 def sumbiosimageupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    data = {"response":"N/A"}
     if request.method == "POST":
         if request.files:
             sumbiosfile = request.files["biosimage"]
             if sumbiosfile.filename == "":
                 printf("Input file must have a filename")
-                return redirect(url_for('sumtoolboxupload'))
+                data["response"] = "Error: Input file must have a filename."
+                return json.dumps(data)
             sumbiosfile.save(savepath + "bios.222")
-            return redirect(url_for('sumtoolboxupload'))
-    return redirect(url_for('sumtoolboxupload')) 
+            data["response"] = "Info: BIOS image has been uploaded."
+            return json.dumps(data)
+    return json.dumps(data)
 
 @app.route('/sumbiosupdateoutput',methods=['GET', 'POST'])
 def sumbiosupdateoutput():
@@ -1444,15 +1447,18 @@ def sumbiosupdateoutput():
 @app.route('/sumbmcimageupload',methods=['GET', 'POST'])
 def sumbmcimageupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    data = {"response":"N/A"}
     if request.method == "POST":
         if request.files:
             sumbmcfile = request.files["bmcimage"]
             if sumbmcfile.filename == "":
                 printf("Input file must have a filename")
-                return redirect(url_for('sumtoolboxupload'))
+                data["response"] = "Error: Input file must have a filename."
+                return json.dumps(data)
             sumbmcfile.save(savepath + "bmc.bin")
-            return redirect(url_for('sumtoolboxupload'))
-    return redirect(url_for('sumtoolboxupload')) 
+            data["response"] = "Info: BMC image has been uploaded."
+            return json.dumps(data)
+    return json.dumps(data) 
 
 @app.route('/sumbmcupdateoutput',methods=['GET', 'POST'])
 def sumbmcupdateoutput():
@@ -1472,15 +1478,18 @@ def sumbmcupdateoutput():
 @app.route('/sumbiossettingsupload',methods=['GET', 'POST'])
 def sumbiossettingsupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    data = {"response":"N/A"}
     if request.method == "POST":
         if request.files:
             biossettingsfile = request.files["biossettings"]
             if biossettingsfile.filename == "":
                 printf("Input file must have a filename")
-                return redirect(url_for('sumtoolboxupload'))
+                data['response'] = "Error: Input file must have a filename."
+                return json.dumps(data)
             biossettingsfile.save(savepath + "biossettings.html")
-            return redirect(url_for('sumtoolboxupload'))
-    return redirect(url_for('sumtoolboxupload')) 
+            data["response"] = "Info: BIOS settings file has been uploaded."
+            return json.dumps(data)
+    return json.dumps(data)
 
 @app.route('/sumbiossettingschangeoutput',methods=['GET', 'POST'])
 def sumbiossettingschangeoutput():
