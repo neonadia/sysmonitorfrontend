@@ -22,7 +22,7 @@ import socket
 from ipaddress import ip_address
 from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess
 import tarfile
-from udpcontroller import getMessage, insertUdpevent, cleanIP
+from udpcontroller import getMessage, insertUdpevent, cleanIP, generateCommandInput
 from glob import iglob
 import datetime
 from datetime import timedelta
@@ -41,6 +41,7 @@ db = client.redfish
 collection = db.servers
 monitor_collection = db.monitor
 udp_collection = db.udp
+cmd_collection = db.cmd
 udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
 
@@ -1625,6 +1626,29 @@ def event():
     else:
         return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
+@app.route('/udp_command_testor')
+def udp_command_testor():
+    command = request.args.get('command')
+    timeout = int(request.args.get('timeout'))
+    command_uid = generateCommandInput(command) # uid is used for the file name and search from database
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    df_input_os = pd.read_csv(savepath+"udpserveruploadip.txt",names=['ip']) # used to measure the length of output
+    insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
+    response = []
+    while len(response) < len(df_input_os): # looking for uid in the collection
+        cur = cmd_collection.find({},{'os_ip','file_name','mac','start_date','content'})
+        for i in cur:
+            if command_uid in i['file_name']:
+                response.append('======================' + i['os_ip'] + '-' + i['mac'] + '======================')
+                response += i['content'].split('\n')
+        printf('Response not ready yet, wait 1 sec ...')
+        if timeout <= 0:
+            response.append('Error: command "' + command + '" failed with timeout')
+            break
+        time.sleep(1)
+        timeout -= 1        
+    return render_template('simpleresult.html', messages = response, rackname=rackname,rackobserverurl = rackobserverurl)
+
 @app.route('/udpserverupload')
 def udpserverupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -2744,7 +2768,6 @@ def benchmark_result_parser():
         printf("Error message: " + str(e))
     data = json.dumps(messages)
     return data
-
 
 def get_sensor_names(bmc_ip): #Sensor names only for header in html - return a various lists
     cpu_temps,vrm_temps,dimm_temps,sys_temps = get_temp_names(bmc_ip)

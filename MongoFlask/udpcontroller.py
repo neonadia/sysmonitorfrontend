@@ -2,6 +2,7 @@ import json
 import os
 import time
 import pandas as pd
+import uuid
 
 def fileEmpty(filepath):
     if not os.path.isfile(filepath):
@@ -41,3 +42,27 @@ def insertUdpevent(flag,data,ipfilepath): # if flag == f, data is the filepath
     cleanIP(ipfilepath)
     with open(udpflag_path, 'a') as flag_file:
         flag_file.write(str(flag) + ',' + str(data) + ',' + str(ipfilepath) + ',' + time.ctime()  + '\n')
+
+def generateCommandInput(command, walltime=10):
+    cur_uid = str(uuid.uuid4()) # need a uid to search the result from database
+    file_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + 'udpinput.json'
+    inputDict = {"category":"command",\
+                "exe":command,\
+                "prefix":"",\
+                "config":"",\
+                "log":cur_uid,\
+                "walltime":walltime,\
+                "parseResultLog":0,\
+                "selfLog":0,\
+                "selfLogPath":"",\
+                "numOfResults":0,\
+                "keywords":[],\
+                "addRow":[],\
+                "dfs":[],\
+                "index":[],\
+                "unit":[],\
+                "criteriaType":[],\
+                "criteria":[]}
+    with open(file_path, 'w') as json_file:
+        json.dump(inputDict, json_file)                
+    return cur_uid
