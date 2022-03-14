@@ -1634,20 +1634,30 @@ def udp_command_testor():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_input_os = pd.read_csv(savepath+"udpserveruploadip.txt",names=['ip']) # used to measure the length of output
     insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
-    response = []
-    while len(response) < len(df_input_os): # looking for uid in the collection
+    response_counter = 0
+    messages = [] # messages are the final output 
+    while response_counter < len(df_input_os): # looking for uid in the collection
+        response = [] # response contains the output message but need to be sort before using
+        response_counter = 0
         cur = cmd_collection.find({},{'os_ip','file_name','mac','start_date','content'})
         for i in cur:
             if command_uid in i['file_name']:
-                response.append('======================' + i['os_ip'] + '-' + i['mac'] + '======================')
-                response += i['content'].split('\n')
+                response.append({i['os_ip']: i['content'],'MAC':i['mac']})
+                response_counter += 1
         printf('Response not ready yet, wait 1 sec ...')
         if timeout <= 0:
-            response.append('Error: command "' + command + '" failed with timeout')
+            response = []
+            messages.append('Error: command "' + command + '" failed with timeout')
             break
         time.sleep(1)
         timeout -= 1        
-    return render_template('simpleresult.html', messages = response, rackname=rackname,rackobserverurl = rackobserverurl)
+    # sort the response
+    for cur_ip in df_input_os['ip']:
+        for cur_msg in response:
+            if cur_ip in cur_msg.keys():
+                messages.append('======================' + cur_ip + '-' + cur_msg['MAC'] + '======================')
+                messages  += cur_msg[cur_ip].split('\n')  
+    return render_template('simpleresult.html', messages = messages, rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpserverupload')
 def udpserverupload():
