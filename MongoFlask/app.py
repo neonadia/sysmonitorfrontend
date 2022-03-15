@@ -1650,22 +1650,21 @@ def event():
 def udp_command_testor():
     command = request.args.get('command')
     timeout = int(request.args.get('timeout'))
-    command_uid = generateCommandInput(command) # uid is used for the file name and search from database
+    command_uid = generateCommandInput(command,timeout) # uid is used for the file name and search from database
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_input_os = pd.read_csv(savepath+"udpserveruploadip.txt",names=['ip']) # used to measure the length of output
     insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
     response_counter = 0
-    messages = [] # messages are the final output 
+    messages = [] # messages are the final outputs, contain a list with response from every selected node
     while response_counter < len(df_input_os): # looking for uid in the collection
         response = [] # response contains the output message but need to be sort before using
         response_counter = 0
-        cur = cmd_collection.find({},{'os_ip','file_name','mac','start_date','content'})
+        cur = cmd_collection.find({"file_name" : {'$regex' : command_uid}},{'os_ip','file_name','mac','start_date','content'})
         for i in cur:
-            if command_uid in i['file_name']:
-                response.append({i['os_ip']: i['content'],'MAC':i['mac']})
-                response_counter += 1
+            response.append({i['os_ip']: i['content'],'MAC':i['mac']})
+            response_counter += 1
         printf('Response not ready yet, wait 1 sec ...')
-        if timeout <= 0:
+        if timeout <= -5: # given database 5 more seconds to response. 
             response = []
             messages.append('Error: command "' + command + '" failed with timeout')
             break
@@ -1676,7 +1675,7 @@ def udp_command_testor():
         for cur_msg in response:
             if cur_ip in cur_msg.keys():
                 messages.append('======================' + cur_ip + '-' + cur_msg['MAC'] + '======================')
-                messages  += cur_msg[cur_ip].split('\n')  
+                messages  += cur_msg[cur_ip].split('\n')
     return render_template('simpleresult.html', messages = messages, rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udpserverupload')
