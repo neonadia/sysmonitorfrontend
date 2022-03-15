@@ -22,7 +22,7 @@ import socket
 from ipaddress import ip_address
 from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess
 import tarfile
-from udpcontroller import getMessage, insertUdpevent, cleanIP, generateCommandInput
+from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, getClientState_dictResponse, generateCommandInput
 from glob import iglob
 import datetime
 from datetime import timedelta
@@ -959,27 +959,47 @@ def uploadinputipsfileforall():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     filetype = request.args.get('filetype')
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
-    if request.args.get('iptype') == 'osip':
+    if request.args.get('iptype') == 'os':
         allips = list(df_pwd['os_ip'])
     else:
         allips = list(df_pwd['ip'])    
     if request.method == "POST":
         if request.files:
-            ipfile = request.files["file"]
-            if ipfile.filename == "":
-                printf("Input file must have a filename")
-                response = {"response":"Error: Input file must have a filename"}
-            else:
-                ipfile.save(savepath+ filetype +".txt.bak")
-                if filetype == "suminput":
-                    df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
+            if "Benchmark" not in filetype:
+                ipfile = request.files["file"]
+                if ipfile.filename == "":
+                    printf("Input file must have a filename")
+                    response = {"response":"Error: Input file must have a filename"}
                 else:
-                    df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,names=['ip'])
-                df_input[df_input['ip'].isin(allips)].to_csv(savepath+ request.args.get('filetype') + ".txt",header=None,index=None,sep=' ')
-                printf("Input ip file has been saved as " + filetype + ".txt".format(ipfile.filename))
-                os.remove(savepath+ filetype +".txt.bak")
-                response = {"response": "inputfile has been saved as " + filetype + ".txt" }
-            response = json.dumps(response)
+                    ipfile.save(savepath+ filetype +".txt.bak")
+                    if filetype == "suminput":
+                        df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
+                    else:
+                        df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,names=['ip'])
+                    df_input[df_input['ip'].isin(allips)].to_csv(savepath+ request.args.get('filetype') + ".txt",header=None,index=None,sep=' ')
+                    printf("Input ip file has been saved as " + filetype + ".txt".format(ipfile.filename))
+                    os.remove(savepath+ filetype +".txt.bak")
+                    response = {"response": "inputfile has been saved as " + filetype + ".txt" }
+                response = json.dumps(response)
+            else:
+                if filetype == "Benchmark":
+                    udpinputfile = request.files["inputfile"]
+                    if udpinputfile.filename == "":
+                        printf("Input file must have a filename")
+                        response = {"ERROR":"Input file must have a filename"}
+                    else:
+                        udpinputfile.save(savepath+"udpinput.json")
+                        printf("{} has been saved as udpinput.json".format(udpinputfile.filename))
+                        response = {"SUCCESS":"{} has been saved".format(udpinputfile.filename)}
+                else:
+                    udpinputfile = request.files["bminputfile"]
+                    if udpinputfile.filename == "":
+                        response = {"ERROR":"Input file must have a filename"}
+                    else:
+                        udpinputfile.save(os.environ['UPLOADPATH'] + udpinputfile.filename)
+                        printf("{} has been saved".format(udpinputfile.filename))
+                        response = {"SUCCESS":"{} has been saved".format(udpinputfile.filename)}
+                response = json.dumps(response)
             return response
 
 @app.route('/bmceventcleanerstart',methods=["GET"])
@@ -1677,81 +1697,125 @@ def udpserverupload():
             indicators.append(0)
     return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
     
-@app.route('/udpserversendfileandrun',methods=["GET","POST"])
-def udpserversendfileandrun():
+# @app.route('/udpserversendfileandrun',methods=["GET","POST"])
+# def udpserversendfileandrun():
+#     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+#     cleanIP(savepath + "udpserveruploadip.txt")
+#     printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
+#     if fileEmpty(savepath + "udpserveruploadip.txt"):
+#         return render_template('error.html',error="No input IP found!")
+#     if request.method == "POST":
+#         if request.files:
+#             udpinputfile = request.files["inputfile"]
+#             if udpinputfile.filename == "":
+#                 printf("Input file must have a filename")
+#                 return redirect(url_for('udpserverupload'))
+#             udpinputfile.save(savepath+"udpinput.json")
+#             printf("{} has been saved as udpinput.json".format(udpinputfile.filename))
+#             # insert flag to run benchmark       
+#             insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
+#             messages = []
+#             messages.append("Benchmark will be started in a few secs.")
+#             messages.append("Please do not submit any benchmarks while it's running.")
+#             return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
+
+@app.route('/runBenchmark')
+def runBenchmark():
+    filetype = request.args.get('filetype')
+    benchmark_file = request.args.get('benchmark')
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     cleanIP(savepath + "udpserveruploadip.txt")
     printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
     if fileEmpty(savepath + "udpserveruploadip.txt"):
-        return render_template('error.html',error="No input IP found!")
-    if request.method == "POST":
-        if request.files:
-            udpinputfile = request.files["inputfile"]
-            if udpinputfile.filename == "":
-                printf("Input file must have a filename")
-                return redirect(url_for('udpserverupload'))
-            udpinputfile.save(savepath+"udpinput.json")
-            printf("{} has been saved as udpinput.json".format(udpinputfile.filename))
-            # insert flag to run benchmark       
-            insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
-            messages = []
-            messages.append("Benchmark will be started in a few secs.")
-            messages.append("Please do not submit any benchmarks while it's running.")
-            return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
+        response = {"ERROR":"No input IP found!"}
+        return json.dumps(response)
+    if filetype == "BenchamarkInput":
+        udpinputfile = benchmark_file
+        if udpinputfile == "":
+            response = {"ERROR":"Input file must have a filename"}
+            return json.dumps(response)
+        # insert flag to run benchmark       
+        insertUdpevent('f',os.environ['UPLOADPATH'] + udpinputfile.filename,savepath+"udpserveruploadip.txt")
+        response = {}
+        response["SUCCESS0"] = "info: Benchmark input files have been uploaded."
+        response["SUCCESS1"] = "info: Run the benchmark when ready."
+        return json.dumps(response)
+    elif filetype == "Benchmark":
+        # insert flag to run benchmark       
+        insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
+        response = {}
+        response["SUCCESS0"] = "info: Benchmark will be started in a few secs."
+        response["SUCCESS1"] = "warning: Please do not submit any benchmarks while it's running."
+        return json.dumps(response)
 
-@app.route('/udpserveruploadinputfile',methods=["GET","POST"])
-def udpserveruploadinputfile():
+@app.route('/check_UDP_clientState')
+def check_UDP_clientState():
+    client_state = request.args.get('state')
+    response = {}
+    mac_os = []
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    cleanIP(savepath + "udpserveruploadip.txt")
-    printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-    if fileEmpty(savepath + "udpserveruploadip.txt"):
-        return render_template('error.html',error="No input IP found!")
-    if request.method == "POST":
-        if request.files:
-            udpinputfile = request.files["bminputfile"]
-            if udpinputfile.filename == "":
-                printf("Input file must have a filename")
-                return redirect(url_for('udpserverupload'))
-            udpinputfile.save(os.environ['UPLOADPATH'] + udpinputfile.filename)
-            printf("{} has been saved".format(udpinputfile.filename))
-            # insert flag to run benchmark       
-            insertUdpevent('f',os.environ['UPLOADPATH'] + udpinputfile.filename,savepath+"udpserveruploadip.txt")
-            messages = []
-            messages.append("Benchmark input files have been uploaded.")
-            messages.append("Please back to the udp server page to run the benchmark.")
-            return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
+    df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
+    inputips = list(df_input['ip'])
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    cur = collection.find({},{"BMC_IP":1,"_id":0})
+    for i in cur:
+        temp_array = []
+        temp_array.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
+        temp_array.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+        for sel_ip in inputips: ####If OS ip is in the selected os_list, append to mac_os (os_list is the input ip list 'RACKNAME'udpserveruploadip.txt)
+            if temp_array[1] == sel_ip:
+                mac_os.append(temp_array)
+    udp_json = savepath+"-host.json"
+    if client_state == "ONLINE" or client_state == "OK":
+        if os.path.exists(udp_json):
+            printf("Getting client state: " + client_state)
+            response = getClientState_dictResponse(udp_json,mac_os,client_state)
+        else:
+            response = {"ERROR":"info: No UDP json file found"}
+            printf("ERROR cannot find file: " + udp_json)
+    elif client_state == "DONE" or client_state == "START":
+        if os.path.exists(udp_json):
+            printf("Getting latest client state: " + client_state)
+            response = getMessage_dictResponse(udp_json,mac_os,client_state)
+        else:
+            response = {"ERROR":"info: No UDP json file found"}
+            printf("ERROR cannot find file: " + udp_json)
+    elif client_state == 'latest':
+        if os.path.exists(udp_json):
+            insertUdpevent('m',"ONLINE",savepath+"udpserveruploadip.txt")
+            time.sleep(1)
+            printf("Getting latest client state")
+            response = getMessage_dictResponse(udp_json,mac_os,client_state)
+        else:
+            response = {"ERROR":"info: No UDP json file found"}
+            printf("ERROR cannot find file: " + udp_json)
+    return response
 
-@app.route('/udpservercheckonline',methods=["GET","POST"])
-def udpservercheckonline():
-    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    cleanIP(savepath + "udpserveruploadip.txt")
-    printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-    if fileEmpty(savepath + "udpserveruploadip.txt"):
-        return render_template('error.html',error="No input IP found!")
-    if request.method == "POST":
-        insertUdpevent('m',"ONLINE",savepath+"udpserveruploadip.txt")
-        time.sleep(1)
-        return redirect(url_for('udpserverupload'))
-
-@app.route('/udpserverinitialize',methods=["GET","POST"])
+@app.route('/udpserverinitialize')
 def udpserverinitialize():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    cleanIP(savepath + "udpserveruploadip.txt")
-    printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-    if fileEmpty(savepath + "udpserveruploadip.txt"):
-        return render_template('error.html',error="No input IP found!")
-    if request.method == "POST":
-        insertUdpevent('m',"request_h",savepath+"udpserveruploadip.txt") # request_h means requst client to send h back to initilize the json file
-        time.sleep(1)
-        messages = []
-        messages.append("Initilize message has been sent to clients.")
-        messages.append("You can check the status on index page.")
-        messages.append("If the system still has not been initialized, please make sure:")
-        messages.append("1. Connections bettween server and clients.")
-        messages.append("2. MACNAME in env file is correct.")
-        messages.append("3. UDP Clients are running.")
-        messages.append("4. System firewall has been disabled and stopped.")
-        return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
+    try:
+        cleanIP(savepath + "udpserveruploadip.txt")
+    except:
+        response = {"ERROR":"Error: No file found. Please input ip first."}
+        return json.dumps(response)
+    else:
+        printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
+        if fileEmpty(savepath + "udpserveruploadip.txt"):
+            response = {"ERROR":"Error: InputFIle empty. Try selecting the IPs again"}
+            return json.dumps(response)
+        if request.method == "GET":
+            insertUdpevent('m',"request_h",savepath+"udpserveruploadip.txt") # request_h means requst client to send h back to initilize the json file
+            time.sleep(1)
+            response = {}
+            response['msg0'] = "Success! Initilize message has been sent to clients."
+            response['msg1'] = "info: You can also check the status on index page."
+            response['msg2'] = "info: If the system still has not been initialized, please make sure:"
+            response['msg3'] = "info: 1. Connections bettween server and clients."
+            response['msg4'] = "info: 2. MACNAME in env file is correct."
+            response['msg5'] = "info: 3. UDP Clients are running."
+            response['msg6'] = "info: 4. System firewall has been disabled and stopped."
+            return json.dumps(response)
 
 @app.route('/udpoutput')
 def udpoutput():
@@ -1775,7 +1839,6 @@ def udpoutput():
         conclusion.append(i['conclusion'])
     return render_template('udpoutput.html',rackname=rackname,\
     data=zip(star, mac, ipmi, os_ip, start_date, done_date, cmd, benchmark, content_size, result, id, file_name,conclusion),ids = id,rackobserverurl = rackobserverurl)
-
 
 @app.route('/udpsendlogfile')
 def udpsendlogfile():

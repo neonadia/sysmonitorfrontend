@@ -14,23 +14,23 @@
 </head>
 <style>
     ul span {
-    color: green;
+        color: green;
     }
     hr.dotted {
-    border-top: 3px dotted #0275d8;
+        border-top: 3px dotted #0275d8;
     }
     hr.solid {
-    border-top: 3px solid #0275d8;
+        border-top: 3px solid #0275d8;
     }
     /* Background contains everything that is the console */
     #background {
-    position: fixed;
-    background-color: black;
-    width: 800px;
-    height: 350px;
-    max-height: 600px;
-    overflow-y: auto;
-    text-align: left;
+        position: fixed;
+        background-color: black;
+        width: 800px;
+        height: 350px;
+        max-height: 600px;
+        overflow-y: auto;
+        text-align: left;
     }
     .terminal{
         background-color: black;
@@ -68,6 +68,19 @@
         color:#FF00FF;
         font-weight:bold;
     }
+    .warning{
+        color: orange;
+    }
+    #myProgress {
+        width: 100%;
+        background-color: grey;
+    }
+
+    #myBar {
+        width: 1%;
+        height: 10px;
+        background-color: rgb(2, 163, 2);
+    }
 </style>
 <body>
     <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
@@ -79,7 +92,7 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
                     {% for url in frontend_urls %}
-                    <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                        <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
                     {% endfor %}
                 </div>
             </li>
@@ -89,7 +102,7 @@
                 </button>
                 <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
                     {% for url in frontend_urls %}
-                    <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Server Deployment</a>
+                        <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Server Deployment</a>
                     {% endfor %}
                 </div>
             </li>
@@ -118,9 +131,9 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% for ip, indicator in data %}
                     {% if indicator == 1 %}
-                    <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
+                        <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
                     {% else %}
-                    <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
+                        <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
                     {% endif %}
                     {% endfor %}
                 </div>
@@ -171,18 +184,18 @@
                     <div class="form-group">
                         <h4>Option 2: Input IPs</h4>
                         <label>Input IP range</label>
-                            <div class ="row">
+                        <div class ="row">
                             <div class="col-auto">
-                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                                <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
                             </div>
                             <div class="col-auto">
-                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
+                                <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
                             </div>
-                            <input type="hidden" id="inputtype" name="inputtype" value="udpserveruploadip">
-                            <input type="hidden" id="redirectpage" name="redirectpage" value="udpserverupload">
-                            <input type="hidden" id="iptype" name="iptype" value="os">
-                            <input type="hidden" id="ip" name="ip" value="all">
-                            </div>
+                                <input type="hidden" id="inputtype" name="inputtype" value="udpserveruploadip">
+                                <input type="hidden" id="redirectpage" name="redirectpage" value="udpserverupload">
+                                <input type="hidden" id="iptype" name="iptype" value="os">
+                                <input type="hidden" id="ip" name="ip" value="all">
+                        </div>
                     </div>
                 </form>
                 <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
@@ -199,18 +212,27 @@
         <hr class="solid">
         <div class ="row">
             <div class="col">
-                <form action="/udpserverinitialize" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form id = "serverInit">
                     <h3><u class="font-weight-bold text-primary">STEP 2:</u> Initialize Target Clients</h3>
-                    <small id="help0" class="form-text text-muted">Request target clients to send h back.</small>
+                    <small id="help0" class="form-text text-muted">Request target clients to send h signal back.</small>
                     <br>
-                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">SEND REQUEST</button>
                 </form>
+                <button id="serverSubmit" type="submit" class="btn btn-primary" onclick="call_ignition()">SEND REQUEST</button>
+            </div>
+            <div class="col">
+                <form id = "checkonline">
+                    <h3><u class="font-weight-bold text-primary">Optional:</u> Check Connections</h3>
+                    <small id="help5" class="form-text text-muted">Check connections between server and client.</small>
+                    <br>
+                </form>
+                <button id="checkconnectionbutton" type="submit" class="btn btn-primary" onclick="checkClientState('latest')">CHECK CONNECTIONS</button>
             </div>
         </div>
+         <!----- Step 3 ------------------------------------------------------------------------------------------------------------------------>
         <hr class="solid">
         <div class ="row">
             <div class="col">
-                <form action="/udpserveruploadinputfile" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form id = "BenchmarkInput">
                     <h3><u class="font-weight-bold text-primary">STEP 3 Optional:</u> Upload Benchmark Input</h3>
                     <br>
                     <h4>Input File Upload</h4>
@@ -219,11 +241,11 @@
                             <small id="help1" class="form-text text-muted">Please upload the necessary input files before running benchmark</small>
                             <br>                            
                         </div>
-                    <button id="uploadfilebutton" type="submit" class="btn btn-primary" target="_blank">UPLOAD</button>
                 </form>
+                <button  type="submit" class="btn btn-primary" onclick="uploadBenchmark('bminputfile','bench_input')" id="bench_input" target="_blank">UPLOAD</button>
             </div>
             <div class="col">
-                <form action="/udpserversendfileandrun" method="POST" enctype="multipart/form-data" id = "fileform">
+                <form id = "Benchmark">
                     <h3><u class="font-weight-bold text-primary">STEP 3:</u> Run Benchmarks</h3>
                     <br>
                     <h4>Config File Upload</h4>
@@ -233,10 +255,11 @@
                             <output id="dict"></output>
                             <br>                            
                         </div>
-                    <button id="uploadfilebutton" type="submit" class="btn btn-primary" target="_blank">RUN BENCHMARK</button>
                 </form>
+                <button type="submit" class="btn btn-primary" id="bench"  onclick="uploadBenchmark('inputfile','bench')" target="_blank">RUN BENCHMARK</button>
             </div>
         </div>
+         <!----- Step 4 ------------------------------------------------------------------------------------------------------------------------>
         <hr class="solid">
         <div class ="row">
             <div class="col">
@@ -254,17 +277,6 @@
                 <button id="parse_benchmark" type="button" class="btn btn-primary" onclick="trigger_bm()">
                     INSERT DATA
                 </button>               
-            </div>
-        </div>
-        <hr class="solid">
-         <div class ="row">
-            <div class="col">
-                <form action="/udpservercheckonline" method="POST" enctype="multipart/form-data" id = "fileform">
-                    <h3><u class="font-weight-bold text-primary">STEP X:</u> Check Connections</h3>
-                    <small id="help5" class="form-text text-muted">Check connections between server and client.</small>
-                    <br>
-                    <button id="checkconnectionbutton" type="submit" class="btn btn-primary">CHECK CONNECTIONS</button>
-                </form>
             </div>
         </div>
     </div>
@@ -286,15 +298,171 @@
     </footer>
     <!-- Footer -->
     <script type="text/javascript">
+        var ips = {}; ///IP dictionary to keep track of succesfull UDP client initiation
+        global_counter = 0;
+        var checkServer_button = document.getElementById('checkconnectionbutton');
+        var serverInit_button = document.getElementById('serverSubmit')
         var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var unselectButton = document.getElementById('unselectall');
         var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
-        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success)\b/g;
+        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
+        var reWarning = /\b(WARNING|Warning|warning)\b/g;
         var reInfo = /\b(Information|information|INFO|info)\b/g;
         var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             $.CheckIPMIs();
+            checkServer_button.disabled = true;
+            serverInit_button.disabled = true;
+            document.getElementById('bench').disabled = true;
         }, false);
+        function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
+            if(on_off){
+                global_counter++;
+                id = "loading" + global_counter;
+                addLine("<span id='"+id+"'></span>")
+                var span = document.getElementById(id);
+                var int = setInterval(function() {
+                    if ((span.innerHTML += '.').length == 25) 
+                        span.innerHTML = '';
+                }, 100);
+            }
+            else{
+                document.getElementById(id).remove();
+            }
+        }
+        function checkClientState(clientState){///// Takes a state to check JSON file produced by the UDP container (latest,START,DONE,OK,ONLINE,RESTART)
+            $.check_client_Online(clientState)
+        }
+        $.check_client_Online = function(clientState){
+            $.ajax({
+                url: '/check_UDP_clientState', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {state: clientState},
+                beforeSend: function(){ 
+                    semaphore = true; 
+                    loading_icons(true);
+                },
+                success: function(result){
+                    var data = result;
+                    var error = false;
+                    var complete = true;
+                    loading_icons(false);
+                    semaphore == false;
+                    if(clientState == 'latest'){
+                        addLine("====================== UDP Client Status ======================");
+                        for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                            if (key === "ERROR"){ ///If error in key report output to terminal
+                                addLine(data[key])
+                                addLine("====================== Things you can do ======================")
+                                addLine("info: Check UDP client in your systems")
+                                addLine("info: Restart your UDP container")
+                                error = true;
+                                break;
+                            }
+                            else{
+                                ips[key] = data[key];
+                                addLine(key + " ...... " + data[key]);
+                            }
+                        }
+                    }
+                    else if(clientState == "START" || clientState == "DONE"){
+                        addLine("====================== UDP Client Status ======================");
+                        for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                            if (key === "ERROR"){ ///If error in key report output to terminal
+                                addLine(data[key])
+                                addLine("====================== Things you can do ======================")
+                                addLine("info: Check UDP client in your systems")
+                                addLine("info: Restart your UDP container")
+                                error = true;
+                                document.getElementById('bench').disabled = true;
+                                break;
+
+                            }
+                            else{
+                                ips[key] = data[key];
+                                addLine(key + " ...... " + data[key]);
+                            }
+                        }
+                        if(!error && clientState !== "DONE"){
+                            checkClientState("DONE");
+                        }
+                        else{
+                            addLine("info: Benchmarks completed!");
+                            addLine("info: You can check out the results in the 'UDP Benchmark Results' in the navbar above ")
+                        }
+                    }
+                    else{
+                        for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                            if (key === "ERROR"){ ///If error in key report output to terminal
+                                addLine(data[key])
+                                addLine("====================== Things you can do ======================")
+                                addLine("info: Check UDP client in your systems")
+                                addLine("info: Restart your UDP container")
+                                error = true;
+                                break;
+                            }
+                            else if(data[key].includes(clientState)){
+                                ips[key] = clientState;
+                                addLine(key + " ...... " + data[key]);
+                            }
+                            else{
+                                addLine(key + " ...... " + data[key]);
+                                ips[key] = "OFFLINE";
+                            }
+                        }
+                        for(var key in ips){
+                            if(ips[key] == "OFFLINE"){
+                                complete  = false;
+                            }
+                        }
+                        if(!error && complete){
+                            addLine("SUCCESS: All selected servers are " + clientState)
+                            if (clientState == "ONLINE"){ ///// IF Online was found in the JSON file, send another request with "OK" as the client State. If OK in the JSON logs, servers have complete their initial handshake
+                                addLine("info: checking  UDP server/client complete handshake, hang tight this may take several seconds...");
+                                checkClientState("OK");
+                            }
+                            checkServer_button.disabled = false;
+                            serverInit_button.disabled = false;
+                        }
+                        else if(!complete && !error){
+                            addLine("ERROR: Failed to initiate one or more servers, check your clients' UDP Client.");
+                        }
+                    }
+                }        
+            }); 
+        }
+        function call_ignition(){
+            terminal.innerHTML = "";
+            $.ignite_server();
+        }
+        $.ignite_server = function(){
+            $.ajax({
+                url: '/udpserverinitialize', 
+                type: 'GET',
+                dataType: "JSON",
+                beforeSend: function(){ 
+                    addLine("info: Sending UDP ignition signal to server...");
+                },
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            addLine(data[key])
+                            complete = false
+                        }
+                        else{
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete == true){
+                        $.check_client_Online("ONLINE");
+                        console.log(true);
+                    }
+                }        
+            }); 
+        }
         $.CheckIPMIs = function(){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
             $.ajax({
                 url: '/checkSelectedIPs?filetype=udpserveruploadip&iptype=os',
@@ -303,6 +471,7 @@
                 success: function(result){
                     var data = result;
                     var hasIPs = false;
+                    ips = data;
                     addLine('Reading file with selected IPs');
                     for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
                         var ip = document.getElementById(key)
@@ -319,14 +488,16 @@
                         }
                     }
                     if (hasIPs === false){
+                        checkServer_button.disabled = true;
+                        serverInit_button.disabled = true;
                         unselectButton.classList.add("disabled")
                         addLine('No IPs selected from this Rack');
                     }
                     else{
                         addLine('Current Selected IPs has been updated');
-                        ips = document.getElementById("display_ips")
                         unselectButton.classList.remove("disabled")
-                        ips.classList.add("show")
+                        serverInit_button.disabled = false;
+                        checkServer_button.disabled = false;
                     }
                 }
             });
@@ -435,6 +606,99 @@
                 button.disabled = true;
             });
         }
+        function uploadBenchmark(input_id, button_id){
+            terminal.innerHTML = "";
+            var file_name = document.getElementById(input_id).files[0]['name']; ///Upload file from the form element 'file'
+            addLine('Uploading Benchmark: ' + file_name + ' to server...');
+            if(input_id == "bminputfile"){
+                $.UploadBenchmarkInput("BenchmarkInput", input_id, button_id,file_name);
+            }
+            else{
+                $.UploadBenchmark("Benchmark", input_id, button_id);
+            }
+        }
+        $.UploadBenchmarkInput = function(form_id, inputField_id, inputButton_id,file_name){
+            $.ajax({
+                url: '/uploadinputipsfileforall?filetype=BenchmarkInput', 
+                type: 'POST',
+                data: new FormData($("#BenchmarkInput")[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                addLine('Upload Completed, file parsed successfully...');
+                var input_field = document.getElementById("bminputfile");
+                var button = document.getElementById("bench_input");
+                button.disabled = true;
+                input_field.value = '';
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                addLine('Upload Failed...');
+                var input_field = document.getElementById("inputfile");
+                input_field.value = '';
+                var button = document.getElementById("bench");
+                button.disabled = false;
+            });
+        }
+        $.UploadBenchmark = function(form_id, inputField_id, inputButton_id){
+            $.ajax({
+                url: '/uploadinputipsfileforall?filetype=Benchmark', 
+                type: 'POST',
+                data: new FormData($('#Benchmark')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                addLine('Upload Completed, file parsed successfully...');
+                var input_field = document.getElementById(inputField_id);
+                var button = document.getElementById(inputButton_id);
+                button.disabled = true;
+                input_field.value = '';
+                start_bench("Benchmark" , "na");
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                addLine('Upload Failed...');
+                var input_field = document.getElementById(inputField_id);
+                input_field.value = '';
+                var button = document.getElementById(inputButton_id);
+                button.disabled = true;
+            });
+        }
+        function start_bench(type,filename){
+            $.runBenchmark(type,filename)
+        }
+        $.runBenchmark = function(filetype,benchmark_file){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/runBenchmark', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {filetype: filetype, benchmark: benchmark_file},
+                beforeSend: function(){ 
+                    addLine("Starting Benchmark... hold on")
+                    loading_icons(true);
+                },
+                success: function(result){
+                    var data = result;
+                    var success = true
+                    loading_icons(false);
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "ERROR"){
+                            addLine(data[key]);
+                            var success = false;
+                            break;
+                        }
+                        else{
+                            addLine(data[key]);
+                        }   
+                    }
+                    if(success){
+                        addLine("warning: Do not refresh this page.")
+                        console.log("Checking for start");
+                        checkClientState("START");
+                    }
+                }        
+            }); 
+        }
         // Clear selected IPs function. Takes a single IP or "all" to unselect all.
         function CallIPCleaner(){
             var ip = document.getElementById('inputform')['ip'].value;
@@ -540,9 +804,10 @@
             });
         }
         function addLine(line) {
-            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
+            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
             var line = line.replace(reIP,"<span class='ip'>$&</span>");
             terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
+            terminal.scrollTop = terminal.scrollHeight;
         } 
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
@@ -616,6 +881,9 @@
         }
         function handleInputFileSelect(evt) {
             var inputfile = document.getElementById("inputfile").files[0];
+            document.getElementById('bench').disabled = true;
+            document.getElementById("dict").innerHTML = "";
+            var compatible_file = true;
             if (inputfile) {
                 var reader = new FileReader();
                 reader.readAsText(inputfile, "UTF-8");
@@ -623,12 +891,29 @@
                     var inputdict= JSON.parse(evt.target.result);
                     var output2 = '<strong class="text-success">Found Configurations as below:</strong><br>';
                     for ( key in inputdict ) {
-                       output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
+                        if(key == "category" || key == "Category"){
+                            if (inputdict[key] !== "benchmark" &&  inputdict[key] !== "Benchmark"){
+                                inputfile.value = "";
+                                document.getElementById("dict").innerHTML = "";
+                                addLine("error: Only Benchmarks allowed to run. Please select another file");
+                                document.getElementById('bench').disabled = true;
+                                compatible_file = false;
+                                break;
+                            }
+                        }
+                        else{
+                            output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
+                        }
                     }
-                    document.getElementById("dict").innerHTML = output2;
+                    if(compatible_file){
+                        document.getElementById("dict").innerHTML = output2;
+                        document.getElementById('bench').disabled = false;
+                        addLine("success: Compatible benchmark selected, run when ready..");
+                    }
                 }
                 reader.onerror = function (evt) {
                     document.getElementById("dict").innerHTML = "error reading file";
+                    inputfile.value = "";
                 }
             }
         }
