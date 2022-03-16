@@ -70,6 +70,7 @@
     pre {
         color: rgb(255, 255, 255);
         margin: 0px 0px 0px 0px;
+        overflow-x: hidden;
     }
     /* More console input formatting to make input box larger */
     input#textinput {
@@ -433,13 +434,18 @@
                                 error = true;
                                 break;
                             }
-                            else if(data[key].includes(clientState)){
-                                ips[key] = clientState;
-                                addLine(key + " ...... " + data[key]);
+                            else if(clientState == "ONLINE"){
+                                if(data[key].includes(clientState) || data[key].includes("RESTART")){
+                                    ips[key] = clientState;
+                                    addLine(key + " ...... " + data[key]);
+                                }
+                                else{
+                                    addLine(key + " ...... OFFLINE");
+                                    ips[key] = "OFFLINE";
+                                }
                             }
                             else{
-                                addLine(key + " ...... " + data[key]);
-                                ips[key] = "OFFLINE";
+                                addLine("Client State not handled..");
                             }
                         }
                         for(var key in ips){
@@ -455,9 +461,6 @@
                             }
                             checkServer_button.disabled = false;
                             serverInit_button.disabled = false;
-                        }
-                        else if(!complete && !error){
-                            addLine("ERROR: Failed to initiate one or more servers, check your clients' UDP Client.");
                         }
                     }
                 }        
@@ -537,7 +540,6 @@
             var ipend = document.getElementById('inputform')['ipend'].value;
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
-            terminal.innerHTML = "";
             addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
         }
@@ -809,8 +811,8 @@
                 var sentence = document.getElementById(output_counter); /// Acquire html element with ID
                 var text = sentence.textContent; /// Get text from html element
                 //// Format key words in the html element's text with REGEX
-                let reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
-                let reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+                let reError = /\b(Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+                let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
                 let reInfo = /\b(Information|information|INFO|info)\b/g;
                 let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
                 let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;

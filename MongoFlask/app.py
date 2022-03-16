@@ -30,7 +30,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from flask_debugtoolbar import DebugToolbarExtension
 import concurrent.futures
-from benchmark_parser import parseInput, resultParser, clean_mac
+from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seperator
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -1703,20 +1703,26 @@ def udp_command_start():
     command_uid = generateCommandInput(command,timeout) # uid is used for the file name and search from database
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_input_os = pd.read_csv(savepath+"udpserveruploadip.txt",names=['ip']) # used to measure the length of output
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    remain_ips = list(df_input_os['ip']) # used for remove value 
     insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
-    response_counter = 0
     messages = [] # messages are the final outputs, contain a list with response from every selected node
-    while response_counter < len(df_input_os): # looking for uid in the collection
+    while len(remain_ips) != 0: # looking for uid in the collection
         response = [] # response contains the output message but need to be sort before using
-        response_counter = 0
         cur = cmd_collection.find({"file_name" : {'$regex' : command_uid}},{'os_ip','file_name','mac','start_date','content'})
         for i in cur:
             response.append({i['os_ip']: i['content'],'MAC':i['mac']})
-            response_counter += 1
+            if i['os_ip'] in remain_ips:
+                printf('Found ' + i['os_ip'] + ' in database!')
+                remain_ips.remove(i['os_ip'])
         printf('Response not ready yet, wait 1 sec ...')
         if timeout <= -5: # given database 5 more seconds to response. 
-            response = []
-            messages.append('Error: command "' + command + '" failed with timeout')
+            for cur_ip in remain_ips:
+                cur_mac = clean_mac(df_pwd[df_pwd['os_ip'] == cur_ip]['mac'].values[0])
+                # insert ':' into the mac
+                cur_mac_column = mac_with_seperator(cur_mac,':')             
+                response.append({cur_ip: 'Error: No connection between UDP server and Client for this node!','MAC':cur_mac_column})   
+                printf('Error: ' + cur_ip + ' can not get response, please check udp_client, connection and OS IP!')
             break
         time.sleep(1)
         timeout -= 1        
@@ -1820,22 +1826,15 @@ def check_UDP_clientState():
             if temp_array[1] == sel_ip:
                 mac_os.append(temp_array)
     udp_json = savepath+"-host.json"
-    if client_state == "ONLINE" or client_state == "OK":
-        if os.path.exists(udp_json):
-            printf("Getting client state: " + client_state)
-            response = getClientState_dictResponse(udp_json,mac_os,client_state)
-        else:
-            response = {"ERROR":"info: No UDP json file found"}
-            printf("ERROR cannot find file: " + udp_json)
-    elif client_state == "DONE" or client_state == "START":
+    if client_state != "latest":
         if os.path.exists(udp_json):
             printf("Getting latest client state: " + client_state)
             response = getMessage_dictResponse(udp_json,mac_os,client_state)
         else:
             response = {"ERROR":"info: No UDP json file found"}
             printf("ERROR cannot find file: " + udp_json)
-    elif client_state == 'latest':
-        if os.path.exists(udp_json):
+    else:
+        if os.path.exists(udp_json):       
             insertUdpevent('m',"ONLINE",savepath+"udpserveruploadip.txt")
             time.sleep(1)
             printf("Getting latest client state")

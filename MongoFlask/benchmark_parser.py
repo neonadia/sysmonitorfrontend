@@ -166,3 +166,13 @@ def clean_mac(mac):
     if len(mac_cleaned) != 12:
         print('Warning! invalid MAC address: ' + mac)
     return(mac_cleaned)
+
+def mac_with_seperator(mac,sep):
+    mac = clean_mac(mac)
+    mac_sep = ''
+    for i, one_chr in enumerate(mac):
+        if i == len(mac)-1 or i%2 == 0:
+            mac_sep += one_chr
+        else:
+            mac_sep += one_chr + ':' 
+    return mac_sep
