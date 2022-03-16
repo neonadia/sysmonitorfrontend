@@ -1678,6 +1678,61 @@ def udp_command_testor():
                 messages  += cur_msg[cur_ip].split('\n')
     return render_template('simpleresult.html', messages = messages, rackname=rackname,rackobserverurl = rackobserverurl)
 
+@app.route('/UDP_commandline')
+def UDP_commandline():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    try:
+        df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['os_ip'])
+    indicators = []
+    for i in range(len(allips)):
+        if allips[i] in inputips:
+            indicators.append(1)
+        else:
+            indicators.append(0)
+    return render_template('UDP_commandline.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
+@app.route('/udp_command_start')
+def udp_command_start():
+    command = request.args.get('command')
+    timeout = int(10)
+    command_uid = generateCommandInput(command,timeout) # uid is used for the file name and search from database
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    df_input_os = pd.read_csv(savepath+"udpserveruploadip.txt",names=['ip']) # used to measure the length of output
+    insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
+    response_counter = 0
+    messages = [] # messages are the final outputs, contain a list with response from every selected node
+    while response_counter < len(df_input_os): # looking for uid in the collection
+        response = [] # response contains the output message but need to be sort before using
+        response_counter = 0
+        cur = cmd_collection.find({"file_name" : {'$regex' : command_uid}},{'os_ip','file_name','mac','start_date','content'})
+        for i in cur:
+            response.append({i['os_ip']: i['content'],'MAC':i['mac']})
+            response_counter += 1
+        printf('Response not ready yet, wait 1 sec ...')
+        if timeout <= -5: # given database 5 more seconds to response. 
+            response = []
+            messages.append('Error: command "' + command + '" failed with timeout')
+            break
+        time.sleep(1)
+        timeout -= 1        
+    output = {}
+    for cur_ip in df_input_os['ip']:
+        for cur_msg in response:
+            if cur_ip in cur_msg.keys():
+                output[cur_ip + " - " + cur_msg['MAC']] = {"output":{}}
+                temp_msg_array = cur_msg[cur_ip].split('\n')
+                temp_msg_array = list(filter(None, temp_msg_array)) # filter out the empty item in the list
+                if len(temp_msg_array) == 0:
+                    temp_msg_array = ['Warning: Command has been excuted successfully, but there is no output!']
+                for i,msg in enumerate(temp_msg_array):
+                    output[cur_ip + " - " + cur_msg['MAC']]['output'][i] = msg
+    return json.dumps(output)
+
 @app.route('/udpserverupload')
 def udpserverupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']

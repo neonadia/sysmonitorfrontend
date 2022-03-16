@@ -16,11 +16,22 @@
     ul span {
         color: green;
     }
-    hr.dotted {
-        border-top: 3px dotted #0275d8;
+    /* CSS For the terminal window, made scroll incase output is too large */
+    div.scroll {
+        background-color: black;
+        width: 400px;
+        height: 350px;
+        max-height: 600px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        text-align: left;
+        padding: 20px;
     }
-    hr.solid {
-        border-top: 3px solid #0275d8;
+    .dropright .dropdown-menu{
+        width: min-content;
+        height: min-content;
+        text-align: center;
+        margin: 0%;
     }
     /* Background contains everything that is the console */
     #background {
@@ -31,19 +42,29 @@
         max-height: 600px;
         overflow-y: auto;
         text-align: left;
-    }
-    .terminal{
-        background-color: black;
-        color: chartreuse;
-        width: 70%;
-        padding: 10px;
-        border: 2px solid greenyellow;
-        font-weight: normal;
-        margin-left: 0%;
-        height: 500px;
         border-radius: 15px;
-        overflow-x: hidden;
+    }
+    /* Console is a box in the background class */
+    #console {
+        margin: 0px;
+        padding: 0px;
+        width: 1000px;
+        height: 1000px;
         overflow-y: auto;
+        text-align: left;
+        border-radius: 15px;
+    }
+    /* Input font formatting for console */
+    #textinput {
+        height: max-content;
+        margin: 0px 0px 0px 0px;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        color: rgb(255, 255, 255);
+        font-family: Monospace;
+        overflow: hidden;
+        padding: 0%;
     }
     /* Console output formatting */
     pre {
@@ -98,17 +119,17 @@
             </li>
             <li class='dropdown'>
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-broadcast-tower"></i>
+                    <i class="fas fa-terminal"></i>
                 </button>
                 <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
                     {% for url in frontend_urls %}
-                        <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Server Deployment</a>
+                        <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Commandline</a>
                     {% endfor %}
                 </div>
             </li>
             <li class='dropdown'>
                 <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                UDP SERVER
+                UDP Commandline
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item">Beta Version 1.0</a> 
@@ -153,6 +174,7 @@
                         <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
                         <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
                         <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+                        <a class="dropdown-item" href="{{ url_for('UDP_commandline') }}" target="_blank">Rack Hardware Data</a>
                         <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
                         <a class="dropdown-item" href="{{ url_for('hardware_output') }}" target="_blank">Rack Hardware Data</a>
                     </div>
@@ -162,7 +184,7 @@
     </nav>
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
         <div class ="row">
-            <div class="col-auto">
+            <div class="col-auto" style="width: 30%;">
                 <form id = "fileform">
                     <div class="form-group">
                         <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
@@ -200,87 +222,50 @@
                 </form>
                 <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
                 <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
-                <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a> 
-            </div>
-            <div class="col" style="padding-left: 10%; font-weight: bolder;">
-                Terminal Output :
-                <div class="col-auto scroll terminal" id = "upload_terminal">
-                </div>
-            </div>
-        </div>
-        <!----- Step 2 ------------------------------------------------------------------------------------------------------------------------>
-        <hr class="solid">
-        <div class ="row">
-            <div class="col">
+                <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner('all')">UNSELECT ALL</a> 
+                <!----- Step 2 ------------------------------------------------------------------------------------------------------------------------>
+                <hr class="solid">
                 <form id = "serverInit">
-                    <h3><u class="font-weight-bold text-primary">STEP 2:</u> Initialize Target Clients</h3>
-                    <small id="help0" class="form-text text-muted">Request target clients to send h signal back.</small>
-                    <br>
+                    <div class="form-group">
+                        <h3><u class="font-weight-bold text-primary">STEP 2:</u> Initialize Target Clients</h3>
+                        <small id="help0" class="form-text text-muted">Request target clients to send h signal back.</small>
+                    </div>
                 </form>
                 <button id="serverSubmit" type="submit" class="btn btn-primary" onclick="call_ignition()">SEND REQUEST</button>
-            </div>
-            <div class="col">
+                <br>
                 <form id = "checkonline">
-                    <h3><u class="font-weight-bold text-primary">Optional:</u> Check Connections</h3>
-                    <small id="help5" class="form-text text-muted">Check connections between server and client.</small>
-                    <br>
+                    <div class="form-group" style="padding-top:20px;">
+                        <h3><u class="font-weight-bold text-primary">Optional:</u> Check Connections</h3>
+                        <small id="help5" class="form-text text-muted">Check connections between server and client.</small>
+                    </div>
                 </form>
                 <button id="checkconnectionbutton" type="submit" class="btn btn-primary" onclick="checkClientState('latest')">CHECK CONNECTIONS</button>
-            </div>
-        </div>
-         <!----- Step 3 ------------------------------------------------------------------------------------------------------------------------>
-        <hr class="solid">
-        <div class ="row">
-            <div class="col">
-                <form id = "BenchmarkInput">
-                    <h3><u class="font-weight-bold text-primary">STEP 3 Optional:</u> Upload Benchmark Input</h3>
-                    <br>
-                    <h4>Input File Upload</h4>
-                        <div class="custom-file">
-                            <input type="file" class="form-control-file form-primary" name="bminputfile" id="bminputfile" required>
-                            <small id="help1" class="form-text text-muted">Please upload the necessary input files before running benchmark</small>
-                            <br>                            
+                <hr class="solid">
+                <form id = "commandForm">
+                    <h3><u class="font-weight-bold text-primary">STEP 3:</u> Enter Linux Command</h3>
+                        <div class="form-group row">                         
+                            <div class="col-md-4 col-lg-4 col-sm-6">
+                            <input type="text" class="form-control" id="cmd" name="cmd" placeholder="sdr list full">
+                            </div>
                         </div>
-                </form>
-                <button  type="submit" class="btn btn-primary" onclick="uploadBenchmark('bminputfile','bench_input')" id="bench_input" target="_blank">UPLOAD</button>
-            </div>
-            <div class="col">
-                <form id = "Benchmark">
-                    <h3><u class="font-weight-bold text-primary">STEP 3:</u> Run Benchmarks</h3>
+                    <small id="help1" class="form-text text-muted">Please input valid ipmitool command</small>
+                    <small id="help2" class="form-text text-muted">Example: <u>lspci</u></small>
                     <br>
-                    <h4>Config File Upload</h4>
-                        <div class="custom-file">
-                            <input type="file" class="form-control-file form-primary" name="inputfile" id="inputfile" required>
-                            <small id="help2" class="form-text text-muted">Please upload the configs for running benchmarks</small>
-                            <output id="dict"></output>
-                            <br>                            
-                        </div>
                 </form>
-                <button type="submit" class="btn btn-primary" id="bench"  onclick="uploadBenchmark('inputfile','bench')" target="_blank">RUN BENCHMARK</button>
+                <button id="testrunbutton" class="btn btn-primary"  onclick="submitCommand()">SUBMIT</button>
             </div>
-        </div>
-         <!----- Step 4 ------------------------------------------------------------------------------------------------------------------------>
-        <hr class="solid">
-        <div class ="row">
-            <div class="col">
-                <h3><u class="font-weight-bold text-primary">STEP X:</u> Insert Hardware Data</h3>
-                <small id="help3" class="form-text text-muted">Insert hardware data from folder to Database</small>
-                <br>
-                <button id="parse_hardware" type="button" class="btn btn-primary" onclick="trigger_hw()">
-                    INSERT DATA
-                </button>               
-            </div>
-            <div class="col">
-                <h3><u class="font-weight-bold text-primary">STEP X:</u> Insert Benchmark Data</h3>
-                <small id="help4" class="form-text text-muted">Insert benchmark data from folder to Database</small>
-                <br>
-                <button id="parse_benchmark" type="button" class="btn btn-primary" onclick="trigger_bm()">
-                    INSERT DATA
-                </button>               
-            </div>
+            <div class ="col-auto"style="font-weight:bolder" onclick="addCursor()">
+                Console:
+                <div id = " col-auto background" style="background-color: black; border-radius: 15px; color: rgb(255, 255, 255); width: auto; max-block-size: auto; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;" >
+                    <div id = "console">
+                            <!-- Commandline output here -->
+                        <pre id="inputbar" >/><input id = "textinput" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>
+                    </div>
+                </div>
+            </div> 
         </div>
     </div>
-    <!-- Footer -->
+        <!-- Footer -->
     <footer class="page-footer font-small teal pt-4 bg-primary text-white">
         <!-- Footer Text -->
         <div class="container-fluid text-center text-md-left">
@@ -299,21 +284,21 @@
     <!-- Footer -->
     <script type="text/javascript">
         var ips = {}; ///IP dictionary to keep track of succesfull UDP client initiation
-        global_counter = 0;
+        var global_counter = 0;
         var checkServer_button = document.getElementById('checkconnectionbutton');
         var serverInit_button = document.getElementById('serverSubmit')
-        var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var output_counter = 0; ///Increasing counter to identify the console output lines. This counter serves as a ID to highlight the keywords.
+        var cursor_lock = 0;
+        var console_history = new Array(); //// Array that contains commands executed in the console.
+        console_history.push("");
+        var position = 0; ///Console History iterator
         var unselectButton = document.getElementById('unselectall');
-        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
-        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
-        var reWarning = /\b(WARNING|Warning|warning)\b/g;
-        var reInfo = /\b(Information|information|INFO|info)\b/g;
-        var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+        var cmdLineSubmit = document.getElementById('testrunbutton'); ///Command submit button, used to enable and disable the button.
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
+            addLine("Welcome to Linux Cluster Monitor UDP Server/Client shell. 'With great power comes great responsability'");
             $.CheckIPMIs();
             checkServer_button.disabled = true;
             serverInit_button.disabled = true;
-            document.getElementById('bench').disabled = true;
         }, false);
         function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
             if(on_off){
@@ -330,6 +315,54 @@
                 document.getElementById(id).remove();
             }
         }
+        function submitCommand(){
+            cursor_lock = 1; // lock the cursor when command submitted
+            var command = document.getElementById('commandForm')['cmd'].value; /// Get command from input form.
+            $.sendCommandtoServer(command); /// Pass command as argument to ajax function
+        }
+        $.sendCommandtoServer = function(command){
+            $.ajax({
+                url: '/udp_command_start', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {command: command}, // Send Command to server to execute
+                beforeSend: function(){ ///Write executing to console while sending and retrieving data.
+                    addLine("Executing command...... please wait");
+                    loading_icons(true);
+                },
+                success: function(result){ ///Server response and error handling
+                    var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
+                    cursor_lock = 0;
+                    loading_icons(false);
+                    addLine("Successfully got server response")
+                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                        if (key == "ERROR"){
+                            addLine("================= Error ===============================");
+                            addLine(data[key]);
+                            addLine("================ End of Error =========================");
+
+                        }
+                        else{ //// Display the response as a succesful command
+                            addLine("============================== Response from " + key +" ================================");
+                            for(var token in data[key]){
+                                for(var output in data[key][token]){
+                                    var line = data[key][token][output];
+                                    addLine(line);
+                                }
+                            }
+                            addLine("============================== End of Response from " + key +" =========================");
+                            addLine("");
+                        }
+                    }
+                }, /// Ajax error output, rare but neccessary in certain circumstances
+                error: function (xhr, textStatus) {
+                    cursor_lock = 0;
+                    addLine("Error sending command:  " + command + " No response to Linux Cluster Monitor server");
+                    console.log(xhr);
+                }        
+            }); 
+        }
         function checkClientState(clientState){///// Takes a state to check JSON file produced by the UDP container (latest,START,DONE,OK,ONLINE,RESTART)
             $.check_client_Online(clientState)
         }
@@ -340,7 +373,6 @@
                 dataType: "JSON",
                 data: {state: clientState},
                 beforeSend: function(){ 
-                    semaphore = true; 
                     loading_icons(true);
                 },
                 success: function(result){
@@ -348,7 +380,6 @@
                     var error = false;
                     var complete = true;
                     loading_icons(false);
-                    semaphore == false;
                     if(clientState == 'latest'){
                         addLine("====================== UDP Client Status ======================");
                         for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
@@ -433,7 +464,6 @@
             }); 
         }
         function call_ignition(){
-            terminal.innerHTML = "";
             $.ignite_server();
         }
         $.ignite_server = function(){
@@ -543,7 +573,6 @@
         function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
-            terminal.innerHTML = "";
             addLine('Selecting all the IPs ...');
             $.CallAdvancedAllGenerator(inputtype,iptype);
         }
@@ -577,7 +606,6 @@
             }); 
         }    
         function uploadFile(){
-            terminal.innerHTML = "";
             var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
             addLine('Uploading ' + file_name + ' to server...');
             $.UploadFiletoServer();
@@ -606,102 +634,8 @@
                 button.disabled = true;
             });
         }
-        function uploadBenchmark(input_id, button_id){
-            terminal.innerHTML = "";
-            var file_name = document.getElementById(input_id).files[0]['name']; ///Upload file from the form element 'file'
-            addLine('Uploading Benchmark: ' + file_name + ' to server...');
-            if(input_id == "bminputfile"){
-                $.UploadBenchmarkInput("BenchmarkInput", input_id, button_id,file_name);
-            }
-            else{
-                $.UploadBenchmark("Benchmark", input_id, button_id);
-            }
-        }
-        $.UploadBenchmarkInput = function(form_id, inputField_id, inputButton_id,file_name){
-            $.ajax({
-                url: '/uploadinputipsfileforall?filetype=BenchmarkInput', 
-                type: 'POST',
-                data: new FormData($("#BenchmarkInput")[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
-                processData: false,
-                contentType: false                    // Using FormData, no need to process data.
-            }).done(function(){
-                console.log("Success: File sent!");
-                addLine('Upload Completed, file parsed successfully...');
-                var input_field = document.getElementById("bminputfile");
-                var button = document.getElementById("bench_input");
-                button.disabled = true;
-                input_field.value = '';
-            }).fail(function(){
-                console.log("An error occurred, the file couldn't be sent!");
-                addLine('Upload Failed...');
-                var input_field = document.getElementById("inputfile");
-                input_field.value = '';
-                var button = document.getElementById("bench");
-                button.disabled = false;
-            });
-        }
-        $.UploadBenchmark = function(form_id, inputField_id, inputButton_id){
-            $.ajax({
-                url: '/uploadinputipsfileforall?filetype=Benchmark', 
-                type: 'POST',
-                data: new FormData($('#Benchmark')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
-                processData: false,
-                contentType: false                    // Using FormData, no need to process data.
-            }).done(function(){
-                console.log("Success: File sent!");
-                addLine('Upload Completed, file parsed successfully...');
-                var input_field = document.getElementById(inputField_id);
-                var button = document.getElementById(inputButton_id);
-                button.disabled = true;
-                input_field.value = '';
-                start_bench("Benchmark" , "na");
-            }).fail(function(){
-                console.log("An error occurred, the file couldn't be sent!");
-                addLine('Upload Failed...');
-                var input_field = document.getElementById(inputField_id);
-                input_field.value = '';
-                var button = document.getElementById(inputButton_id);
-                button.disabled = true;
-            });
-        }
-        function start_bench(type,filename){
-            $.runBenchmark(type,filename)
-        }
-        $.runBenchmark = function(filetype,benchmark_file){//// Clear IP ajax function to send command and variables to server for processing
-            $.ajax({
-                url: '/runBenchmark', 
-                type: 'GET',
-                dataType: "JSON",
-                data: {filetype: filetype, benchmark: benchmark_file},
-                beforeSend: function(){ 
-                    addLine("Starting Benchmark... hold on")
-                    loading_icons(true);
-                },
-                success: function(result){
-                    var data = result;
-                    var success = true
-                    loading_icons(false);
-                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
-                        if (key == "ERROR"){
-                            addLine(data[key]);
-                            var success = false;
-                            break;
-                        }
-                        else{
-                            addLine(data[key]);
-                        }   
-                    }
-                    if(success){
-                        addLine("warning: Do not refresh this page.")
-                        console.log("Checking for start");
-                        checkClientState("START");
-                    }
-                }        
-            }); 
-        }
         // Clear selected IPs function. Takes a single IP or "all" to unselect all.
-        function CallIPCleaner(){
-            var ip = document.getElementById('inputform')['ip'].value;
+        function CallIPCleaner(ip){
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             $.clearIPs(inputtype,ip,iptype);
@@ -713,7 +647,6 @@
                 dataType: "JSON",
                 data: {inputtype: inputtype, ip: ip, iptype: iptype},
                 beforeSend: function(){ 
-                    terminal.innerHTML = ""
                     addLine('Modifying Selection...');
                 },
                 success: function(result){
@@ -730,85 +663,233 @@
                 }        
             }); 
         }  
-        function trigger_hw(){
-            $.call_hw_script();
+       ///// Add commmand to history array and update iterator.  
+       function addHistory(command){
+            console_history.pop();
+            if (console_history.length == 0){ /// If history array empty push to array
+                console_history.push(command);
+            }
+            else if(console_history[console_history.length-1] !== command){ // Check if last command in history array is the same as current command.
+                console_history.push(command);
+            }
+            console_history.push("");
+            position = console_history.length - 1; ///Position iterator and the end of list whenever a command is entered (LIFO data structure)
         }
-        $.call_hw_script = function(){
-            $.ajax({
-                url: '/hardware_parser',
-                dataType : "JSON",
-                type : "GET",
-                beforeSend: function(){ ///Write executing to button while sending and retrieving data.
-                    console.log("Executing...");
-                    var button = document.getElementById("parse_hardware");
-                    document.getElementById("parse_hardware").innerHTML = "Loading ...";
-                    if(!button.classList.replace("btn-primary","btn-info")) {
-                        if(!button.classList.replace("btn-danger", "btn-info")){
-                            button.classList.replace("btn-success", "btn-info")
-                        }
-                    }
-                },
-                success: function(result){
-                    var data = result;
-                    var button = document.getElementById("parse_hardware");
-                    for(var key in data){
-                        console.log(data[key]);
-                        if(data[key] == "OK"){
-                            button.classList.replace("btn-info","btn-success")
-                            document.getElementById("parse_hardware").innerHTML = "INSERT DONE";
-                        }
-                        else{
-                            console.log(key + ": " + data[key]);
-                            button.classList.replace("btn-info","btn-danger")
-                            document.getElementById("parse_hardware").innerHTML = "INSERT FAILED";
-                        } 
-                    }
+        function checkInput() {
+            var event = window.event || event.which; 
+            if (event.keyCode == 13) { ///// When enter key is entered for console
+                var CMD = document.getElementById("textinput").value;
+                addHistory(CMD); /// Add command to history array.
+                //// Parse command and check for internal console command, if not send to server to process as ipmitool commmand.
+                //// INTERNAL CONSOLE COMMANDS ARE HERE!.  Modify or add commands in this area. The else statement sends command to LCM server. ///////////////////////////////
+                if (CMD.trim() === ""){ /// For no input.
+                    addLine("");
+                }                    
+                else if(CMD == "clear" ){ /// Clear function clears console output.
+                    document.getElementById("console").innerHTML = "";
+                    $.CheckIPMIs(inputtype,iptype);
+                    document.getElementById("console").insertAdjacentHTML('beforeend',"<p id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: min-content; max-width: max-content;''></p>")
+                    document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+                    PosEnd(document.getElementById('textinput'));
                 }
-            });
-        }
-        function trigger_bm(){
-            $.call_bm_script();
-        }
-        $.call_bm_script = function(){
-            $.ajax({
-                url: '/benchmark_result_parser',
-                dataType : "JSON",
-                type : "GET",
-                beforeSend: function(){ ///Write executing to button while sending and retrieving data.
-                    console.log("Executing benchmark parser...");
-                    var button = document.getElementById("parse_benchmark");
-                    document.getElementById("parse_benchmark").innerHTML = "Loading ...";
-                    if(!button.classList.replace("btn-primary","btn-info")) {
-                        if(!button.classList.replace("btn-danger", "btn-info")){
-                            button.classList.replace("btn-success", "btn-info")
+                else if(CMD == "select all" || CMD == "Select all" ){
+                    addLine(document.getElementById("textinput").value);
+                    uploadallIPs(); /// Select all IPS function
+                }
+                else if(CMD ==  "help" || CMD == "Help"){
+                    addLine(document.getElementById("textinput").value);
+                    addLine("-----> Enter 'select all' to select all IPs");
+                    addLine("-----> Enter 'unselect all' to unselect all IPs");
+                    addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
+                    addLine("-----> Enter 'show selected' to show the selected IPs");
+                    addLine("-----> Enter 'history' to display console history or history -s (phrase)");
+                    addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter '-h' to display ipmtool help message");
+                    addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD == "show selected"){
+                    addLine(CMD);
+                    $.CheckIPMIs(inputtype,iptype);
+                }
+                else if(CMD.split(" ")[0] =="unselect"){
+                    addLine(CMD);
+                    let split = CMD.split(" ").filter(element => {
+                        if(element !== ""){
+                            return true;
                         }
-                    }
-                },
-                success: function(result){
-                    var data = result;
-                    var button = document.getElementById("parse_benchmark");                   
-                    for(var key in data){
-                        console.log(key);
-                        console.log(data[key]);
-                    }
-                    if(data['Insert Status'] == "success"){
-                        button.classList.replace("btn-info","btn-success")
-                        button.innerHTML = "INSERT DONE";
+                    });
+                    if (split[1] == "all"){
+                        CallIPCleaner("all");
                     }
                     else{
-                        console.log(key + ": " + data[key]);
-                        button.classList.replace("btn-info","btn-danger")
-                        button.innerHTML = "INSERT FAILED";
-                    } 
+                        if (split.length == 2){
+                            console.log(split[1]);
+                            if(ValidateIPaddress(split[1]) == false){
+                                addLine("Enter a valid IP address... or enter 'all' to unselect all")
+                            }
+                            else{
+                                CallIPCleaner(split[1]);
+                            }
+                        }
+                        else{
+                            addLine("Please enter unselect in the form of 'unselect <ip>' or 'unselect all'");
+                        }
+                    }
                 }
-            });
+                else if(CMD.split(" ")[0] == "history"){ /// History function
+                    addLine(CMD);
+                    let history_options = CMD.split(" ").filter(element => { ///Split history command in an array in the form of [history,-s,sel,list]
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if(history_options.length > 1){ ///If length of array is bigger than one, assume user is searching for a command. If not, display ALL history.
+                        if(history_options[1] == "-s"){ ///Check if second string in command is '-s' if not through error
+                            if (history_options.length == 2){ /// If user only input 'history -s' throw error to user
+                                addLine("Please provide search criteria to the console history command: history -s (your search term)");
+                            }
+                            else{
+                                var search_term = "";
+                                for(var i = 0; i < history_options.length; i++){ /// Concantenate all the string after '-s' from array ['sel','list'] = "sel list"
+                                    if (i > 1){
+                                        search_term += history_options[i] + " ";
+                                    }
+                                }
+                                addLine("======================= Console Histroy ============================");
+                                for (var i = 0; i < console_history.length; i++){
+                                    console.log(console_history[i] + " ===== " + search_term);
+                                    if (console_history[i].trim().includes(search_term.trim())){ /// Check if the string are equal and display. Trim() to delete the spaces from outside of the string, but not inbetween.
+                                        addLine(i +" "+console_history[i]);
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            addLine("Invalid option for history commands:");
+                            addLine("History commands:");
+                            addLine("       -s         Search for phrase in console history");
+                        }
+                    }
+                    else{
+                        addLine("======================= Console Histroy ============================");
+                        for (var i = 0; i < console_history.length; i++){
+                            if(i != console_history.length - 1){
+                                addLine(i +" "+console_history[i]);
+                            }
+                        }
+                    }
+                }
+                else{
+                    if (cmdLineSubmit.disabled == true){ /// Check if IPs are selected by checking the command submit button.
+                        addLine(CMD);
+                        addLine("Error: Please select IPs first");
+                    }
+                    else{
+                        document.getElementById('commandForm')['cmd'].value = document.getElementById("textinput").value;
+                        addLine(document.getElementById("textinput").value);
+                        console.log(document.getElementById("textinput").value);
+                        addLine(document.getElementById("textinput").value);
+                        submitCommand();
+                    }
+                }
+            }
+            else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
+                var CMD = document.getElementById("textinput").value;
+                if (CMD.trim() !== ""){ /// For no input.
+                    addHistory(CMD);
+                }
+                addLine(CMD);
+            }
         }
+        ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
+        ////Do not tamper unless you know what you are doing.
         function addLine(line) {
-            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
-            var line = line.replace(reIP,"<span class='ip'>$&</span>");
-            terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
-            terminal.scrollTop = terminal.scrollHeight;
-        } 
+            if(!line.includes('span')){
+                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line + "</pre>" ); ///Insert string to console with a unique ID
+                var sentence = document.getElementById(output_counter); /// Acquire html element with ID
+                var text = sentence.textContent; /// Get text from html element
+                //// Format key words in the html element's text with REGEX
+                let reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+                let reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+                let reInfo = /\b(Information|information|INFO|info)\b/g;
+                let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+                let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+                let reWarning = /\b(WARNING|Warning|warning)\b/g;
+                var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
+                var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
+                sentence.innerHTML = replaceWord; /// Replace string in html element
+                output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
+            }
+            else{
+                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line + "</pre>" );
+            }
+            document.getElementById("textinput").value = ""; /// Set your console input to nothing
+            document.getElementById("inputbar").remove(); //Remove the input bar
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: width: 800px;''></pre>") ///Place at the end of html element console.
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
+            PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        document.getElementById('file').addEventListener('change', handleFileSelect, false);
+        function ValidateIPaddress(ipaddress) { ////Validate IP address format
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+        ///Function to move cursor to input bar in console.
+        function PosEnd(end) {
+            var len = end.value.length;
+            // Mostly for Web Browsers
+            if (document.getSelection().toString().length == 0 && cursor_lock == 0){ // if nothing selected and nothing running
+                end.focus();
+            }
+            else if (end.createTextRange) {
+                var t = end.createTextRange();
+                t.collapse(true);
+                t.moveEnd('character', len);
+                t.moveStart('character', len);
+                t.select();
+            }
+        }
+        function addCursor(){
+            PosEnd(document.getElementById('textinput'));
+        }
+        document.addEventListener('keydown', function(e) { ///// UP and DOWN arrow key listeners to scroll through command history
+            switch (e.keyCode) {/// Switch statment to process UP AND DOWN. Update iterator according and change the input bar text.
+                case 38:///key code 38 is UP arrow
+                    if (console_history.length !== 0 && position == 0){ 
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 0){
+                        console.log("No history");
+                    }
+                    else{
+                        if(position == console_history.length - 1){
+                            position--;
+                        }
+                        document.getElementById("textinput").value = console_history[position];
+                        position--;
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+                case 40:///key code 40 is DOWN arrow key
+                    console.log("Down");
+                    if (console_history.length-1 !== position && console_history.length !== 0){
+                        position++;
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 1){
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else{
+                        console.log("No history");
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+            }
+        });
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
             input_field = document.getElementById('file');
@@ -879,46 +960,45 @@
             }
             return (false);
         }
-        function handleInputFileSelect(evt) {
-            var inputfile = document.getElementById("inputfile").files[0];
-            document.getElementById('bench').disabled = true;
-            document.getElementById("dict").innerHTML = "";
-            var compatible_file = true;
-            if (inputfile) {
-                var reader = new FileReader();
-                reader.readAsText(inputfile, "UTF-8");
-                reader.onload = function (evt) {
-                    var inputdict= JSON.parse(evt.target.result);
-                    var output2 = '<strong class="text-success">Found Configurations as below:</strong><br>';
-                    for ( key in inputdict ) {
-                        if(key == "category" || key == "Category"){
-                            if (inputdict[key] !== "benchmark" &&  inputdict[key] !== "Benchmark"){
-                                inputfile.value = "";
-                                document.getElementById("dict").innerHTML = "";
-                                addLine("error: Only Benchmarks allowed to run. Please select another file");
-                                document.getElementById('bench').disabled = true;
-                                compatible_file = false;
-                                break;
-                            }
-                        }
-                        else{
-                            output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
-                        }
-                    }
-                    if(compatible_file){
-                        document.getElementById("dict").innerHTML = output2;
-                        document.getElementById('bench').disabled = false;
-                        addLine("success: Compatible benchmark selected, run when ready..");
-                    }
-                }
-                reader.onerror = function (evt) {
-                    document.getElementById("dict").innerHTML = "error reading file";
-                    inputfile.value = "";
-                }
-            }
-        }
-        document.getElementById('inputfile').addEventListener('change', handleInputFileSelect, false);
+        // function handleInputFileSelect(evt) {
+        //     var inputfile = document.getElementById("inputfile").files[0];
+        //     document.getElementById('bench').disabled = true;
+        //     document.getElementById("dict").innerHTML = "";
+        //     var compatible_file = true;
+        //     if (inputfile) {
+        //         var reader = new FileReader();
+        //         reader.readAsText(inputfile, "UTF-8");
+        //         reader.onload = function (evt) {
+        //             var inputdict= JSON.parse(evt.target.result);
+        //             var output2 = '<strong class="text-success">Found Configurations as below:</strong><br>';
+        //             for ( key in inputdict ) {
+        //                 if(key == "category" || key == "Category"){
+        //                     if (inputdict[key] !== "benchmark" &&  inputdict[key] !== "Benchmark"){
+        //                         inputfile.value = "";
+        //                         document.getElementById("dict").innerHTML = "";
+        //                         addLine("error: Only Benchmarks allowed to run. Please select another file");
+        //                         document.getElementById('bench').disabled = true;
+        //                         compatible_file = false;
+        //                         break;
+        //                     }
+        //                 }
+        //                 else{
+        //                     output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
+        //                 }
+        //             }
+        //             if(compatible_file){
+        //                 document.getElementById("dict").innerHTML = output2;
+        //                 document.getElementById('bench').disabled = false;
+        //                 addLine("success: Compatible benchmark selected, run when ready..");
+        //             }
+        //         }
+        //         reader.onerror = function (evt) {
+        //             document.getElementById("dict").innerHTML = "error reading file";
+        //             inputfile.value = "";
+        //         }
+        //     }
+        // }
+        // document.getElementById('inputfile').addEventListener('change', handleInputFileSelect, false);
     </script>
 </body>
 </html>
-
