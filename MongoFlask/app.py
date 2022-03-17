@@ -1813,6 +1813,7 @@ def check_UDP_clientState():
     client_state = request.args.get('state')
     response = {}
     mac_os = []
+    mac_os_all = []
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
     inputips = list(df_input['ip'])
@@ -1822,11 +1823,19 @@ def check_UDP_clientState():
         temp_array = []
         temp_array.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         temp_array.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+        mac_os_all.append(temp_array)
         for sel_ip in inputips: ####If OS ip is in the selected os_list, append to mac_os (os_list is the input ip list 'RACKNAME'udpserveruploadip.txt)
             if temp_array[1] == sel_ip:
                 mac_os.append(temp_array)
     udp_json = savepath+"-host.json"
-    if client_state != "latest":
+    if client_state == "ONLINE":
+        if os.path.exists(udp_json):
+            printf("Getting latest client state: " + client_state)
+            response = getMessage_dictResponse(udp_json,mac_os_all,client_state)
+        else:
+            response = {"ERROR":"info: No UDP json file found"}
+            printf("ERROR cannot find file: " + udp_json)
+    elif client_state != "latest":
         if os.path.exists(udp_json):
             printf("Getting latest client state: " + client_state)
             response = getMessage_dictResponse(udp_json,mac_os,client_state)
@@ -1846,29 +1855,23 @@ def check_UDP_clientState():
 
 @app.route('/udpserverinitialize')
 def udpserverinitialize():
-    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    try:
-        cleanIP(savepath + "udpserveruploadip.txt")
-    except:
-        response = {"ERROR":"Error: No file found. Please input ip first."}
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '_udpserveruploadip_all.txt'
+    with open(savepath,'w') as all_ip_file:
+        for ip in df_pwd['os_ip']:
+            all_ip_file.write("%s\n" % ip)    
+    if request.method == "GET":
+        insertUdpevent('m',"request_h",savepath) # request_h means requst client to send h back to initilize the json file
+        time.sleep(1)
+        response = {}
+        response['msg0'] = "Success! Initilize message has been sent to clients."
+        response['msg1'] = "info: You can also check the status on index page."
+        response['msg2'] = "info: If the system still has not been initialized, please make sure:"
+        response['msg3'] = "info: 1. Connections bettween server and clients."
+        response['msg4'] = "info: 2. MACNAME in env file is correct."
+        response['msg5'] = "info: 3. UDP Clients are running."
+        response['msg6'] = "info: 4. System firewall has been disabled and stopped."
         return json.dumps(response)
-    else:
-        printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-        if fileEmpty(savepath + "udpserveruploadip.txt"):
-            response = {"ERROR":"Error: InputFIle empty. Try selecting the IPs again"}
-            return json.dumps(response)
-        if request.method == "GET":
-            insertUdpevent('m',"request_h",savepath+"udpserveruploadip.txt") # request_h means requst client to send h back to initilize the json file
-            time.sleep(1)
-            response = {}
-            response['msg0'] = "Success! Initilize message has been sent to clients."
-            response['msg1'] = "info: You can also check the status on index page."
-            response['msg2'] = "info: If the system still has not been initialized, please make sure:"
-            response['msg3'] = "info: 1. Connections bettween server and clients."
-            response['msg4'] = "info: 2. MACNAME in env file is correct."
-            response['msg5'] = "info: 3. UDP Clients are running."
-            response['msg6'] = "info: 4. System firewall has been disabled and stopped."
-            return json.dumps(response)
 
 @app.route('/udpoutput')
 def udpoutput():
