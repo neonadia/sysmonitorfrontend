@@ -25,13 +25,25 @@
         overflow-x: hidden;
         overflow-y: auto;
         text-align: left;
-        padding: 20px;
     }
     .dropright .dropdown-menu{
         width: min-content;
         height: min-content;
         text-align: center;
         margin: 0%;
+    }
+    .terminal{
+        background-color: black;
+        color: chartreuse;
+        width: 70%;
+        border: 2px solid greenyellow;
+        font-weight: normal;
+        margin-left: 0%;
+        height: 500px;
+        border-radius: 15px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 5%;
     }
     /* Background contains everything that is the console */
     #background {
@@ -48,12 +60,16 @@
     #console {
         margin: 0px;
         padding: 0px;
-        width: 1000px;
+        width: 100%;
         height: 1000px;
         overflow-y: auto;
         text-align: left;
         border-radius: 15px;
     }
+
+div#console {
+    padding-left: 10;
+}
     /* Input font formatting for console */
     #textinput {
         height: max-content;
@@ -146,20 +162,6 @@
                 Hardware Database
                 </a>
             </li>
-            <li class='dropdown'>
-                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Current Selected OS IPs
-                </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% for ip, indicator in data %}
-                    {% if indicator == 1 %}
-                        <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
-                    {% else %}
-                        <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-            </li>
             <li class="dropdown">
                 <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Advanced Features
@@ -185,7 +187,7 @@
     </nav>
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
         <div class ="row">
-            <div class="col-auto" style="width: 30%;">
+            <div class="col-auto" style="width: 20%;">
                 <form id = "fileform">
                     <div class="form-group">
                         <h3><u class="font-weight-bold text-primary">STEP 1:</u> Config Input IPs</h3>
@@ -255,7 +257,7 @@
                 </form>
                 <button id="testrunbutton" class="btn btn-primary"  onclick="submitCommand()">SUBMIT</button>
             </div>
-            <div class ="col-auto"style="font-weight:bolder" onclick="addCursor()">
+            <div class ="col-auto"style="font-weight:bolder; width:60%;" onclick="addCursor()">
                 Console:
                 <div id = " col-auto background" style="background-color: black; border-radius: 15px; color: rgb(255, 255, 255); width: auto; max-block-size: auto; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;" >
                     <div id = "console">
@@ -264,6 +266,11 @@
                     </div>
                 </div>
             </div> 
+            <div class="col-auto" style="width: 20%; height: auto; font-weight:bolder;" >
+                Client Status :
+                <div class="col-auto scroll terminal" id = "status_terminal">
+                </div>
+            </div>
         </div>
     </div>
         <!-- Footer -->
@@ -284,7 +291,12 @@
     </footer>
     <!-- Footer -->
     <script type="text/javascript">
+        var command_running = false;
+        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|OFFLINE|false|No|Not\sAvailable)\b/g;
+        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
+        var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
         var ips = {}; ///IP dictionary to keep track of succesfull UDP client initiation
+        var selected_ips = {};
         var global_counter = 0;
         var checkServer_button = document.getElementById('checkconnectionbutton');
         var serverInit_button = document.getElementById('serverSubmit')
@@ -298,12 +310,20 @@
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
             addLine("Welcome to Linux Cluster Monitor UDP Server/Client shell. 'With great power comes great responsability'");
             $.CheckIPMIs();
+            call_ignition();
             checkServer_button.disabled = true;
             serverInit_button.disabled = true;
         }, false);
-        function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
-            if(on_off){
+        function checkClients(){
+            if(command_running == false){
+                checkClientState("ONLINE");
+            }
+        }
+        setInterval(checkClients,90000);/////Loop every 90 seconds get client status
+        function loading_icons(on){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
+            if(on){
                 global_counter++;
+                command_running = true;
                 id = "loading" + global_counter;
                 addLine("<span id='"+id+"'></span>")
                 var span = document.getElementById(id);
@@ -314,6 +334,7 @@
             }
             else{
                 document.getElementById(id).remove();
+                command_running = false;
             }
         }
         function submitCommand(){
@@ -323,7 +344,7 @@
         }
         $.sendCommandtoServer = function(command){
             $.ajax({
-                url: '/udp_command_start', 
+                url: '/udp_command_start',
                 type: 'GET',
                 dataType: "JSON",
                 data: {command: command}, // Send Command to server to execute
@@ -342,7 +363,6 @@
                             addLine("================= Error ===============================");
                             addLine(data[key]);
                             addLine("================ End of Error =========================");
-
                         }
                         else{ //// Display the response as a succesful command
                             addLine("============================== Response from " + key +" ================================");
@@ -358,14 +378,15 @@
                     }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
+                    loading_icons(false);
                     cursor_lock = 0;
-                    addLine("Error sending command:  " + command + " No response to Linux Cluster Monitor server");
+                    addLine("Error sending command:  " + command + " - Internal 500 error.");
                     console.log(xhr);
                 }        
             }); 
         }
         function checkClientState(clientState){///// Takes a state to check JSON file produced by the UDP container (latest,START,DONE,OK,ONLINE,RESTART)
-            $.check_client_Online(clientState)
+            $.check_client_Online(clientState);
         }
         $.check_client_Online = function(clientState){
             $.ajax({
@@ -373,30 +394,26 @@
                 type: 'GET',
                 dataType: "JSON",
                 data: {state: clientState},
-                beforeSend: function(){ 
-                    loading_icons(true);
+                beforeSend: function(){
+                    if(clientState == "latest"){
+                        loading_icons(true);
+                    }
                 },
                 success: function(result){
                     var data = result;
                     var error = false;
                     var complete = true;
-                    loading_icons(false);
-                    if(clientState == 'latest'){
-                        addLine("====================== UDP Client Status ======================");
+                    if(clientState == "ONLINE"){
                         for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                             if (key === "ERROR"){ ///If error in key report output to terminal
-                                addLine(data[key])
-                                addLine("====================== Things you can do ======================")
-                                addLine("info: Check UDP client in your systems")
-                                addLine("info: Restart your UDP container")
-                                error = true;
+                                console.log("ERROR: Checking client state " + clientState);
                                 break;
                             }
                             else{
                                 ips[key] = data[key];
-                                addLine(key + " ...... " + data[key]);
                             }
                         }
+                        updateClientStatusTerminal();
                     }
                     else if(clientState == "START" || clientState == "DONE"){
                         addLine("====================== UDP Client Status ======================");
@@ -412,7 +429,6 @@
 
                             }
                             else{
-                                ips[key] = data[key];
                                 addLine(key + " ...... " + data[key]);
                             }
                         }
@@ -425,46 +441,55 @@
                         }
                     }
                     else{
+                        loading_icons(false);
+                        addLine("====================== UDP Client Status ======================");
                         for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                             if (key === "ERROR"){ ///If error in key report output to terminal
-                                addLine(data[key])
-                                addLine("====================== Things you can do ======================")
-                                addLine("info: Check UDP client in your systems")
-                                addLine("info: Restart your UDP container")
-                                error = true;
+                                console.log("ERROR: Checking client state " + clientState);
                                 break;
                             }
-                            else if(clientState == "ONLINE"){
-                                if(data[key].includes(clientState) || data[key].includes("RESTART")){
-                                    ips[key] = clientState;
-                                    addLine(key + " ...... " + data[key]);
-                                }
-                                else{
-                                    addLine(key + " ...... OFFLINE");
-                                    ips[key] = "OFFLINE";
-                                }
-                            }
                             else{
-                                addLine("Client State not handled..");
+                                addLine(key + " ...... " + data[key]);
                             }
-                        }
-                        for(var key in ips){
-                            if(ips[key] == "OFFLINE"){
-                                complete  = false;
-                            }
-                        }
-                        if(!error && complete){
-                            addLine("SUCCESS: All selected servers are " + clientState)
-                            if (clientState == "ONLINE"){ ///// IF Online was found in the JSON file, send another request with "OK" as the client State. If OK in the JSON logs, servers have complete their initial handshake
-                                addLine("info: checking  UDP server/client complete handshake, hang tight this may take several seconds...");
-                                checkClientState("OK");
-                            }
-                            checkServer_button.disabled = false;
-                            serverInit_button.disabled = false;
                         }
                     }
                 }        
             }); 
+        }
+        function updateClientStatusTerminal(){
+            document.getElementById("status_terminal").innerHTML = "";
+            var line = "";
+            if(Object.keys(ips).length === 0){
+                for(var key in selected_ips){
+                    if(selected_ips[key] == "true"){
+                        line = ">> " + key + " : OFFLINE";
+                        console.log(line);
+                    }
+                    else{
+                        line = "   " + key + " : OFFLINE";
+                        console.log(line);
+                    }
+                    addLine_to_status(line);
+                }
+            }
+            else{
+                for(var key in selected_ips){
+                    if(selected_ips[key] == "true"){
+                        line = ">> " + key + " : " + ips[key];
+                        console.log(line);
+                    }
+                    else{
+                        line = "   " + key + " : " + ips[key];
+                        console.log(line);
+                    }
+                    addLine_to_status(line);
+                }
+            }
+        }
+        function addLine_to_status(line){
+            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>");
+            var line = line.replace(reIP,"<span class='ip'>$&</span>");
+            document.getElementById("status_terminal").insertAdjacentHTML('beforeend',"<pre>" +  line + "</pre>" );
         }
         function call_ignition(){
             $.ignite_server();
@@ -490,8 +515,11 @@
                         }
                     }
                     if(complete == true){
-                        $.check_client_Online("ONLINE");
-                        console.log(true);
+                        addLine("Checking if ONLINE and updating client status. Please wait...")
+                        loading_icons(true);
+                        checkClientState("ONLINE");
+                        loading_icons(false);
+                        addLine("Server/Client check done!")
                     }
                 }        
             }); 
@@ -504,20 +532,15 @@
                 success: function(result){
                     var data = result;
                     var hasIPs = false;
-                    ips = data;
+                    selected_ips = data;
                     addLine('Reading file with selected IPs');
                     for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
-                        var ip = document.getElementById(key)
-                        console.log(key);
                         if (data[key] == 'true'){
                             hasIPs = true;
-                            ip.classList.add("text-success");
-                            ip.classList.add("font-weight-bold");
                             addLine('Selecting ' + key + '...');
                         }
                         else{
-                            ip.classList.remove("text-success");
-                            ip.classList.remove("font-weight-bold");
+                            console.log("Removing");
                         }
                     }
                     if (hasIPs === false){
@@ -532,6 +555,7 @@
                         serverInit_button.disabled = false;
                         checkServer_button.disabled = false;
                     }
+                    updateClientStatusTerminal();
                 }
             });
         }
@@ -625,6 +649,7 @@
                 $.CheckIPMIs();///Once form has been uploaded and saved by server. Run the CheckIPMI ajax function to read the file from the server and update the Current Selected IPs
                 input_field = document.getElementById('file');
                 input_field.value = '';
+                updateClientStatusTerminal();
                 var button = document.getElementById('uploadbutton');
                 button.disabled = true;
             }).fail(function(){
@@ -657,6 +682,7 @@
                         if (key == "SUCCESS"){
                             addLine(data[key]);
                             $.CheckIPMIs(inputtype,iptype);
+                            updateClientStatusTerminal();
                         }
                         else{
                             addLine(data[key]);
@@ -962,45 +988,6 @@
             }
             return (false);
         }
-        // function handleInputFileSelect(evt) {
-        //     var inputfile = document.getElementById("inputfile").files[0];
-        //     document.getElementById('bench').disabled = true;
-        //     document.getElementById("dict").innerHTML = "";
-        //     var compatible_file = true;
-        //     if (inputfile) {
-        //         var reader = new FileReader();
-        //         reader.readAsText(inputfile, "UTF-8");
-        //         reader.onload = function (evt) {
-        //             var inputdict= JSON.parse(evt.target.result);
-        //             var output2 = '<strong class="text-success">Found Configurations as below:</strong><br>';
-        //             for ( key in inputdict ) {
-        //                 if(key == "category" || key == "Category"){
-        //                     if (inputdict[key] !== "benchmark" &&  inputdict[key] !== "Benchmark"){
-        //                         inputfile.value = "";
-        //                         document.getElementById("dict").innerHTML = "";
-        //                         addLine("error: Only Benchmarks allowed to run. Please select another file");
-        //                         document.getElementById('bench').disabled = true;
-        //                         compatible_file = false;
-        //                         break;
-        //                     }
-        //                 }
-        //                 else{
-        //                     output2 = output2 + '<strong class="text-primary">' + key + ':</strong> ' + inputdict[key] + '<br>';
-        //                 }
-        //             }
-        //             if(compatible_file){
-        //                 document.getElementById("dict").innerHTML = output2;
-        //                 document.getElementById('bench').disabled = false;
-        //                 addLine("success: Compatible benchmark selected, run when ready..");
-        //             }
-        //         }
-        //         reader.onerror = function (evt) {
-        //             document.getElementById("dict").innerHTML = "error reading file";
-        //             inputfile.value = "";
-        //         }
-        //     }
-        // }
-        // document.getElementById('inputfile').addEventListener('change', handleInputFileSelect, false);
     </script>
 </body>
 </html>

@@ -45,7 +45,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
         for ip in ip_list:
             response[ip] = "OFFLINE"
         if latest_state == "ONLINE":
-            for iterations in range(3):###Check the file for the client_state desired a total of 10 times w/ 2 second
+            for iterations in range(10):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
                 with open(json_path) as json_file:
                     data = json.load(json_file)
@@ -91,40 +91,6 @@ def getMessage_dictResponse(json_path,mac_os,state):
                 time.sleep(2)
     return response
 
-def getClientState_dictResponse(json_path,mac_os,client_state):
-    response = {}
-    found = False
-    for i in range(4):
-        if fileEmpty(json_path) == False:
-            found = True
-            break
-        time.sleep(1)
-    if not found:
-        for i in range(len(mac_os)):
-            response[mac_os[i][1]] = 'Error: Initialization  Needed!'
-    else:
-        for i in range(len(mac_os)):
-            response[mac_os[i][1]] = 'Error: Initialization  Needed!'
-        for iterations in range(10):###Check the file for the client_state desired a total of 10 times w/ 2 second
-            client_state_checking_done = True
-            with open(json_path) as json_file:
-                data = json.load(json_file)
-                for mac in data:
-                    mac_cut = mac.replace(':','').upper()
-                    for selected_mac in mac_os:
-                        if mac_cut == selected_mac[0]:
-                            selected_ip = selected_mac[1]
-                            for msg in data[mac]['log']:
-                                if client_state in msg['data']:
-                                    response[selected_ip] = msg['data']
-            for r in response:
-                if client_state not in response[r]:
-                    client_state_checking_done = False
-            if client_state_checking_done:
-                break
-            time.sleep(2)
-    return response
-
 def cleanIP(ipfilepath):
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
     ip_list = list(df_pwd['os_ip'])
@@ -136,7 +102,6 @@ def cleanIP(ipfilepath):
             if line.strip("\n") in ip_list:
                 ip_file_new.write(line)
     
-
 def insertUdpevent(flag,data,ipfilepath): # if flag == f, data is the filepath 
     #udpflag_path = os.environ['UPLOADPATH'] + 'udpflag.txt'
     udpflag_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-udpflag.txt'

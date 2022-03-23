@@ -22,7 +22,7 @@ import socket
 from ipaddress import ip_address
 from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess
 import tarfile
-from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, getClientState_dictResponse, generateCommandInput
+from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, generateCommandInput
 from glob import iglob
 import datetime
 from datetime import timedelta
@@ -1830,7 +1830,9 @@ def check_UDP_clientState():
     udp_json = savepath+"-host.json"
     if client_state == "ONLINE":
         if os.path.exists(udp_json):
-            printf("Getting latest client state: " + client_state)
+            insertUdpevent('m',"request_h",savepath + '_udpserveruploadip_all.txt') # request_h means requst client to send h back to initilize the json file
+            time.sleep(1)
+            printf("Performing UDP Client/server handshake...")
             response = getMessage_dictResponse(udp_json,mac_os_all,client_state)
         else:
             response = {"ERROR":"info: No UDP json file found"}
