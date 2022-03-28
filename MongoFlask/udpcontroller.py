@@ -32,6 +32,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
     latest_state = state
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
     ip_list = list(df_pwd['os_ip'])
+    mac_list = list(df_pwd['mac'])
     for i in range(4):
         if fileEmpty(json_path) == False:
             found = True
@@ -51,9 +52,9 @@ def getMessage_dictResponse(json_path,mac_os,state):
                     data = json.load(json_file)
                     for mac in data.keys():
                         mac_cut = mac.replace(':','').upper()
-                        for selected_mac in mac_os:
-                            if mac_cut == selected_mac[0]:
-                                selected_ip = selected_mac[1]
+                        for i,selected_mac in enumerate(mac_list):
+                            if mac_cut == selected_mac:
+                                selected_ip = ip_list[i]
                                 if latest_state in data[mac]['log'][-1]['data'] or "RESTART" in data[mac]['log'][-1]['data']:
                                     response[selected_ip] = data[mac]['log'][-1]['data'] + " : " +  data[mac]['log'][-1]['time']
                 for r in response:
