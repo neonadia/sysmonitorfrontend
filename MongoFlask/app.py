@@ -249,7 +249,11 @@ def index():
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
         bmcMacAddress.append(i['UUID'][24:])
-        serialNumber.append(i['Systems']['1']['SerialNumber'])
+        if i['Systems']['1']['SerialNumber'] == 'NA' or i['Systems']['1']['SerialNumber'] == 'N/A':
+            serialNumber.append(getSerialNumberFromFile(i['BMC_IP'],1)) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A
+            printf('Warning: cannot get serial number from database (redfish API), reading it from csv file')
+        else:
+            serialNumber.append(i['Systems']['1']['SerialNumber'])
         modelNumber.append(i['Systems']['1']['Model'])
         try:
             cpld_version.append(i['CPLDVersion'])
@@ -311,11 +315,14 @@ def index():
 
 def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
-    if opt == 0:
+    if 'System S/N' not in df_all.columns:
+        return 'N/A'
+    if 'OS_IP' in df_all.columns and opt == 0:
         return(df_all[df_all['OS_IP'] == ip]['System S/N'].values[0])
-    elif opt == 1:
+    elif 'IPMI_IP' in df_all.columns and opt == 1:
         return(df_all[df_all['IPMI_IP'] == ip]['System S/N'].values[0])
-
+    else:
+        return 'N/A'
 def getSerialNumber(ipmiip):
     cur = collection.find_one({"BMC_IP": ipmiip},{"Systems.1.SerialNumber":1})
     if cur != None:
