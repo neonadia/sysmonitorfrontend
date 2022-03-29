@@ -1,0 +1,20 @@
+<li class="dropdown">
+    <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Advanced Features
+    </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{ url_for('biosupload') }}" target="_blank">BIOS Update</a>
+            <a class="dropdown-item" href="{{ url_for('bmcupload') }}" target="_blank">BMC Update</a>
+            <a class="dropdown-item" href="{{ url_for('systemresetupload') }}" target="_blank">Power Reset Test</a>
+            <a class="dropdown-item" href="{{ url_for('bmceventcleanerupload') }}" target="_blank">BMC Events Cleaner</a>
+            <a class="dropdown-item" href="{{ url_for('ipmitoolcommandlineupload') }}" target="_blank">IPMI CLI</a>
+            <a class="dropdown-item" href="{{ url_for('checkipmisensor') }}" target="_blank">IPMI Sensor Check</a>
+            <a class="dropdown-item" href="{{ url_for('bioscomparisonoutput') }}" target="_blank">BIOS Comparison</a>
+            <a class="dropdown-item" href="{{ url_for('bootorderoutput') }}" target="_blank">Download BootOrder</a>
+            <a class="dropdown-item" href="{{ url_for('sumtoolboxupload') }}" target="_blank">SUM Tool Box</a>
+            <a class="dropdown-item" href="{{ url_for('udpserverupload') }}" target="_blank">UDP Server Controller</a>
+            <a class="dropdown-item" href="{{ url_for('udpoutput') }}" target="_blank">UDP Benchmark Results</a>
+            <a class="dropdown-item" href="{{ url_for('UDP_commandline') }}" target="_blank">UDP CLI</a>
+            <a class="dropdown-item" href="{{ url_for('hardware_output') }}" target="_blank">Rack Hardware Data</a>
+        </div>
+</li>
