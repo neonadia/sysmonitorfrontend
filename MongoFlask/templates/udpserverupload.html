@@ -180,8 +180,8 @@
                         </div>
                     </div>
                 </form>
-                <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
-                <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
+                <button class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
+                <button  class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>  
                 <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a> 
             </div>
             <div class="col" style="padding-left: 10%; font-weight: bolder;">
@@ -312,6 +312,37 @@
                 document.getElementById(id).remove();
             }
         }
+        function disableAllButtons(on_off){
+            if(on_off){
+                checkServer_button.disabled = true;
+                serverInit_button.disabled = true;
+                unselectButton.disabled = true;
+                document.getElementById('uploadRange').disabled = true;
+                document.getElementById('uploadall').disabled = true;
+                document.getElementById('file').disabled = true;
+                document.getElementById('ipstart').disabled = true;
+                document.getElementById('ipend').disabled = true;
+                document.getElementById('bminputfile').disabled = true;
+                document.getElementById('bench_input').disabled = true;
+                document.getElementById('inputfile').disabled = true;
+                document.getElementById('bench').disabled = true;
+
+            }
+            else{
+                checkServer_button.disabled = false;
+                serverInit_button.disabled = false;
+                unselectButton.disabled = false;
+                document.getElementById('uploadRange').disabled = false;
+                document.getElementById('uploadall').disabled = false;
+                document.getElementById('file').disabled = false;
+                document.getElementById('ipstart').disabled = false;
+                document.getElementById('ipend').disabled = false;
+                document.getElementById('bminputfile').disabled = false;
+                document.getElementById('bench_input').disabled = false;
+                document.getElementById('inputfile').disabled = false;
+                document.getElementById('bench').disabled = false;
+            }
+        }
         function checkClientState(clientState){///// Takes a state to check JSON file produced by the UDP container (latest,START,DONE,OK,ONLINE,RESTART)
             $.check_client_Online(clientState)
         }
@@ -349,6 +380,12 @@
                         }
                     }
                     else if(clientState == "START" || clientState == "DONE"){
+                        if(clientState == "START"){
+                            disableAllButtons(true);
+                        }
+                        else{
+                            disableAllButtons(false);
+                        }
                         addLine("====================== UDP Client Status ======================");
                         for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                             if (key === "ERROR"){ ///If error in key report output to terminal
@@ -647,6 +684,7 @@
             });
         }
         function start_bench(type,filename){
+            disableAllButtons(true);
             $.runBenchmark(type,filename)
         }
         $.runBenchmark = function(filetype,benchmark_file){//// Clear IP ajax function to send command and variables to server for processing
@@ -667,6 +705,7 @@
                         if (key == "ERROR"){
                             addLine(data[key]);
                             var success = false;
+                            disableAllButtons(false);
                             break;
                         }
                         else{

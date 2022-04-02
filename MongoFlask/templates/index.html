@@ -2,39 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="300">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta http-equiv="refresh" content="300"> -->
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Redfish Program</title>
-    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"> -->
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
-    
-    
-    
-    <!-- <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script> -->
-    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
-    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
-    
-    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"> -->
-    
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap4.css"> -->
-
-    <!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.1/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script> 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/jquery.dataTables.min.js"></script>
-    -->
-    
     <style>
         table,
         thead,
@@ -80,7 +62,6 @@
     </style>
 </head>
 <body>
-
 <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
 <ul class="navbar-nav">
 
@@ -122,7 +103,6 @@
 
 </ul>
 </nav>
-
 <div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
 <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
     <thead class="thead-dark" >
@@ -196,58 +176,58 @@
             <td class="align-middle font-weight-bold text-success" >{{ row[10] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[1] }}</td>
             <td class="align-middle font-weight-bold" >{{ row[13] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[2] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[3] }}</td> 
-            <td class="align-middle font-weight-bold" >{{ row[4] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[5] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[15] }}</td>
-            <td class="align-middle font-weight-bold" >{{ row[7] }}</td>
+            <td class="align-middle font-weight-bold" id="{{row[0]}}model">{{ row[2] }}</td>
+            <td class="align-middle font-weight-bold" id="{{row[0]}}serial">{{ row[3] }}</td> 
+            <td class="align-middle font-weight-bold" id="{{row[0]}}biosversion">{{ row[4] }}</td>
+            <td class="align-middle font-weight-bold" id="{{row[0]}}bmcversion">{{ row[5] }}</td>
+            <td class="align-middle font-weight-bold" id="{{row[0]}}cpldversion">{{ row[15] }}</td>
+            <td class="align-middle font-weight-bold" id="{{row[0]}}datetime">{{ row[7] }}</td>
             <td style="text-align:center">
                 <div class="dropdown">
                     {% if row[6] == "OK" %}
-                    <button class="btn btn-success btn-small btn-block font-weight-bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-success btn-small btn-block font-weight-bold" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {{ row[6] }}
                     </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
                         <a class="dropdown-item">Everything is good, no event reported!</a>     
                     </div>
                     {% elif row[6] == "WARNING" %}
-                    <button class="btn btn-warning btn-small btn-block font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-warning btn-small btn-block font-weight-bold text-white" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ffa31a">{{ row[8]|length }}</span>
                     </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
                         {% for n in range(5) if row[8][n] %}
                             <a class="dropdown-item">{{ row[8][n] }}</a>
                         {% endfor %}
                         {% if row[8]|length > 5 %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>More Events</u></a>
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>More Events</u></a>
                         {% else %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>Click for details</u></a>
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>Click for details</u></a>
                         {% endif %}
                     </div>
                     {% else %}
-                    <button class="btn btn-small btn-danger btn-block font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-small btn-danger btn-block font-weight-bold text-white" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ff3333" >{{ row[8]|length }}</span>
                     </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
                         {% for n in range(5) if row[8][n] %}
                             <a class="dropdown-item">{{ row[8][n] }}</a>
                         {% endfor %}
                         {% if row[8]|length > 5 %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>More Events</u></a>
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>More Events</u></a>
                         {% else %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" target="_blank"><u>Click for details</u></a>
+                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>Click for details</u></a>
                         {% endif %}
                     </div>
                     {% endif %}
                 </div>
             </td>
             {% if "OFF" in row[9] %}
-                <td class="align-middle font-weight-bold text-danger">{{ row[9] }} </td>
+                <td class="align-middle font-weight-bold text-danger" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% else %}
-                <td class="align-middle font-weight-bold text-success">{{ row[9] }} </td>
+                <td class="align-middle font-weight-bold text-success" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% endif %}
-            <td class="align-middle font-weight-bold text-success" >{{ row[11] }}</td> 
+            <td class="align-middle font-weight-bold text-success" id= "{{row[0]}}udp" >{{ row[11] }}</td> 
             {% if "OFF" in row[14]%}
                 <td class="col col-auto">
                     <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" style="width: 120px"  id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
@@ -376,38 +356,28 @@
             </tr>
         {% endfor %}
     </tbody>
-
 </table>
 </div>
-
- 
 <!-- Footer -->
 <footer class="page-footer font-small teal pt-4 bg-primary text-white">
 
   <!-- Footer Text -->
   <div class="container-fluid text-center text-md-left">
-
-
-
         <!-- Content -->
         <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
         </p>
-
-
-
   </div>
   <!-- Footer Text -->
-
   <!-- Copyright  class="footer-copyright text-center py-3" -->
   <div class="text-center text-light bg-dark">Copyright © 2021 
     <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
     All Rights Reserved
   </div>
   <!-- Copyright -->
-
 </footer>
 <!-- Footer -->
 <script>
+    var frontend_url = "{{ frontend_url}}";
     function get_ikvm(val1){
         $.ikvm(val1);
     }
@@ -475,29 +445,8 @@
                     button.classList.replace("btn-success", "btn-danger");
                 }
             }
-
         });
     };
-
-    function get_time(){
-        $.TimejQuery();
-    };
-    $.TimejQuery = function(){
-        $.ajax({
-            url: '/get_container_time',
-            dataType: "JSON",
-            timeout: 1000,
-            type: 'GET',
-            success: function(result){
-                var data = result;
-                var clock = document.getElementById('clockstopper');
-                for(var key in data){
-                    clock.innerHTML = data[key]; ///Replace text in button with return value from python script
-                }
-            }
-        });
-    };
-
     $(document).ready(function() {
         $('#indexpage').DataTable( {
             "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
@@ -509,13 +458,111 @@
             ],
         } );
     } );
-    
     $('body .dropdown-toggle').dropdown(); 
-
-    get_time();
-    // setInterval(get_time, 1000);
+    function updatePage(){
+        $.updateIndex();
+    }
+    $.updateIndex = function(clientState){
+        $.ajax({
+            url: '/update_index_page',
+            type: 'GET',
+            dataType: "JSON",
+            beforeSend: function() {
+                //console.log("Updating Index page...");///For debug purposes
+            },
+            success: function(result){
+                var data = result;
+                var lcm_ip;
+                for (var bmc_ip in data){ /// Function return a data in JSON
+                    if(bmc_ip == "time"){
+                        document.getElementById('clockstopper').innerHTML = data[bmc_ip];
+                    }
+                    else{
+                        for (var i in data[bmc_ip]){
+                            switch (i) {
+                                case 'ModelNumber':
+                                    document.getElementById(bmc_ip+'model').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'SerialNumber':
+                                    document.getElementById(bmc_ip+'serial').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'CPLDVersion':
+                                    document.getElementById(bmc_ip+'cpldversion').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'BmcVersion':
+                                    document.getElementById(bmc_ip+'bmcversion').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'BiosVersion':
+                                    document.getElementById(bmc_ip+'biosversion').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'timestamp':
+                                    document.getElementById(bmc_ip+'datetime').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'udp_message':
+                                    document.getElementById(bmc_ip+'udp').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'monitorStatus':
+                                    document.getElementById(bmc_ip+'flag').innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'bmc_event':
+                                    var event_button = document.getElementById(bmc_ip + 'eventButton');
+                                    event_button.classList.remove('btn-success');
+                                    event_button.classList.remove('btn-warning');
+                                    event_button.classList.remove('btn-danger');
+                                    event_button.classList.remove('text-white');
+                                    if(data[bmc_ip][i] == 'ERROR'){
+                                        event_button.classList.add('btn-danger');
+                                    }
+                                    else if(data[bmc_ip][i] == 'WARNING'){
+                                        event_button.classList.add('btn-warning');
+                                    }
+                                    else{
+                                        event_button.classList.add('btn-success');
+                                    }
+                                    event_button.classList.add('text-white');
+                                    event_button.innerHTML = data[bmc_ip][i];
+                                    break;
+                                case 'bmc_details':
+                                    var event_menu = document.getElementById(bmc_ip + 'eventSubmenu');
+                                    event_menu.innerHTML = "";
+                                    var event_list = data[bmc_ip][i];
+                                    var button_text = document.getElementById(bmc_ip + 'eventButton').innerHTML;
+                                    var event_link = frontend_url + "/event?var=" + bmc_ip
+                                    var inserted_more = false;
+                                    if(event_list[0] != ''){
+                                        for(var y = 0; y < event_list.length; y++){
+                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + event_list[y] + "</a>")
+                                            if(y > 5){
+                                                inserted_more = true;
+                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>More Events</u></a>");
+                                                break;
+                                            }
+                                        }
+                                        if(!inserted_more && button_text != "OK"){
+                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>Click for details</u></a>");
+                                        }
+                                    }
+                                    if(button_text == "ERROR"){
+                                        document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ff3333'>" + event_list.length + "</span>";
+                                    }
+                                    else if(button_text == "WARNING"){
+                                        document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ffa31a'>" + event_list.length + "</span>";
+                                    }
+                                    else{
+                                        event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + "Everything is good, no event reported!" + "</a>")
+                                    }
+                                    break;
+                                default:
+                                    console.log(data[bmc_ip][i])
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }        
+        });
+    }
+    var index_update = setInterval(updatePage,5000); ////Adjust the interval for page update: i.e 1000 = 1 sec
 </script>
-
 </body>
 </html>
-

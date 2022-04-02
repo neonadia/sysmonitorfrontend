@@ -308,10 +308,60 @@ def index():
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
         data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
-  
+
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
-    return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl,cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages, cur_time=cur_time, time_zone=time_zone)
+    frontend_url = "http://" + get_ip() + ":" + str(frontport)
+    return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl, frontend_url = frontend_url, cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages, cur_time=cur_time, time_zone=time_zone)
+
+
+@app.route('/update_index_page')
+def update_index_page():
+    bmc_ip = []
+    pwd =[]
+    mac_list = []
+    os_ip = []
+    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
+    response = {}
+    for i in cur:
+        bmc_ip.append(i['BMC_IP'])
+        response[i['BMC_IP']] = {}
+        if i['Systems']['1']['SerialNumber'] == 'NA' or i['Systems']['1']['SerialNumber'] == 'N/A':
+            response[i['BMC_IP']]['SerialNumber'] = getSerialNumberFromFile(i['BMC_IP'],1)
+            printf('Warning: cannot get serial number from database (redfish API), reading it from csv file')
+        else:
+            response[i['BMC_IP']]['SerialNumber'] = i['Systems']['1']['SerialNumber']
+        response[i['BMC_IP']]['ModelNumber'] = i['Systems']['1']['Model']
+        try:
+            response[i['BMC_IP']]['CPLDVersion'] = i['CPLDVersion']
+        except:
+            response[i['BMC_IP']]['CPLDVersion'] = "N/A"
+        try:
+            response[i['BMC_IP']]['BmcVersion'] = i['UpdateService']['SmcFirmwareInventory']['1']['Version']
+        except:
+           response[i['BMC_IP']]['BmcVersion'] = "N/A"
+        try:
+            response[i['BMC_IP']]['BiosVersion'] = i['UpdateService']['SmcFirmwareInventory']['2']['Version']
+        except:
+            response[i['BMC_IP']]['BiosVersion'] = "N/A"
+        current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == i['BMC_IP']]['pwd'].values[0])
+        pwd.append(current_auth[1])
+        mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
+        os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+    with concurrent.futures.ProcessPoolExecutor() as p:
+        output = p.map(indexHelper, bmc_ip)
+    udp_msg = getMessage(json_path, mac_list)
+    for node_iter,i in enumerate(output):
+        node = bmc_ip[node_iter]
+        response[node]['bmc_event'] = i[0]
+        response[node]['bmc_details'] = i[1]
+        response[node]['monitorStatus'] = i[2]
+        response[node]['timestamp'] = i[3]
+        response[node]['udp_message'] = udp_msg[node_iter]
+    response['time'] = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+    return json.dumps(response)
 
 def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
@@ -1763,28 +1813,6 @@ def udpserverupload():
         else:
             indicators.append(0)
     return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
-    
-# @app.route('/udpserversendfileandrun',methods=["GET","POST"])
-# def udpserversendfileandrun():
-#     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-#     cleanIP(savepath + "udpserveruploadip.txt")
-#     printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-#     if fileEmpty(savepath + "udpserveruploadip.txt"):
-#         return render_template('error.html',error="No input IP found!")
-#     if request.method == "POST":
-#         if request.files:
-#             udpinputfile = request.files["inputfile"]
-#             if udpinputfile.filename == "":
-#                 printf("Input file must have a filename")
-#                 return redirect(url_for('udpserverupload'))
-#             udpinputfile.save(savepath+"udpinput.json")
-#             printf("{} has been saved as udpinput.json".format(udpinputfile.filename))
-#             # insert flag to run benchmark       
-#             insertUdpevent('f',savepath+"udpinput.json",savepath+"udpserveruploadip.txt")
-#             messages = []
-#             messages.append("Benchmark will be started in a few secs.")
-#             messages.append("Please do not submit any benchmarks while it's running.")
-#             return render_template('simpleresult.html',messages=messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/runBenchmark')
 def runBenchmark():
@@ -1793,8 +1821,8 @@ def runBenchmark():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     cleanIP(savepath + "udpserveruploadip.txt")
     printf("INPUTFILE EMPTY: " + str(fileEmpty(savepath + "udpserveruploadip.txt")))
-    if fileEmpty(savepath + "udpserveruploadip.txt"):
-        response = {"ERROR":"No input IP found!"}
+    if fileEmpty(savepath + "udpserveruploadip.txt") or fileEmpty(savepath + "-host.json"):
+        response = {"ERROR":"No input IP found! or No host output file found... Please initiate server first or restart the UDP container"}
         return json.dumps(response)
     if filetype == "BenchamarkInput":
         udpinputfile = benchmark_file
@@ -1823,7 +1851,6 @@ def check_UDP_clientState():
     mac_os_all = []
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     df_input = pd.read_csv(savepath+"_udpserveruploadip_all.txt",header=None,names=['ip'])
-    
     inputips = list(df_input['ip'])
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     cur = collection.find({},{"BMC_IP":1,"_id":0})
@@ -1854,8 +1881,6 @@ def check_UDP_clientState():
             printf("ERROR cannot find file: " + udp_json)
     else:
         if os.path.exists(udp_json):       
-            insertUdpevent('m',"ONLINE",savepath+"udpserveruploadip.txt")
-            time.sleep(1)
             printf("Getting latest client state")
             response = getMessage_dictResponse(udp_json,mac_os,client_state)
         else:
