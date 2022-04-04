@@ -20,7 +20,7 @@ from bioscomparison import compareBiosSettings, bootOrderOutput
 import pandas as pd
 import socket
 from ipaddress import ip_address
-from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess
+from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess, sumRedfishAPI
 import tarfile
 from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, generateCommandInput
 from glob import iglob
@@ -1421,6 +1421,36 @@ def sumtoolboxupload():
         else:
             indicators.append(0)
     return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
+
+
+@app.route('/sumtoolboxterminal')
+def sumtoolboxterminal():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    try:
+        df_input = pd.read_csv(savepath+"suminput.txt",header=None,names=['ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['ip'])
+    indicators = []
+    for i in range(len(allips)):
+        if allips[i] in inputips:
+            indicators.append(1)
+        else:
+            indicators.append(0)
+    return render_template('sumtoolboxterminal.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
+@app.route('/sumtoolboxredfish',methods=["GET"])
+def sumtoolboxredfish(): ### Take a command for processing and distribution to servers
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    if request.method == "GET":
+        if fileEmpty(savepath+"suminput.txt"):
+            response = {"ERROR": "No input IP found!"}
+    api_url = request.args.get('command')
+    makeSumExcutable()
+    return sumRedfishAPI(savepath+"suminput.txt", api_url)        
 
 @app.route('/sumbioscompoutput',methods=['GET', 'POST'])
 def sumbioscompoutput():
