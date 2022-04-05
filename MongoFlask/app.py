@@ -46,6 +46,7 @@ cmd_collection = db.cmd
 udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
+sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
@@ -58,6 +59,16 @@ def udp_sesssion_handler():
         printf('Updating UDP Session info to...')
         printf("state: " + udp_session_info['state'])
         printf("guid: " + udp_session_info['guid'])
+    return 'updated session info'
+
+@app.route('/sum_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
+def sum_sesssion_handler():
+    if request.method == 'POST':
+        sum_session_info['state'] = request.form['session_state']
+        sum_session_info['guid'] = request.form['session_guid']
+        printf('Updating SUM Session info to...')
+        printf("state: " + sum_session_info['state'])
+        printf("guid: " + sum_session_info['guid'])
     return 'updated session info'
  
 def printf(data):
@@ -1414,9 +1425,29 @@ def sumlogtermial():
             line = line.strip()
             response['log_lines'].append(line)
     return json.dumps(response)
- 
+
+def sum_session_creator():
+    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
+    if sum_session_info['state'] == 'active':
+        printf("Failed to create new sum_server session")
+        printf("Current SUM Session info is:")
+        printf("state: " + sum_session_info['state'])
+        printf("guid: " + sum_session_info['guid'])
+        return False
+    else:
+        url_saf = secrets.token_urlsafe(8)
+        sum_session_info['state'] = 'active'
+        sum_session_info['guid'] = url_saf
+        printf("Creating new sum_server session")
+        printf("state: " + sum_session_info['state'])
+        printf("guid: " + sum_session_info['guid'])
+        return True
+
 @app.route('/sumtoolboxupload',methods=['GET', 'POST'])
 def sumtoolboxupload():
+    if not sum_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the SUM server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"suminput.txt",sep=" ",header=None,names=['ip','user','pwd'])
@@ -1431,12 +1462,15 @@ def sumtoolboxupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = sum_session_info['guid'])
 
 
 
 @app.route('/sumtoolboxterminal')
 def sumtoolboxterminal():
+    if not sum_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the SUM server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"suminput.txt",header=None,names=['ip'])
@@ -1779,8 +1813,8 @@ def udp_command_testor():
 @app.route('/UDP_commandline')
 def UDP_commandline():
     if not udp_session_creator(): #### Check if a session is active...
-        error = "An instance of the UDP server controller have been detected, someone might be using this feature. Since, this page can create some conflict with multiple users, please only have one instance open"
-        return render_template('error.html',error = error)
+        error = ["ERROR: An instance of the UDP server controller have been detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
@@ -1860,8 +1894,8 @@ def udp_session_creator():
 @app.route('/udpserverupload')
 def udpserverupload():
     if not udp_session_creator(): #### Check if a session is active...
-        error = "One or more instances of the UDP server controller have been detected. Since, this page can create some conflict with multiple users, please only have one instance open"
-        return render_template('error.html',error = error)
+        error = ["ERROR: An instance of the UDP server controller have been detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
@@ -3039,6 +3073,10 @@ def page_not_found(e):
 def internal_error(e):
     # note that we set the 500 status explicitly!!
     return render_template('500.html',rackname=rackname,rackobserverurl = rackobserverurl), 500
+
+@app.route('/sum_manual')
+def sum_manual():
+    return send_file("/app/templates/SUM_UserGuide_280.pdf",cache_timeout=0)
 
 @app.route('/howToDeploy')
 def howToDeploy():
