@@ -1485,7 +1485,7 @@ def sumtoolboxterminal():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('sumtoolboxterminal.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+    return render_template('sumtoolboxterminal.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = sum_session_info['guid'])
 
 @app.route('/sumtoolboxredfish',methods=["GET"])
 def sumtoolboxredfish(): ### Take a command for processing and distribution to servers
