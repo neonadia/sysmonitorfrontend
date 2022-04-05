@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 from flask_debugtoolbar import DebugToolbarExtension
 import concurrent.futures
 from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seperator
+import secrets
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -44,10 +45,20 @@ udp_collection = db.udp
 cmd_collection = db.cmd
 udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
-
+udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
+
+@app.route('/udp_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
+def udp_sesssion_handler():
+    if request.method == 'POST':
+        udp_session_info['state'] = request.form['session_state']
+        udp_session_info['guid'] = request.form['session_guid']
+        printf('Updating UDP Session info to...')
+        printf("state: " + udp_session_info['state'])
+        printf("guid: " + udp_session_info['guid'])
+    return 'updated session info'
  
 def printf(data):
     print(data, flush=True)
@@ -1767,6 +1778,9 @@ def udp_command_testor():
 
 @app.route('/UDP_commandline')
 def UDP_commandline():
+    if not udp_session_creator(): #### Check if a session is active...
+        error = "An instance of the UDP server controller have been detected, someone might be using this feature. Since, this page can create some conflict with multiple users, please only have one instance open"
+        return render_template('error.html',error = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
@@ -1781,7 +1795,7 @@ def UDP_commandline():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('UDP_commandline.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+    return render_template('UDP_commandline.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = udp_session_info['guid'])
 
 @app.route('/udp_command_start')
 def udp_command_start():
@@ -1826,8 +1840,28 @@ def udp_command_start():
                     output[cur_ip + " - " + cur_msg['MAC']]['output'][i] = msg
     return json.dumps(output)
 
+def udp_session_creator():
+    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
+    if udp_session_info['state'] == 'active':
+        printf("Failed to create new udp_server session")
+        printf("Current UDP Session info is:")
+        printf("state: " + udp_session_info['state'])
+        printf("guid: " + udp_session_info['guid'])
+        return False
+    else:
+        url_saf = secrets.token_urlsafe(8)
+        udp_session_info['state'] = 'active'
+        udp_session_info['guid'] = url_saf
+        printf("Creating new udp_server session")
+        printf("state: " + udp_session_info['state'])
+        printf("guid: " + udp_session_info['guid'])
+        return True
+
 @app.route('/udpserverupload')
 def udpserverupload():
+    if not udp_session_creator(): #### Check if a session is active...
+        error = "One or more instances of the UDP server controller have been detected. Since, this page can create some conflict with multiple users, please only have one instance open"
+        return render_template('error.html',error = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
         df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
@@ -1842,7 +1876,7 @@ def udpserverupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+    return render_template('udpserverupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(),session_auth = udp_session_info['guid'])
 
 @app.route('/runBenchmark')
 def runBenchmark():

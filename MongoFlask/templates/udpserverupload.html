@@ -280,6 +280,7 @@
     </footer>
     <!-- Footer -->
     <script type="text/javascript">
+        var session_auth = "{{ session_auth }}";
         var ips = {}; ///IP dictionary to keep track of succesfull UDP client initiation
         global_counter = 0;
         var checkServer_button = document.getElementById('checkconnectionbutton');
@@ -939,6 +940,16 @@
             }
         }
         document.getElementById('inputfile').addEventListener('change', handleInputFileSelect, false);
+        ////// Session agent for communicating with the LCM server to send session states ////
+        window.addEventListener('beforeunload', function (e) {
+            var agentForm = new FormData();
+            var state = 'inactive'
+            agentForm.append("session_state",state)
+            agentForm.append("session_guid",session_auth)
+            navigator.sendBeacon("/udp_session_handler", agentForm);
+        });
+        // }
+        // });
     </script>
 </body>
 </html>
