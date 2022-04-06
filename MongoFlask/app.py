@@ -47,6 +47,7 @@ udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
+redfish_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 
 err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
@@ -61,7 +62,7 @@ def udp_sesssion_handler():
         printf("guid: " + udp_session_info['guid'])
     return 'updated session info'
 
-@app.route('/sum_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
+@app.route('/sum_session_handler',methods = ['POST']) ##### Get SUM Session information on page close
 def sum_sesssion_handler():
     if request.method == 'POST':
         sum_session_info['state'] = request.form['session_state']
@@ -69,6 +70,16 @@ def sum_sesssion_handler():
         printf('Updating SUM Session info to...')
         printf("state: " + sum_session_info['state'])
         printf("guid: " + sum_session_info['guid'])
+    return 'updated session info'
+
+@app.route('/redfish_session_handler',methods = ['POST']) ##### Get Redfish Session information on page close
+def redfish_sesssion_handler():
+    if request.method == 'POST':
+        redfish_session_info['state'] = request.form['session_state']
+        redfish_session_info['guid'] = request.form['session_guid']
+        printf('Updating RedFish Session info to...')
+        printf("state: " + redfish_session_info['state'])
+        printf("guid: " + redfish_session_info['guid'])
     return 'updated session info'
  
 def printf(data):
@@ -681,8 +692,6 @@ def systemresetstatus():
         data = ['Not Started Yet']
     return render_template('systemresetstatus.html',rackname=rackname,data=data,rackobserverurl = rackobserverurl)
 
-
-
 def systemresetone(data_list):
     rstatuspath = os.environ['RESETSTATUSPATH']
     IPMI = "https://" + data_list[0]
@@ -726,8 +735,28 @@ def systemresetone(data_list):
         with open(rstatuspath, 'a') as rprint:
             rprint.write(time.asctime() + ": " + data_list[0] + " period count down finished...\n")
 
+def redfish_session_creator():
+    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
+    if redfish_session_info['state'] == 'active':
+        printf("Failed to create new sum_server session")
+        printf("Current RedFish Session info is:")
+        printf("state: " + redfish_session_info['state'])
+        printf("guid: " + redfish_session_info['guid'])
+        return False
+    else:
+        url_saf = secrets.token_urlsafe(8)
+        redfish_session_info['state'] = 'active'
+        redfish_session_info['guid'] = url_saf
+        printf("Creating new RedFish session")
+        printf("state: " + redfish_session_info['state'])
+        printf("guid: " + redfish_session_info['guid'])
+        return True
+
 @app.route('/biosupload',methods=["GET","POST"])
 def biosupload():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH']
     if request.method == "POST":
         if request.files:
@@ -738,7 +767,7 @@ def biosupload():
             biosfile.save(os.path.join(savepath, "bios.222"))
             printf("{} has been saved as bios.222".format(biosfile.filename))
             return redirect(url_for('biosupload'))
-    return render_template('biosupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('biosupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/biosupdate',methods=["GET","POST"])
 def biosupdate():
@@ -845,6 +874,9 @@ def biosupdatestart():
 
 @app.route('/bmcupload',methods=["GET","POST"])
 def bmcupload():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH']
     if request.method == "POST":
         if request.files:
@@ -855,7 +887,7 @@ def bmcupload():
             bmcfile.save(os.path.join(savepath, "bmc.bin"))
             printf("{} has been saved as bmc.bin".format(bmcfile.filename))
             return redirect(url_for('bmcupload'))
-    return render_template('bmcupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('bmcupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/bmcupdaterack',methods=["GET","POST"])
 def bmcupdaterack():
@@ -1666,15 +1698,21 @@ def sumbiossettingschangeoutput():
      
 @app.route('/bioscomparisonoutput')
 def bioscomparisonoutput():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
         time.sleep(1)
     df_auth = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     data_bioscomp = compareBiosSettings(df_auth)['compResult']
-    return render_template('bioscomparisonoutput.html', data_bioscomp = data_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('bioscomparisonoutput.html', data_bioscomp = data_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/bootorderoutput')
 def bootorderoutput():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
         time.sleep(1)
@@ -1683,6 +1721,7 @@ def bootorderoutput():
     df_bootorder.to_excel(os.environ['BOOTORDERPATH'],index=None)
     while not os.path.isfile(os.environ['BOOTORDERPATH']):
         time.sleep(1)
+    redfish_session_info['state'] = 'inactive'
     return send_file(os.environ['BOOTORDERPATH'], as_attachment=False, cache_timeout=0)
 
 @app.route('/pwdoutput')
