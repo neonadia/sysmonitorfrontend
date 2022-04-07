@@ -1220,7 +1220,7 @@ class Test(object):
             self.story.append(benchmarks_nocontent2)
             self.story.append(benchmarks_nocontent3)
         
-        ptext_chart = 'Restulst Bar Plot is as shown below'
+        ptext_chart = 'Results Bar Plot is as shown below'
         ptext_table = 'Results Table is as shown below'
         ptext_table_non_num = 'Non-Numerical Results Table is as shown below'
         benchmark_number = 1
