@@ -225,11 +225,20 @@ for j in collection.find({}):
     except:
         memoryCount.append('N/A')
     try:
-        driveModel.append(j['Systems']['1']['SimpleStorage']['1']['Devices'][0]['Model'])
-    except:
+        diff_drive_model = []
+        for cur_key in j['Systems']['1']['SimpleStorage'].keys():
+            for cur_device in j['Systems']['1']['SimpleStorage'][cur_key]['Devices']:
+                if cur_device['Model'] not in diff_drive_model:
+                    diff_drive_model.append(cur_device['Model'])
+        driveModel.append(' & '.join(diff_drive_model))
+    except Exception as e:
+        printf(e)
         driveModel.append('N/A')
     try:
-        driveCount.append(len(j['Systems']['1']['SimpleStorage']['1']['Devices']))
+        total_drive_count = 0
+        for cur_key in j['Systems']['1']['SimpleStorage'].keys():
+            total_drive_count += len(j['Systems']['1']['SimpleStorage'][cur_key]['Devices'])
+        driveCount.append(total_drive_count)
     except:
         driveCount.append('N/A')
 
@@ -353,8 +362,10 @@ for item in all_hw_data:
         parsed_data[-1]['hd_model'] = '<br/>'.join(cur_storage.keys())
         for key in cur_storage:
             #print(cur_storage[key][1])
-            parsed_data[-1]['hd_num'] = parsed_data[-1]['hd_num'].replace('0','')
-            parsed_data[-1]['hd_note'] = parsed_data[-1]['hd_note'].replace('N/A','')
+            if parsed_data[-1]['hd_num'] == '0':
+                parsed_data[-1]['hd_num'] = parsed_data[-1]['hd_num'].replace('0','')
+            if parsed_data[-1]['hd_note'] == 'N/A':
+                parsed_data[-1]['hd_note'] = parsed_data[-1]['hd_note'].replace('N/A','')
             parsed_data[-1]['hd_num'] += str(cur_storage[key][0]) + '<br/>'
             parsed_data[-1]['hd_note'] += str(round(int(cur_storage[key][1])/1099500000000,2)) + ' TB<br/>'
         parsed_data[-1]['hd_note'] = parsed_data[-1]['hd_note'].strip()
@@ -399,7 +410,8 @@ for item in all_hw_data:
             parsed_data[-1]['nic_model'] = '<br/>'.join(cur_nic.keys())
         for key in cur_nic:
             #print(cur_storage[key][1])
-            parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].replace('0','')
+            if parsed_data[-1]['nic_num'] == '0':
+               parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].replace('0','')
             parsed_data[-1]['nic_num'] += str(cur_nic[key]) + '<br/>'
         parsed_data[-1]['nic_num'] = parsed_data[-1]['nic_num'].strip()
             
@@ -420,7 +432,8 @@ for item in all_hw_data:
         parsed_data[-1]['power_model'] = '<br/>'.join(cur_psu.keys())
         for key in cur_psu:
             #print(cur_storage[key][1])
-            parsed_data[-1]['power_num'] = parsed_data[-1]['power_num'].replace('0','')
+            if parsed_data[-1]['power_num'] == '0':
+               parsed_data[-1]['power_num'] = parsed_data[-1]['power_num'].replace('0','')
             parsed_data[-1]['power_num'] += str(cur_psu[key]) + '<br/>'
         parsed_data[-1]['power_num'] = parsed_data[-1]['power_num'].strip()
     
