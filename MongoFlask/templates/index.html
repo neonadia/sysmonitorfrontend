@@ -95,6 +95,7 @@
 -->
     <li class='dropdown'>
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="clockstopper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ cur_time }}
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
              <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
@@ -562,7 +563,7 @@
             }        
         });
     }
-    var index_update = setInterval(updatePage,5000); ////Adjust the interval for page update: i.e 1000 = 1 sec
+    var index_update = setInterval(updatePage,60000); ////Adjust the interval for page update: i.e 1000 = 1 sec
 </script>
 </body>
 </html>

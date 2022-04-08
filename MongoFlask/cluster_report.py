@@ -1189,12 +1189,13 @@ class Test(object):
         
         
         ptext_bm_intro = """
-        Benchmarks include but not limited to:<br />
+        Supported benchmark list:<br />
         1. <b>STRESS-NG</b>: designed to exercise various physical subsystems of a computer.<br />
         2. <b>STRESSAPPTEST</b>: memory test, maximize randomized traffic to memory from processor and I/O.<br />
         3. <b>HPCG</b>: intended to model the data access patterns of real-world applications.<br />
         4. <b>HPL</b>: High Performance Computing Linpack Benchmark. <br />
-        5. <b>GPU-BURN</b>: Multi-GPU CUDA stress test 
+        5. <b>GPU-BURN</b>: Multi-GPU CUDA stress test. <br />
+        6. <b>NCCL</b>: a stand-alone library of standard communication routines for GPUs.
         """
         benchmarks_intro = Paragraph(ptext_bm_intro, bm_intro)
         benchmarks_intro.keepWithNext = True
