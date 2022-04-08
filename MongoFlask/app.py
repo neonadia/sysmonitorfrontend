@@ -190,7 +190,10 @@ def get_fan_names(bmc_ip):
     return sys_fans
 
 def indexHelper(bmc_ip):
-    for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id":0, "Event":1}).sort("_id",-1):
+    client_index = MongoClient('localhost', mongoport)
+    db_index = client_index.redfish
+    monitor_collection_index = db_index.monitor
+    for i in monitor_collection_index.find({"BMC_IP": bmc_ip}, {"_id":0, "Event":1}).sort("_id",-1):
         details = i['Event']
         break
     details.reverse() # begin from latest
@@ -248,9 +251,10 @@ def indexHelper(bmc_ip):
         monitor_status = "SUM in use " + current_state
     else:
         monitor_status = "UNKOWN " + current_state   
-    for i in monitor_collection.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
+    for i in monitor_collection_index.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
-    cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip) 
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip)
+    client_index.close()
     return [bmc_event, bmc_details, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
@@ -305,7 +309,7 @@ def index():
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
     
-    with concurrent.futures.ProcessPoolExecutor() as p:
+    with Pool() as p:
         output = p.map(indexHelper, bmc_ip)
          
     for i in output:
@@ -383,7 +387,7 @@ def update_index_page():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
-    with concurrent.futures.ProcessPoolExecutor() as p:
+    with Pool() as p:
         output = p.map(indexHelper, bmc_ip)
     udp_msg = getMessage(json_path, mac_list)
     for node_iter,i in enumerate(output):
