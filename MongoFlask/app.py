@@ -32,6 +32,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 import concurrent.futures
 from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seperator
 import secrets
+import flask_monitoringdashboard as dashboard
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -189,7 +190,8 @@ def get_fan_names(bmc_ip):
         sys_fans.append(dataset_Fans["Fans"][x]["Name"])
     return sys_fans
 
-def indexHelper(bmc_ip):
+def indexHelper(bmc_ip_auth):
+    bmc_ip = bmc_ip_auth[0]
     client_index = MongoClient('localhost', mongoport)
     db_index = client_index.redfish
     monitor_collection_index = db_index.monitor
@@ -221,8 +223,7 @@ def indexHelper(bmc_ip):
         bmc_event = "ERROR"
     else:
         bmc_event = "WARNING"
-    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
-    current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
+    current_auth = (bmc_ip_auth[1],bmc_ip_auth[2])
     if os.environ['POWERDISP'] == "ON":
         if powerState(bmc_ip,current_auth) == -1:
             current_state = "D/C"
@@ -235,27 +236,12 @@ def indexHelper(bmc_ip):
     if os.environ['UIDDISP'] == "ON":
         uid_state = checkUID(bmc_ip, current_auth)
     else:
-        uid_state = "N/A"
-    current_flag = read_flag()
-    if current_flag == 0:
-        monitor_status = "IDLE " + current_state
-    elif current_flag == 1:
-        monitor_status = "FETCHING " + current_state
-    elif current_flag == 2:
-        monitor_status = "UPDATING " + current_state
-    elif current_flag == 3:
-        monitor_status = "REBOOTING " + current_state
-    elif current_flag == 4:
-        monitor_status = "REBOOT DONE " + current_state
-    elif current_flag == 5:
-        monitor_status = "SUM in use " + current_state
-    else:
-        monitor_status = "UNKOWN " + current_state   
+        uid_state = "N/A" 
     for i in monitor_collection_index.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1}): # get last datetime
         cur_date = i['Datetime']
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages = get_sensor_names(bmc_ip)
     client_index.close()
-    return [bmc_event, bmc_details, monitor_status, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
+    return [bmc_event, bmc_details, current_state, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages]
 
 @app.route('/')
 def index():
@@ -280,7 +266,23 @@ def index():
     dimm_temps = []
     sys_temps = []
     sys_fans = []
-    sys_voltages = []                 
+    sys_voltages = []
+    bmc_ip_auth = []
+    current_flag = read_flag()
+    if current_flag == 0:
+        monitor = "IDLE "
+    elif current_flag == 1:
+        monitor = "FETCHING "
+    elif current_flag == 2:
+        monitor = "UPDATING "
+    elif current_flag == 3:
+        monitor = "REBOOTING "
+    elif current_flag == 4:
+        monitor = "REBOOT DONE "
+    elif current_flag == 5:
+        monitor = "SUM in use "
+    else:
+        monitor = "UNKOWN "                   
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
@@ -308,14 +310,15 @@ def index():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+        bmc_ip_auth.append((i['BMC_IP'],"ADMIN",current_auth[1]))
     
     with Pool() as p:
-        output = p.map(indexHelper, bmc_ip)
+        output = p.map(indexHelper, bmc_ip_auth)
          
     for i in output:
         bmc_event.append(i[0])
         bmc_details.append(i[1])
-        monitorStatus.append(i[2])
+        monitorStatus.append(monitor + " " + i[2])
         timestamp.append(i[3])
         uidStatus.append(i[4])
         cpu_temps.append(i[5])
@@ -358,10 +361,26 @@ def update_index_page():
     pwd =[]
     mac_list = []
     os_ip = []
+    bmc_ip_auth = []  
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     response = {}
+    current_flag = read_flag()
+    if current_flag == 0:
+        monitor = "IDLE "
+    elif current_flag == 1:
+        monitor = "FETCHING "
+    elif current_flag == 2:
+        monitor = "UPDATING "
+    elif current_flag == 3:
+        monitor = "REBOOTING "
+    elif current_flag == 4:
+        monitor = "REBOOT DONE "
+    elif current_flag == 5:
+        monitor = "SUM in use "
+    else:
+        monitor = "UNKOWN "  
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
         response[i['BMC_IP']] = {}
@@ -387,14 +406,15 @@ def update_index_page():
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
+        bmc_ip_auth.append((i['BMC_IP'],"ADMIN",current_auth[1]))
     with Pool() as p:
-        output = p.map(indexHelper, bmc_ip)
+        output = p.map(indexHelper, bmc_ip_auth)
     udp_msg = getMessage(json_path, mac_list)
     for node_iter,i in enumerate(output):
         node = bmc_ip[node_iter]
         response[node]['bmc_event'] = i[0]
         response[node]['bmc_details'] = i[1]
-        response[node]['monitorStatus'] = i[2]
+        response[node]['monitorStatus'] = monitor + " " + i[2]
         response[node]['timestamp'] = i[3]
         response[node]['udp_message'] = udp_msg[node_iter]
     response['time'] = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
@@ -3249,7 +3269,9 @@ if __name__ == '__main__':
         printf('Debug Mode is True')
         app.debug =True
         app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+        app.config['DEBUG_TB_PROFILER_ENABLED'] = True # enable the profiler by default
         toolbar = DebugToolbarExtension(app)
+        dashboard.bind(app)
         app.run(host='0.0.0.0',port=frontport, debug=True)
     else:
         printf('Debug Mode is False')
