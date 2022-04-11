@@ -2307,6 +2307,7 @@ def min_max_temperatures_chart(bmc_ip):
     show_names = 'true' # Default value to pass to html to enable a list of nodenames
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages = get_sensor_names(bmc_ip)
     ips_names = get_node_names()
+    plt.close()
     if isinstance(ips_names,bool) == True:
         show_names = 'false'   
     if show_names == 'true':
@@ -2356,6 +2357,7 @@ def min_max_voltages_chart(bmc_ip):
     ips_names = get_node_names()
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
+    plt.close()
     if show_names == 'true':
         return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages",rackobserverurl = rackobserverurl)    
     else:
@@ -2408,6 +2410,7 @@ def min_max_fans_chart(bmc_ip):
     ips_names = get_node_names()
     if isinstance(ips_names,bool) == True:
         show_names = 'false'    
+    plt.close()
     if show_names == 'true':
         return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans",rackobserverurl = rackobserverurl)
     else:
@@ -2452,6 +2455,7 @@ def min_max_power_chart(bmc_ip):
     ips_names = get_node_names()
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
+    plt.close()
     if show_names == 'true':
         return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power",rackobserverurl = rackobserverurl)   
     else:
@@ -2511,6 +2515,7 @@ def min_max_alltemperatures_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
+    plt.close()
     return render_template('imageOutputRack.html',rackname=rackname, sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_allpower_chart')
@@ -2566,6 +2571,7 @@ def min_max_allpower_chart():
     sensor = sensor_name #used for scoping into the chart
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
+    plt.close()
     return render_template('imageOutputRack.html',rackname=rackname,chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
 
 
