@@ -216,14 +216,14 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {%if 'false' in show_names %}
                         {% for ip in ip_list %}
-                            <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                            <a id="node_url_{{ ip }}" onclick="selectDevice('{{ ip }}')" href="javascript:void(0)" class="dropdown-item">{{ ip }}</a>
                         {% endfor %}
                     {%else%}
                         {% for ip,name in ip_list %}
                             {%if 'No Value' in name%}
-                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}">{{ ip }}</a>
+                                <a id="node_url_{{ ip }}" onclick="selectDevice('{{ ip }}')" href="javascript:void(0)" class="dropdown-item" >{{ ip }}</a>
                             {%else%}
-                                <a class="dropdown-item" href="{{ url_for('index') }}{{ chart_name }}/{{ ip }}"> {{name}} - {{ip}} </a>
+                                <a id="node_url_{{ ip }}" onclick="selectDevice('{{ ip }}')" href="javascript:void(0)" class="dropdown-item" > {{name}} - {{ip}} </a>
                             {%endif%}
                         {% endfor %}   
                     {%endif%}                   
@@ -244,6 +244,7 @@
     <script>
         // Power is power reading from app.py: For exemption handling, we set empty string or assign it appropriately///
         var power = "{{reading}}";
+        var chart_url = "{{ url_for('index') }}{{ chart_name }}/";
         if(power == "ERROR"){
             power = "";
         }
@@ -510,7 +511,11 @@
         startTime();
         
 */
-        
+    function selectDevice(ip){
+        url = chart_url + ip + location.search;
+        window.open(url,"_self");
+
+    }
     </script>
 </body>
 
