@@ -223,8 +223,10 @@
                     {% endif %}
                 </div>
             </td>
-            {% if "OFF" in row[9] %}
+            {% if "D/C" in row[9] %}
                 <td class="align-middle font-weight-bold text-danger" id="{{row[0]}}flag" >{{ row[9] }}</td>
+            {% elif "OFF" in row[9]%}
+                <td class="align-middle font-weight-bold text-warning" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% else %}
                 <td class="align-middle font-weight-bold text-success" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% endif %}
@@ -504,6 +506,18 @@
                                     break;
                                 case 'monitorStatus':
                                     document.getElementById(bmc_ip+'flag').innerHTML = data[bmc_ip][i];
+                                    document.getElementById(bmc_ip+'flag').classList.remove('text-warning');
+                                    document.getElementById(bmc_ip+'flag').classList.remove('text-success');
+                                    document.getElementById(bmc_ip+'flag').classList.remove('text-danger');
+                                    if(data[bmc_ip][i].includes('D/C')){
+                                        document.getElementById(bmc_ip+'flag').classList.add('text-danger');
+                                    }
+                                    else if(data[bmc_ip][i].includes('OFF')){
+                                        document.getElementById(bmc_ip+'flag').classList.add('text-warning');
+                                    }
+                                    else{
+                                        document.getElementById(bmc_ip+'flag').classList.add('text-success');
+                                    }
                                     break;
                                 case 'bmc_event':
                                     var event_button = document.getElementById(bmc_ip + 'eventButton');
