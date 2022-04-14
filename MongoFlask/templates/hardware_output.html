@@ -342,7 +342,7 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{
@@ -368,7 +368,7 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{
@@ -385,7 +385,7 @@
                             var newkey = "NICS"+ i + bmc_ip
                             menu.insertAdjacentHTML('beforeend',"<li>"+ key  + ":<ul id=" + newkey + "> </ul></li>");
                             for (var subkey in data[key]){
-                                if (subkey != "SMC DB handshake"){
+                                if (subkey != "SMC DB handshake" && subkey != "MAC in DB?"){
                                     if(subkey == "Serial"){
                                         if (data[key]["SMC DB handshake"] == "False"){
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
@@ -394,7 +394,18 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                    }
+                                    else if(subkey == "MAC"){
+                                        if (data[key]["MAC in DB?"] == "False"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else if(data[key]["MAC in DB?"] == "TBD"){
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
+                                        }
+                                        else{
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{
@@ -420,7 +431,7 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{
@@ -446,7 +457,7 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{
@@ -477,7 +488,7 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-warning>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                         else{
-                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
+                                            document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-success>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
                                     else{

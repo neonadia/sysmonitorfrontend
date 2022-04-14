@@ -63,6 +63,10 @@ def fetch_hardware_details(bmc_ip,hardware):
                             hw_dict["Device " + str(j)]["SMC DB handshake"] = hardware_dict[i][str(j)]["SMC DB handshake"]
                         except:
                             hw_dict["Device " + str(j)]["SMC DB handshake"] = "N/A"
+                        try:
+                            hw_dict["Device " + str(j)]["MAC in DB?"] = hardware_dict[i][str(j)]["MAC in DB?"]
+                        except:
+                            hw_dict["Device " + str(j)]["MAC in DB?"] = "N/A"
         elif hardware == "gpu":
             for i in hardware_dict:
                 if i == "Graphics":

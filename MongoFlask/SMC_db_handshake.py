@@ -1,3 +1,4 @@
+from ast import excepthandler
 import pandas as pd
 import os
 import json
@@ -81,16 +82,38 @@ for file in os.listdir(inputdir):
                     temp_dict = {component:entry[component]}
                     for port in temp_dict[component]:
                         nic_serial = temp_dict[component][str(port)]['Serial']
+                        try:
+                            nic_mac = temp_dict[component][str(port)]['MAC'].replace(":","").upper()
+                        except:
+                            nic_mac = "N/A"
                         data = nic_serial.upper()
                         if data in df_sn.values:
-                            print("Found serial in DB for card no. " + str(port))
                             temp_dict[component][str(port)]["SMC DB handshake"] = "True"
-                        elif data != "N/A" and data not in df_sn.values:
-                            all_components_accounted_for = False
-                            temp_dict[component][str(port)]["SMC DB handshake"] = "False"
-                            print("NICS")
-                        elif data == "N/A" or data == "":
+                            if nic_mac in df_sn.values:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                            elif nic_mac == "N/A":
+                                temp_dict[component][str(port)]["MAC in DB?"] = "TBD"
+                            else:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                                all_components_accounted_for = False
+                        elif data == "N/A":
                             temp_dict[component][str(port)]["SMC DB handshake"] = "TBD"
+                            if nic_mac in df_sn.values:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                            elif nic_mac == "N/A":
+                                temp_dict[component][str(port)]["MAC in DB?"] = "TBD"
+                            else:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                                all_components_accounted_for = False
+                        else:
+                            temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                            all_components_accounted_for = False
+                            if nic_mac in df_sn.values:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                            elif nic_mac == "N/A":
+                                temp_dict[component][str(port)]["MAC in DB?"] = "TBD"
+                            else:
+                                temp_dict[component][str(port)]["MAC in DB?"] = "False"
                     collection.update_one({"Hostname":i[2]},{"$set":temp_dict})
                 elif component == "PSU":
                     temp_dict = {component:entry[component]}
