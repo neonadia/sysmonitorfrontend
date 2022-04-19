@@ -778,9 +778,6 @@ def redfish_session_creator():
 
 @app.route('/biosupload',methods=["GET","POST"])
 def biosupload():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
-        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH']
     if request.method == "POST":
         if request.files:
@@ -791,16 +788,22 @@ def biosupload():
             biosfile.save(os.path.join(savepath, "bios.222"))
             printf("{} has been saved as bios.222".format(biosfile.filename))
             return redirect(url_for('biosupload'))
-    return render_template('biosupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
+    return render_template('biosupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/biosupdate',methods=["GET","POST"])
 def biosupdate():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     ip = request.args.get('var')
-    return render_template('biosupdate.html',ip=ip,rackname=rackname,rackobserverurl = rackobserverurl)
+    return render_template('biosupdate.html',ip=ip,rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/biosupdaterack',methods=["GET","POST"])
 def biosupdaterack():
-    return render_template('biosupdaterack.html',numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl)
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
+    return render_template('biosupdaterack.html',numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/biosupdatestartrack',methods=["GET","POST"])
 def biosupdatestartrack():
@@ -898,9 +901,6 @@ def biosupdatestart():
 
 @app.route('/bmcupload',methods=["GET","POST"])
 def bmcupload():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
-        return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH']
     if request.method == "POST":
         if request.files:
@@ -911,16 +911,19 @@ def bmcupload():
             bmcfile.save(os.path.join(savepath, "bmc.bin"))
             printf("{} has been saved as bmc.bin".format(bmcfile.filename))
             return redirect(url_for('bmcupload'))
-    return render_template('bmcupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
+    return render_template('bmcupload.html',ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/bmcupdaterack',methods=["GET","POST"])
 def bmcupdaterack():
+    if not redfish_session_creator(): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     ip = str(request.args.get('var'))
     if ip == "ALL":
         ipstr = ",".join(str(x) for x in getIPlist())
-        return render_template('bmcupdaterack.html',ip = ipstr,numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl)
+        return render_template('bmcupdaterack.html',ip = ipstr,numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
     else:
-        return render_template('bmcupdaterack.html',ip = ip,numOfNodes=1,rackname=rackname,rackobserverurl = rackobserverurl)
+        return render_template('bmcupdaterack.html',ip = ip,numOfNodes=1,rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/bmcupdatestartrack',methods=["GET","POST"])
 def bmcupdatestartrack():

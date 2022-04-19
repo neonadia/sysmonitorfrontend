@@ -153,6 +153,14 @@
         $("#updatestart").on("click", function() {
             $(this).addClass('disabled');
         });
+        var session_auth = "{{ session_auth }}";
+        window.addEventListener('beforeunload', function (e) {
+            var agentForm = new FormData();
+            var state = 'inactive'
+            agentForm.append("session_state",state)
+            agentForm.append("session_guid",session_auth)
+            navigator.sendBeacon("/redfish_session_handler", agentForm);
+        });
     </script>
 
 </body>
