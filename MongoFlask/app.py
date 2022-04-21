@@ -33,6 +33,7 @@ import concurrent.futures
 from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seperator
 import secrets
 import flask_monitoringdashboard as dashboard
+from io import StringIO
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -611,11 +612,13 @@ def systemreset():
     return redirect(url_for('systemresetupload'))
 
 
-def checkipmisensor_one(bmc_ip):
+def runipmisingle(input_list):
+    bmc_ip = input_list[0]
+    ipmi_cmd = input_list[1]
     try:
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
-        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sdr list full', shell = 1, stdout  = PIPE, stderr = PIPE)
+        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' ' + ipmi_cmd, shell = 1, stdout  = PIPE, stderr = PIPE)
         stdout , stderr = response.communicate(timeout=2)
     except:
         printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
@@ -630,8 +633,7 @@ def checkipmisensor_one(bmc_ip):
             printf('IPMI command on ' + bmc_ip + ' got following error:')
             printf(stderr.decode('utf-8'))
             return []
-    return output # output = ["CPU1 Temp        | 59 degrees C      | ok","CPU2 Temp        | 62 degrees C      | ok",.....]
-
+    return output # output = ["CPU1 Temp        | 59 degrees C      | ok",  "CPU2 Temp        | 62 degrees C      | ok",.....]
 
 @app.route('/checkipmisensor')
 def checkipmisensor():
@@ -644,6 +646,7 @@ def checkipmisensor():
     bios_version = []
     bmc_version = []
     cpld_version = []
+    input_lists = []
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])    
     if isinstance(ips_names,bool) != True:
         for ip, name in ips_names:
@@ -657,6 +660,7 @@ def checkipmisensor():
         ip_list = getIPlist()
         name_list = ip_list
     for ip in ip_list:
+        input_lists.append([ip, 'sdr list full'])
         sn_list.append(getSerialNumber(ip))
         pwd_list.append(df_pwd[df_pwd['ip'] == ip]['pwd'].values[0])
         cur_list = list(collection.find({"BMC_IP":ip},{"UpdateService.SmcFirmwareInventory.1.Version": 1,\
@@ -675,7 +679,7 @@ def checkipmisensor():
             cpld_version.append("N/A")   
     # Check how many working sensors
     with Pool() as p:
-        output = p.map(checkipmisensor_one, ip_list) # output = [[bmc1 output],[bmc2 output],....]
+        output = p.map(runipmisingle, input_lists) # output = [[bmc1 output],[bmc2 output],....]
     num_all = []
     num_workable = []
     num_nonworkable = []
@@ -703,6 +707,54 @@ def checkipmisensor():
         else:
             prob_flags.append(0)
     return render_template('checkipmisensor.html',rackname=rackname,data=zip(name_list,ip_list,pwd_list,sn_list,bmc_version,bios_version,cpld_version,num_all,num_workable,num_nonworkable,num_unknown,prob_flags),rackobserverurl = rackobserverurl)
+
+
+@app.route('/showipmisensor')
+def showipmisensor():
+    bmc_ip = request.args.get('var')
+    name_list = []
+    reading_list = []
+    unit_list = []
+    severity_list = []
+    lownr_list = []
+    lowct_list = []
+    highct_list = []
+    highnr_list = []
+    ips_names = get_node_names()
+    if isinstance(ips_names,bool) == True:
+        show_names = 'false'
+    else:
+        show_names = 'true'
+    try:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
+        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sensor', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout , stderr = response.communicate(timeout=2)
+    except:
+        printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
+    else:
+        if stderr.decode('utf-8') == '':
+            output = StringIO(stdout.decode("utf-8"))
+            df_output = pd.read_csv(output,header=None,names=['Name','Reading','Unit','Severity','Low NR','Low CT','Unkown-1','Unkown-2','High CT','High NR'], sep="|")
+            name_list = df_output['Name']
+            reading_list = df_output['Reading']
+            unit_list = df_output['Unit']
+            severity_list = df_output['Severity']
+            lownr_list = df_output['Low NR']
+            lowct_list = df_output['Low CT']
+            highct_list = df_output['High CT']
+            highnr_list = df_output['High NR']
+        else:
+            printf('IPMI command on ' + bmc_ip + ' got following error:')
+            printf(stderr.decode('utf-8'))
+    if show_names == 'true':
+        return render_template('showipmisensor.html',\
+        rackname=rackname,data=zip(name_list,reading_list,unit_list,severity_list,lownr_list,lowct_list,highct_list,highnr_list),\
+        bmc_ip = bmc_ip, ip_list =  ips_names, rackobserverurl = rackobserverurl)        
+    else:
+        return render_template('showipmisensor.html',\
+        rackname=rackname,data=zip(name_list,reading_list,unit_list,severity_list,lownr_list,lowct_list,highct_list,highnr_list),\
+        bmc_ip = bmc_ip, ip_list = getIPlist(), rackobserverurl = rackobserverurl)   
 
 @app.route('/systemresetstatus')
 def systemresetstatus():
