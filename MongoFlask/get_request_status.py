@@ -4,7 +4,7 @@ import os
 import time
 import datetime
 
-link_lists =['','/chart_allpowercontrols','/min_max_allpower_chart?var=1']
+link_lists =['','/chart_allpowercontrols','/checkipmisensor']
 
 health_log = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-health.log'
 
