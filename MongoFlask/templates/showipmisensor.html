@@ -145,7 +145,21 @@
     <tbody>
         {% for name, reading, unit, severity, lownr, lowct, highct, highnr in data %}
                 <tr>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ name }}</h4></td>
+                {% if "CPU" in name and "degree" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% elif "VRM" in name and "degree" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% elif "DIMM" in name and "degree" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% elif "degree" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% elif "Volts" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% elif "RPM" in unit %}
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                {% else %}
+                    <td class="align-middle font-weight-bold text-info"><h4>{{ name }}</h4></td>
+                {% endif %}
                 {% if "ok" in severity %}
                     <td class="align-middle font-weight-bold text-success" ><h4>{{ reading }}</h4></td>
                 {% else %}
