@@ -116,17 +116,31 @@
     <tbody>
         {% for name, ipmi, pwd, sn, bmc, bios, cpld, num_sensor, num_w_sensor, num_n_sensor, num_u_sensor, flag in data %}
                 <tr>
-                <td class="align-middle font-weight-bold text-primary" ><a href="https://{{ ipmi }}" target="_blank"><h4>{{ name }}</h4></a></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ pwd}}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ sn }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ bmc }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ bios }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ cpld }}</h4></td>
-                <td class="align-middle font-weight-bold text-success" ><h4>{{ num_sensor }}</h4></td>
-                <td class="align-middle font-weight-bold text-success" ><h4>{{ num_w_sensor }}</h4></td>
-                <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_n_sensor }}</h4></td>
-                <td class="align-middle font-weight-bold text-danger" ><h4>{{ num_u_sensor }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ flag }}</h4></td>
+                <td class="align-middle">
+                    <div class="dropdown dropright">  
+                        <a class="font-weight-bold"  href="" id="dropdownMenuButton1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ name }}
+                        </a>
+                        <u1 class="dropdown-menu" aria-labelledby="dropdownMenuButton" x-placement="right-start" style="right:0px" >
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold text-primary" href="https://{{ ipmi }}" target="_blank">IPMI Page</a>
+                            </li>
+                            <li>
+                            <a class="dropdown-item align-middle font-weight-bold text-primary" href="{{ url_for('showipmisensor') }}?var={{ ipmi }}" target="_blank">Senor Readings</a>    
+                            </li>
+                        </u1>
+                    </div>
+                </td>
+                <td class="align-middle font-weight-bold text-info" >{{ pwd}}</td>
+                <td class="align-middle font-weight-bold text-info" >{{ sn }}</td>
+                <td class="align-middle font-weight-bold text-info" >{{ bmc }}</td>
+                <td class="align-middle font-weight-bold text-info" >{{ bios }}</td>
+                <td class="align-middle font-weight-bold text-info" >{{ cpld }}</td>
+                <td class="align-middle font-weight-bold text-success" >{{ num_sensor }}</td>
+                <td class="align-middle font-weight-bold text-success" >{{ num_w_sensor }}</td>
+                <td class="align-middle font-weight-bold text-danger" >{{ num_n_sensor }}</td>
+                <td class="align-middle font-weight-bold text-danger" >{{ num_u_sensor }}</td>
+                <td class="align-middle font-weight-bold text-info" >{{ flag }}</td>
                 </tr>
         {% endfor %}
     </tbody>

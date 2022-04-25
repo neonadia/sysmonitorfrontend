@@ -264,7 +264,7 @@ except Exception as e:
 
 if 'N/A' not in bmc_ip:
     temp_id = ["1","2","3","4","5","6"] # first 6 temp sensor
-    temp_keys = ["CPU","Inlet","System","Peripheral","GPU","FPGA","ASIC"] # other sensors FPGA and ASIC are intel habana GPU
+    temp_keys = ["CPU","Inlet","System","PLX","Peripheral","GPU","FPGA","ASIC"] # other sensors FPGA and ASIC are intel habana GPU
     # get temperature  data
     data_entries = []
     for i in bmc_ip:
