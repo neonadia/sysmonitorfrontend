@@ -469,6 +469,7 @@ div#console {
             document.getElementById("status_terminal").insertAdjacentHTML('beforeend',"<pre>" +  line + "</pre>" );
         }
         function call_ignition(){
+            cursor_lock = 1; // lock the cursor when command submitted
             $.ignite_server();
         }
         $.ignite_server = function(){
@@ -495,6 +496,7 @@ div#console {
                         checkClientState("ONLINE");
                         addLine("Server/Client check complete!")
                     }
+                    cursor_lock = 0; // lock the cursor when command submitted
                 }        
             }); 
         }

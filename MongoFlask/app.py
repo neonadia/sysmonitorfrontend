@@ -2113,7 +2113,7 @@ def udpserverinitialize():
             all_ip_file.write("%s\n" % ip)    
     if request.method == "GET":
         insertUdpevent('m',"request_h",savepath) # request_h means requst client to send h back to initilize the json file
-        time.sleep(1)
+        time.sleep(5)
         response = {}
         response['msg0'] = "Success! Initilize message has been sent to clients."
         response['msg1'] = "info: You can also check the status on index page."
