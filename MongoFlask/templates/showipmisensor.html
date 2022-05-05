@@ -139,8 +139,9 @@
     <thead class="thead-dark" >
         <th class="align-middle" >Name</th>
         <th class="align-middle" id="reading_col" >Reading</th>
-        <th class="align-middle" >Unit</th>
+        <th class="align-middle" id="trend_col" >Trend</th>        
         <th class="align-middle" id="severity_col">Severity</th>
+        <th class="align-middle" >Unit</th>
         <th class="align-middle" >Low NR</th>
         <th class="align-middle" >Low CT</th>
         <th class="align-middle" >High CT</th>
@@ -169,12 +170,13 @@
                 {% else %}
                     <td class="align-middle font-weight-bold text-danger" ><h4 id="{{ name }}Reading">{{ reading }}</h4></td>
                 {% endif %}
-                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Unit">{{ unit }}</h4></td>
+                 <td class="align-middle font-weight-bold" ><i class="fas fa-equals text-info" id="{{ name }}ReadingTrend"></i></td>
                 {% if "ok" in severity %}
                     <td class="align-middle font-weight-bold text-success" ><h4 id="{{ name }}Severity">{{ severity }}</h4></td>
                 {% else %}
                     <td class="align-middle font-weight-bold text-danger" ><h4 id="{{ name }}Severity">{{ severity }}</h4></td>
                 {% endif %}
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Unit">{{ unit }}</h4></td>
                 <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Low NR" >{{ lownr }}</h4></td>
                 <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Low CT">{{ lowct }}</h4></td>
                 <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}High CT">{{ highct }}</h4></td>
@@ -276,10 +278,30 @@
                     for (var row in data[col]){
                         if (document.getElementById(row + col)) {
                             console.log(row+col,data[col][row]);
+                            if ( col == 'Reading') {
+                                if ( document.getElementById(row + col).innerHTML < data[col][row]) {
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-equals','fa-arrow-up');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-arrow-down','fa-arrow-up');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-info','text-danger');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-success','text-danger');
+                                }
+                                else if ( document.getElementById(row + col).innerHTML > data[col][row] ) { 
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-equals','fa-arrow-down');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-arrow-up','fa-arrow-down');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-info','text-success');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-danger','text-success');
+                                }
+                                else {
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-arrow-down','fa-equals');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('fa-arrow-up','fa-equals');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-danger','text-info');
+                                    document.getElementById(row + 'ReadingTrend').classList.replace('text-success','text-info');
+                                }                            
+                            }
                             document.getElementById(row + col).innerHTML = data[col][row];
                             if ( !data[col][row].includes('ok') && col == 'Severity') {
-                                document.getElementById(row + col).classList.remove("text-info")
-                                document.getElementById(row + col).classList.remove("text-success")
+                                document.getElementById(row + col).classList.remove("text-info");
+                                document.getElementById(row + col).classList.remove("text-success");
                                 document.getElementById(row + col).classList.add("text-danger");
                             }
                         }
@@ -301,6 +323,10 @@
                 document.getElementById('severity_col').classList.remove("text-white");
                 document.getElementById('severity_col').classList.add("text-success");
             }
+            if (document.getElementById('trend_col')) {
+                document.getElementById('trend_col').classList.remove("text-white");
+                document.getElementById('trend_col').classList.add("text-success");
+            }
             page_update = 1;
         } else {
             clearInterval(interval_id);
@@ -312,6 +338,10 @@
             if (document.getElementById('severity_col')) {
                 document.getElementById('severity_col').classList.remove("text-success");
                 document.getElementById('severity_col').classList.add("text-white");
+            }
+            if (document.getElementById('trend_col')) {
+                document.getElementById('trend_col').classList.remove("text-success");
+                document.getElementById('trend_col').classList.add("text-white");
             }
             page_update = 0;
         }
