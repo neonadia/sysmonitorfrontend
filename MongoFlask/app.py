@@ -756,6 +756,31 @@ def showipmisensor():
         rackname=rackname,data=zip(name_list,reading_list,unit_list,severity_list,lownr_list,lowct_list,highct_list,highnr_list),\
         bmc_ip = bmc_ip, ip_list = getIPlist(), rackobserverurl = rackobserverurl)   
 
+@app.route('/updateipmisensor')
+def updateipmisensor():
+    bmc_ip = request.args.get('address')
+    data = {'Reading':{},'Severity':{}}
+    try:
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
+        response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sensor', shell = 1, stdout  = PIPE, stderr = PIPE)
+        stdout , stderr = response.communicate(timeout=2)
+    except:
+        printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
+    else:
+        if stderr.decode('utf-8') == '':
+            output = StringIO(stdout.decode("utf-8"))
+            df_output = pd.read_csv(output,header=None,names=['Name','Reading','Unit','Severity','Low NR','Low CT','Unkown-1','Unkown-2','High CT','High NR'], sep="|")
+            for i in range(len(df_output)):
+                data['Reading'][df_output['Name'][i]] = df_output['Reading'][i]
+                data['Severity'][df_output['Name'][i]] = df_output['Severity'][i]
+        else:
+            printf('IPMI command on ' + bmc_ip + ' got following error:')
+            printf(stderr.decode('utf-8'))
+            data['error_msg'] = str(stderr.decode('utf-8'))
+    return json.dumps(data) 
+
+
 @app.route('/systemresetstatus')
 def systemresetstatus():
     rstatuspath = os.environ['RESETSTATUSPATH']

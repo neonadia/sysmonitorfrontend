@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="60">
+    <!-- <meta http-equiv="refresh" content="60"> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>show ipmi sensor</title>
@@ -83,8 +83,8 @@
         </div>
     </li>
     <div class="dropdown col col-auto">
-                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Nodes - {{ bmc_ip }}
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton-node-ip" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Nodes - {{ bmc_ip }}
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {%if 'false' in show_names %}
@@ -114,7 +114,11 @@
                     {%endif%}                   
                 </div>
     </div>
-
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg mr-1 text-white" type="button" id="interval-toggle" onclick="toggle_page_update()">
+         Refresh OFF
+        </a>
+    </li>
     {% include "advancedfeatures_menu.html" %}
     {% include "documentationButton.html" %}
 <!--
@@ -134,9 +138,9 @@
 <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
     <thead class="thead-dark" >
         <th class="align-middle" >Name</th>
-        <th class="align-middle" >Reading</th>
+        <th class="align-middle" id="reading_col" >Reading</th>
         <th class="align-middle" >Unit</th>
-        <th class="align-middle" >Severity</th>
+        <th class="align-middle" id="severity_col">Severity</th>
         <th class="align-middle" >Low NR</th>
         <th class="align-middle" >Low CT</th>
         <th class="align-middle" >High CT</th>
@@ -146,35 +150,35 @@
         {% for name, reading, unit, severity, lownr, lowct, highct, highnr in data %}
                 <tr>
                 {% if "CPU" in name and "degree" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name" >{{ name }}</h4></a></td>
                 {% elif "VRM" in name and "degree" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name">{{ name }}</h4></a></td>
                 {% elif "DIMM" in name and "degree" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name">{{ name }}</h4></a></td>
                 {% elif "degree" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name">{{ name }}</h4></a></td>
                 {% elif "Volts" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name">{{ name }}</h4></a></td>
                 {% elif "RPM" in unit %}
-                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ name }}"><h4>{{ name }}</h4></a></td>
+                    <td><a class="align-middle font-weight-bold text-success" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ name }}"><h4 id="{{ name }}Name">{{ name }}</h4></a></td>
                 {% else %}
-                    <td class="align-middle font-weight-bold text-info"><h4>{{ name }}</h4></td>
+                    <td class="align-middle font-weight-bold text-info"><h4 id="{{ name }}Name">{{ name }}</h4></td>
                 {% endif %}
                 {% if "ok" in severity %}
-                    <td class="align-middle font-weight-bold text-success" ><h4>{{ reading }}</h4></td>
+                    <td class="align-middle font-weight-bold text-success" ><h4 id="{{ name }}Reading">{{ reading }}</h4></td>
                 {% else %}
-                    <td class="align-middle font-weight-bold text-danger" ><h4>{{ reading }}</h4></td>
+                    <td class="align-middle font-weight-bold text-danger" ><h4 id="{{ name }}Reading">{{ reading }}</h4></td>
                 {% endif %}
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ unit }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Unit">{{ unit }}</h4></td>
                 {% if "ok" in severity %}
-                    <td class="align-middle font-weight-bold text-success" ><h4>{{ severity }}</h4></td>
+                    <td class="align-middle font-weight-bold text-success" ><h4 id="{{ name }}Severity">{{ severity }}</h4></td>
                 {% else %}
-                    <td class="align-middle font-weight-bold text-danger" ><h4>{{ severity }}</h4></td>
+                    <td class="align-middle font-weight-bold text-danger" ><h4 id="{{ name }}Severity">{{ severity }}</h4></td>
                 {% endif %}
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ lownr }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ lowct }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ highct }}</h4></td>
-                <td class="align-middle font-weight-bold text-info" ><h4>{{ highnr }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Low NR" >{{ lownr }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}Low CT">{{ lowct }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}High CT">{{ highct }}</h4></td>
+                <td class="align-middle font-weight-bold text-info" ><h4 id="{{ name }}High NR">{{ highnr }}</h4></td>
                 </tr>
         {% endfor %}
     </tbody>
@@ -210,7 +214,13 @@
 </footer>
 <!-- Footer -->
 <script>
-        console.log("{{show_names}}")
+        //console.log("{{ bmc_ip }}")
+        var bmc_ip = "{{ bmc_ip }}";
+        var page_update = 0;
+        var interval_id = 0;
+        //var element = document.getElementById('dropdownMenuButton-node-ip');
+        //var bmc_ip = element.innerText || element.textContent;
+        console.log(bmc_ip)
 /*
         function startTime() {
             var today = new Date()
@@ -249,6 +259,65 @@
     } );
     
     $('body .dropdown-toggle').dropdown(); 
+    function updatePage(){
+        $.updateipmisensor();
+    }
+    $.updateipmisensor = function(){
+        $.ajax({
+            url: '/updateipmisensor?address=' + bmc_ip,
+            type: 'GET',
+            dataType: "JSON",
+            beforeSend: function() {
+                //console.log("Updating Index page...");///For debug purposes
+            },
+            success: function(result){
+                var data = result;
+                for (var col in data){
+                    for (var row in data[col]){
+                        if (document.getElementById(row + col)) {
+                            console.log(row+col,data[col][row]);
+                            document.getElementById(row + col).innerHTML = data[col][row];
+                            if ( !data[col][row].includes('ok') && col == 'Severity') {
+                                document.getElementById(row + col).classList.remove("text-info")
+                                document.getElementById(row + col).classList.remove("text-success")
+                                document.getElementById(row + col).classList.add("text-danger");
+                            }
+                        }
+                    }                    
+                }
+            }        
+        });
+    }
+    
+    function toggle_page_update() {
+        if (page_update == 0) {
+            interval_id = setInterval(updatePage,2000);
+            document.getElementById('interval-toggle').innerHTML = "Refresh On";
+            if (document.getElementById('reading_col')) {
+                document.getElementById('reading_col').classList.remove("text-white");
+                document.getElementById('reading_col').classList.add("text-success");
+            }
+            if (document.getElementById('severity_col')) {
+                document.getElementById('severity_col').classList.remove("text-white");
+                document.getElementById('severity_col').classList.add("text-success");
+            }
+            page_update = 1;
+        } else {
+            clearInterval(interval_id);
+            document.getElementById('interval-toggle').innerHTML = "Refresh Off";
+            if (document.getElementById('reading_col')) {
+                document.getElementById('reading_col').classList.remove("text-success");
+                document.getElementById('reading_col').classList.add("text-white");
+            }
+            if (document.getElementById('severity_col')) {
+                document.getElementById('severity_col').classList.remove("text-success");
+                document.getElementById('severity_col').classList.add("text-white");
+            }
+            page_update = 0;
+        }
+    }
+    
+    //var page_update = setInterval(updatePage,1000); ////Adjust the interval for page update: i.e 1000 = 1 sec
 </script>
 
 </body>
