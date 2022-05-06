@@ -484,87 +484,107 @@
                         for (var i in data[bmc_ip]){
                             switch (i) {
                                 case 'ModelNumber':
-                                    document.getElementById(bmc_ip+'model').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'model')) {
+                                        document.getElementById(bmc_ip+'model').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'SerialNumber':
-                                    document.getElementById(bmc_ip+'serial').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'serial')) {
+                                        document.getElementById(bmc_ip+'serial').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'CPLDVersion':
-                                    document.getElementById(bmc_ip+'cpldversion').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'cpldversion')) {
+                                        document.getElementById(bmc_ip+'cpldversion').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'BmcVersion':
-                                    document.getElementById(bmc_ip+'bmcversion').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'bmcversion')) {
+                                        document.getElementById(bmc_ip+'bmcversion').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'BiosVersion':
-                                    document.getElementById(bmc_ip+'biosversion').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'biosversion')) {
+                                        document.getElementById(bmc_ip+'biosversion').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'timestamp':
-                                    document.getElementById(bmc_ip+'datetime').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'datetime')) {
+                                        document.getElementById(bmc_ip+'datetime').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'udp_message':
-                                    document.getElementById(bmc_ip+'udp').innerHTML = data[bmc_ip][i];
+                                    if (document.getElementById(bmc_ip+'udp')) {
+                                        document.getElementById(bmc_ip+'udp').innerHTML = data[bmc_ip][i];
+                                    }
                                     break;
                                 case 'monitorStatus':
-                                    document.getElementById(bmc_ip+'flag').innerHTML = data[bmc_ip][i];
-                                    document.getElementById(bmc_ip+'flag').classList.remove('text-warning');
-                                    document.getElementById(bmc_ip+'flag').classList.remove('text-success');
-                                    document.getElementById(bmc_ip+'flag').classList.remove('text-danger');
-                                    if(data[bmc_ip][i].includes('D/C')){
-                                        document.getElementById(bmc_ip+'flag').classList.add('text-danger');
-                                    }
-                                    else if(data[bmc_ip][i].includes('OFF')){
-                                        document.getElementById(bmc_ip+'flag').classList.add('text-warning');
-                                    }
-                                    else{
-                                        document.getElementById(bmc_ip+'flag').classList.add('text-success');
+                                    if (document.getElementById(bmc_ip+'flag')) {
+                                        document.getElementById(bmc_ip+'flag').innerHTML = data[bmc_ip][i];
+                                        document.getElementById(bmc_ip+'flag').classList.remove('text-warning');
+                                        document.getElementById(bmc_ip+'flag').classList.remove('text-success');
+                                        document.getElementById(bmc_ip+'flag').classList.remove('text-danger');
+                                        if(data[bmc_ip][i].includes('D/C')){
+                                            document.getElementById(bmc_ip+'flag').classList.add('text-danger');
+                                        }
+                                        else if(data[bmc_ip][i].includes('OFF')){
+                                            document.getElementById(bmc_ip+'flag').classList.add('text-warning');
+                                        }
+                                        else{
+                                            document.getElementById(bmc_ip+'flag').classList.add('text-success');
+                                        }
                                     }
                                     break;
                                 case 'bmc_event':
-                                    var event_button = document.getElementById(bmc_ip + 'eventButton');
-                                    event_button.classList.remove('btn-success');
-                                    event_button.classList.remove('btn-warning');
-                                    event_button.classList.remove('btn-danger');
-                                    event_button.classList.remove('text-white');
-                                    if(data[bmc_ip][i] == 'ERROR'){
-                                        event_button.classList.add('btn-danger');
+                                    if (document.getElementById(bmc_ip+'eventButton')) {
+                                        var event_button = document.getElementById(bmc_ip + 'eventButton');
+                                        event_button.classList.remove('btn-success');
+                                        event_button.classList.remove('btn-warning');
+                                        event_button.classList.remove('btn-danger');
+                                        event_button.classList.remove('text-white');
+                                        if(data[bmc_ip][i] == 'ERROR'){
+                                            event_button.classList.add('btn-danger');
+                                        }
+                                        else if(data[bmc_ip][i] == 'WARNING'){
+                                            event_button.classList.add('btn-warning');
+                                        }
+                                        else{
+                                            event_button.classList.add('btn-success');
+                                        }
+                                        event_button.classList.add('text-white');
+                                        event_button.innerHTML = data[bmc_ip][i];
                                     }
-                                    else if(data[bmc_ip][i] == 'WARNING'){
-                                        event_button.classList.add('btn-warning');
-                                    }
-                                    else{
-                                        event_button.classList.add('btn-success');
-                                    }
-                                    event_button.classList.add('text-white');
-                                    event_button.innerHTML = data[bmc_ip][i];
                                     break;
                                 case 'bmc_details':
-                                    var event_menu = document.getElementById(bmc_ip + 'eventSubmenu');
-                                    event_menu.innerHTML = "";
-                                    var event_list = data[bmc_ip][i];
-                                    var button_text = document.getElementById(bmc_ip + 'eventButton').innerHTML;
-                                    var event_link = frontend_url + "/event?var=" + bmc_ip
-                                    var inserted_more = false;
-                                    if(event_list[0] != ''){
-                                        for(var y = 0; y < event_list.length; y++){
-                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + event_list[y] + "</a>")
-                                            if(y > 5){
-                                                inserted_more = true;
-                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>More Events</u></a>");
-                                                break;
+                                    if (document.getElementById(bmc_ip+'eventSubmenu')) {
+                                        var event_menu = document.getElementById(bmc_ip + 'eventSubmenu');
+                                        event_menu.innerHTML = "";
+                                        var event_list = data[bmc_ip][i];
+                                        var button_text = document.getElementById(bmc_ip + 'eventButton').innerHTML;
+                                        var event_link = frontend_url + "/event?var=" + bmc_ip
+                                        var inserted_more = false;
+                                        if(event_list[0] != ''){
+                                            for(var y = 0; y < event_list.length; y++){
+                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + event_list[y] + "</a>")
+                                                if(y > 5){
+                                                    inserted_more = true;
+                                                    event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>More Events</u></a>");
+                                                    break;
+                                                }
+                                            }
+                                            if(!inserted_more && button_text != "OK"){
+                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>Click for details</u></a>");
                                             }
                                         }
-                                        if(!inserted_more && button_text != "OK"){
-                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>Click for details</u></a>");
+                                        if(button_text == "ERROR"){
+                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ff3333'>" + event_list.length + "</span>";
                                         }
-                                    }
-                                    if(button_text == "ERROR"){
-                                        document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ff3333'>" + event_list.length + "</span>";
-                                    }
-                                    else if(button_text == "WARNING"){
-                                        document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ffa31a'>" + event_list.length + "</span>";
-                                    }
-                                    else{
-                                        event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + "Everything is good, no event reported!" + "</a>")
+                                        else if(button_text == "WARNING"){
+                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ffa31a'>" + event_list.length + "</span>";
+                                        }
+                                        else{
+                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + "Everything is good, no event reported!" + "</a>")
+                                        }
                                     }
                                     break;
                                 default:
