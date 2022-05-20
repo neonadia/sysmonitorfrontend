@@ -2154,11 +2154,23 @@ def udpoutput():
     star,mac,ipmi,os_ip,start_date,done_date,cmd,content,content_size,benchmark,config,result,id,file_name,conclusion= [],[],[],[],[],[],[],[],[],[],[],[],[],[],[]
     benchmark_data = list(udp_collection.find({}))
     for i in benchmark_data:
+        cur_mac_clean = clean_mac(i['mac'])
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         star.append(i['star'])
         mac.append(i['mac'])
-        os_ip.append(i['os_ip'])
-        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
-        ipmi.append(df_pwd[df_pwd['os_ip'] == i['os_ip']]['ip'].values[0])
+        try: 
+            cur_os_ip = df_pwd[df_pwd['mac'].isin([cur_mac_clean.upper(),cur_mac_clean.lower()])]['os_ip'].values[0]
+            os_ip.append(cur_os_ip)
+            ipmi.append(df_pwd[df_pwd['mac'].isin([cur_mac_clean.upper(),cur_mac_clean.lower()])]['ip'].values[0])
+            if cur_os_ip != os_ip:
+                printf('Found OS IP changed: [Benchmark OS IP] ' + i['os_ip']  + ' ====> [Current OS IP] ' +  cur_os_ip)
+        except Exception as e:
+            printf(e)
+            printf('Wanrning: can not find matching mac address. Below is the pwd dataframe')
+            printf(df_pwd)
+            printf('mac address from benchmark data is: ' + cur_mac_clean)
+            os_ip.append('N/A')
+            ipmi.append('N/A')
         start_date.append(i['start_date'])
         done_date.append(i['done_date'])
         cmd.append(i['cmd'])
@@ -3144,7 +3156,7 @@ def benchmark_result_parser():
                 for filename in os.listdir(inputdir + '/' + dirname):
                     for config in config_list:
                         # Only parse the log has config files
-                        if config['log'].lower() in filename.lower():
+                        if filename.lower().startswith(config['log'].lower()):
                             print(filename)
                             with open(inputdir + '/' + dirname + '/' + filename, 'r') as logfile:
                                 contents = logfile.read()
