@@ -3160,11 +3160,12 @@ def benchmark_result_parser():
                             print(filename)
                             with open(inputdir + '/' + dirname + '/' + filename, 'r') as logfile:
                                 contents = logfile.read()
-                            conclusionAndResult = resultParser(contents, keywords=config['keywords'], addRow=config['addRow'], \
-                                               dfs=config['dfs'], index=config['index'], unit=config['unit'], \
-                                               criteriaType=config['criteriaType'], criteria=config['criteria'])
-                            print(conclusionAndResult.values())
-                            if conclusionAndResult['conclusion'] != 'N/A':
+                            conclusionAndResult = 'N/A'
+                            if config['parseResultLog'] == 1:
+                                conclusionAndResult = resultParser(contents, keywords=config['keywords'], addRow=config['addRow'], \
+                                                       dfs=config['dfs'], index=config['index'], unit=config['unit'], \
+                                                       criteriaType=config['criteriaType'], criteria=config['criteria'])
+                                print(conclusionAndResult.values())
                                 file_data = {\
                                         'os_ip':cur_ip,\
                                         'mac':cur_mac,\
@@ -3182,7 +3183,24 @@ def benchmark_result_parser():
                                         'raw_result':conclusionAndResult['raw_result'],\
                                         'star':-1}
                                 #print(file_data)
-                                udp_collection.insert(file_data)       
+                            else:
+                                file_data = {\
+                                        'os_ip':cur_ip,\
+                                        'mac':cur_mac,\
+                                        'file_name':filename,\
+                                        'start_date':"Self-inserted",\
+                                        'done_date':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),\
+                                        'content':contents,\
+                                        'result':'Disabled',\
+                                        'conclusion':'Disabled',\
+                                        'category':config['category'],\
+                                        'config':config['config'],\
+                                        'cmd':config['prefix'] + " " + config['exe'] + " " + config['config'],\
+                                        'benchmark':config['log'],\
+                                        'unit':['N/A'],\
+                                        'raw_result':['N/A'],\
+                                        'star':-1} 
+                            udp_collection.insert(file_data)       
         printf("Benchmark Data Insert Done!")
         printf(messages)
     except Exception as e:
