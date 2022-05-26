@@ -3160,19 +3160,25 @@ def benchmark_result_parser():
                             print(filename)
                             with open(inputdir + '/' + dirname + '/' + filename, 'r') as logfile:
                                 contents = logfile.read()
+                            if getsizeof(contents) > 16000000:                               
+                                lines = contents.split('\n')
+                                sub_lines = int(len(lines) * 16000000/getsizeof(contents) * 0.9)
+                                contents_mongo = 'Info: Lines have been hidden due to the size of log file is larger than 16 MB.\n' + '\n'.join(lines[-sub_lines::])
+                            else:
+                                contents_mongo = contents
                             conclusionAndResult = 'N/A'
                             if config['parseResultLog'] == 1:
                                 conclusionAndResult = resultParser(contents, keywords=config['keywords'], addRow=config['addRow'], \
                                                        dfs=config['dfs'], index=config['index'], unit=config['unit'], \
                                                        criteriaType=config['criteriaType'], criteria=config['criteria'])
-                                print(conclusionAndResult.values())
+                                print(conclusionAndResult.values())                                
                                 file_data = {\
                                         'os_ip':cur_ip,\
                                         'mac':cur_mac,\
                                         'file_name':filename,\
                                         'start_date':"Self-inserted",\
                                         'done_date':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),\
-                                        'content':contents,\
+                                        'content':contents_mongo,\
                                         'result':conclusionAndResult['result'],\
                                         'conclusion':conclusionAndResult['conclusion'],\
                                         'category':config['category'],\
@@ -3190,7 +3196,7 @@ def benchmark_result_parser():
                                         'file_name':filename,\
                                         'start_date':"Self-inserted",\
                                         'done_date':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),\
-                                        'content':contents,\
+                                        'content':contents_mongo,\
                                         'result':'Disabled',\
                                         'conclusion':'Disabled',\
                                         'category':config['category'],\
