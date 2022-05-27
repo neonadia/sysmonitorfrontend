@@ -12,6 +12,7 @@ from reportlab.graphics.shapes import Drawing, Line
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.textlabels import Label
 from reportlab.platypus.flowables import HRFlowable, Image
+from benchmark_parser import clean_mac
 from get_data import find_min_max_rack
 import os
 import pandas as pd
@@ -20,6 +21,9 @@ import math
 import datetime
 import pymongo
 import string
+import gridfs
+import cv2
+import numpy as np
 
 class ConditionalSpacer(Spacer):
 
@@ -99,6 +103,7 @@ db = client.redfish
 collection = db.servers
 collection2 = db.udp
 collection3 = db.monitor
+fs = gridfs.GridFS(db)
 list_of_collections = db.list_collection_names()
 bmc_ip = []
 timestamp = []
@@ -321,7 +326,7 @@ template_data = {'bmc_ip':'N/A','mac':'N/A',\
                  'power_model':'N/A','power_num':'0','power_note':'N/A',\
                  'fan_model':'N/A','fan_num':'0','fan_note':'N/A'\
                 }
-
+topo_files = {}
 #parsed_data = [template_data for i in range(len(all_hw_data))]
 for item in all_hw_data:
     #print(item['Hostname'])
@@ -464,6 +469,9 @@ for item in all_hw_data:
                             all_manufactures.append(cur_entry)
         #print(all_manufactures)
         parsed_data[-1]['mem_model'] = '<br/>'.join(all_manufactures)
+
+    if 'TOPO_file' in item and 'Hostname' in item:
+        topo_files[item['Hostname']] = [item['TOPO_file']['imageID'], item['TOPO_file']['shape']]
 #parsed_data[0]['mac'] = -1
 parsed_data_sort = []
 
@@ -672,6 +680,7 @@ for ip in bmc_ip:
 printf('############sn_data############')
 for i in sn_data_sort:
     printf(i)
+printf('############sn_data END############')
 
 class Test(object):
     """"""
@@ -860,8 +869,9 @@ class Test(object):
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
         ]))
         ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Cluster Summary</link> 
-/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">Hardware Counts</link> 
-/ <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">Hardware Per Node</link> 
+/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">HW Counts</link> 
+/ <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">HW Per Node</link> 
+/ <link href="#TOPO_TITLE"color="blue" fontName="Helvetica-Bold">PCI TOPO</link>
 / <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
 / <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark</link>
 / <link href="#Archive"color="blue" fontName="Helvetica-Bold">Archive</link>"""
@@ -1064,7 +1074,79 @@ class Test(object):
             """
             hardware_node_nodata = Paragraph(ptext_hn_nodata, warning)
             self.story.append(hardware_node_nodata)
-#######################################################################        
+        ########################################Node by Node Hardware summary END##################################################     
+        
+        ########################################Node by Node PCI Topo##################################################
+        self.story.append(PageBreak())
+        ptext_topo = """<a name="TOPO_TITLE"/><font color="black" size="12"><b>PCIE TOPOLOGY DIAGRAM</b></font>"""
+        topo_title = Paragraph(ptext_topo, centered)
+        topo_title.keepWithNext = True
+        self.story.append(topo_title)
+        self.story.append(p)
+        self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
+        
+        # load topo files from database
+        printf(topo_files)
+        for key in topo_files.keys():
+            printf(topo_files[key])
+            gOut = fs.get(topo_files[key][0])
+            cur_img = np.frombuffer(gOut.read(), dtype=np.uint8)
+            cur_img = np.reshape(cur_img, topo_files[key][1])
+            save_path = os.environ['UPLOADPATH'] + '/hw_data/hw_info_'  + key
+            
+            if os.path.exists(save_path):
+                printf('--------------------------------Saving the image for: ' + key)
+                cv2.imwrite(save_path  +  '/topo_' + key  + '.jpg',cur_img)
+            else:
+                printf('Warning: ' + save_path + ' path not exsits. Skip saving the topo.png')
+        # initialize variables
+        hw_data_path = os.environ['UPLOADPATH'] + '/hw_data'
+        all_hw_info_dirs = []
+        all_topo_files = {}
+        num_of_topos = 0
+        # scan all files
+        for root,dirs,files in os.walk(hw_data_path):
+            for one_dir in sorted(dirs):
+                one_dir_full = hw_data_path + '/' + one_dir
+                if one_dir_full not in all_hw_info_dirs and one_dir.startswith("hw_info_") and os.path.exists(hw_data_path + '/' + one_dir) and clean_mac(one_dir.split("_")[-1]).upper() in MacAddress:
+                    all_hw_info_dirs.append(one_dir_full)
+                    printf(one_dir_full)
+        printf("--------------------------TOPO files info----------------------------")
+        printf(MacAddress)
+        for one_dir in all_hw_info_dirs:
+            all_topo_files[clean_mac(one_dir.split("_")[-1]).upper()] = 'N/A'
+            for root,dirs,files in os.walk(one_dir):
+                for file in sorted(files):
+                    if file.startswith("topo_") and file.endswith(".jpg") and os.path.exists(one_dir + '/' + file):
+                        all_topo_files[clean_mac(one_dir.split("_")[-1]).upper()] = one_dir + '/' + file
+                        num_of_topos += 1
+                        printf(one_dir + '/' + file)
+                        break
+        printf(all_topo_files.keys())
+        printf("---------------------------------------------------------------------")
+        if num_of_topos == 0:
+            ptext_topo_nodata = """
+            Warning: No TOPO image can be found in Database:<br />
+            1. Make sure the 'hw_data' is inside the input directory.<br />
+            2. Try to put the topo_*.png file in the directory. <br />
+            3. Check the MAC addresses are the same as the input files.<br />
+            4. Check if any nodes hw data missing.<br />
+            """
+            topo_nodata = Paragraph(ptext_topo_nodata, warning)
+            self.story.append(topo_nodata)
+        for cur_mac in MacAddress:
+            printf('Scanning ===> ' + cur_mac)
+            for key in all_topo_files.keys():
+                if cur_mac == key:                                         
+                    if all_topo_files[key] != 'N/A':
+                        printf('Found topo image <=== ' + cur_mac)
+                        self.story.append(get_image(all_topo_files[key], height=30*cm, width=20*cm))
+                    else:
+                        printf('Cannot find topo image <=== ' + cur_mac)
+                    break
+            #self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
+            break # only show one systems topo
+        ########################################Node by Node PCI Topo END##################################################
         
         #Sensor reading charts
         self.story.append(PageBreak())

@@ -2162,7 +2162,7 @@ def udpoutput():
             cur_os_ip = df_pwd[df_pwd['mac'].isin([cur_mac_clean.upper(),cur_mac_clean.lower()])]['os_ip'].values[0]
             os_ip.append(cur_os_ip)
             ipmi.append(df_pwd[df_pwd['mac'].isin([cur_mac_clean.upper(),cur_mac_clean.lower()])]['ip'].values[0])
-            if cur_os_ip != os_ip:
+            if cur_os_ip != i['os_ip']:
                 printf('Found OS IP changed: [Benchmark OS IP] ' + i['os_ip']  + ' ====> [Current OS IP] ' +  cur_os_ip)
         except Exception as e:
             printf(e)
