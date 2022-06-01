@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from subprocess import Popen, PIPE
 import os
 from pymongo import MongoClient
+import traceback
 
 mongoport = int(os.environ['MONGOPORT'])
 client = MongoClient('localhost', mongoport)
@@ -825,9 +826,10 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     for sensorID in all_readings[0][api1]:
         try:
             all_vals[sensorID] = [all_readings[0][api1][sensorID]['Name']]
-        except:
-            print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
+        except Exception:
+            traceback.print_exc()
             if api1 == "Fans":
+                print("FAN name is not readable, named as FAN1,FAN2..", flush=True)
                 all_vals[sensorID] = ["Fan"+sensorID]
             else:
                 all_vals[sensorID] = ["NaN"+sensorID]
@@ -835,7 +837,11 @@ def find_min_max(bmc_ip, api1, api2, boundry):
     for i in range(len(all_readings)):
         all_dates.append(all_readings[i]["Datetime"])
         for sensorID in all_vals:
-            all_vals[sensorID].append(all_readings[i][api1][sensorID][api2])
+            try:
+                all_vals[sensorID].append(all_readings[i][api1][sensorID][api2])
+            except Exception:
+                traceback.print_exc()
+                continue
     extreme_vals = {}
     date_format = "%Y-%m-%d %H:%M:%S"
     elapsed_time = datetime.datetime.strptime(all_dates[-1], date_format) - datetime.datetime.strptime(all_dates[0], date_format)

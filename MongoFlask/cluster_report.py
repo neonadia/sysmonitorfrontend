@@ -471,7 +471,7 @@ for item in all_hw_data:
         parsed_data[-1]['mem_model'] = '<br/>'.join(all_manufactures)
 
     if 'TOPO_file' in item and 'Hostname' in item:
-        topo_files[item['Hostname']] = [item['TOPO_file']['imageID'], item['TOPO_file']['shape']]
+        topo_files[item['Hostname']] = [item['TOPO_file']['imageID'], item['TOPO_file']['shape'], item['TOPO_file']['filename']]
 #parsed_data[0]['mac'] = -1
 parsed_data_sort = []
 
@@ -898,6 +898,7 @@ class Test(object):
         ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster showcase during L12 testing</b></font>"""
         paragraph_schema = Paragraph(ptext_schema, centered)
         self.story.append(paragraph_schema)
+        self.story.append(spacer_tiny)
         self.story.append(p)
         ptext_schema_intro = """
         SMC HPC cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
@@ -1096,7 +1097,7 @@ class Test(object):
             
             if os.path.exists(save_path):
                 printf('--------------------------------Saving the image for: ' + key)
-                cv2.imwrite(save_path  +  '/topo_' + key  + '.jpg',cur_img)
+                cv2.imwrite(save_path  +  '/' + topo_files[key][2], cur_img)
             else:
                 printf('Warning: ' + save_path + ' path not exsits. Skip saving the topo.png')
         # initialize variables
@@ -1117,7 +1118,7 @@ class Test(object):
             all_topo_files[clean_mac(one_dir.split("_")[-1]).upper()] = 'N/A'
             for root,dirs,files in os.walk(one_dir):
                 for file in sorted(files):
-                    if file.startswith("topo_") and file.endswith(".jpg") and os.path.exists(one_dir + '/' + file):
+                    if file.startswith("topo_") and file.endswith(".png") and os.path.exists(one_dir + '/' + file):
                         all_topo_files[clean_mac(one_dir.split("_")[-1]).upper()] = one_dir + '/' + file
                         num_of_topos += 1
                         printf(one_dir + '/' + file)
@@ -1134,22 +1135,29 @@ class Test(object):
             """
             topo_nodata = Paragraph(ptext_topo_nodata, warning)
             self.story.append(topo_nodata)
-        for cur_mac in MacAddress:
+            self.story.append(PageBreak())
+        for cur_sn, cur_mac in zip(serialNumber, MacAddress):
             printf('Scanning ===> ' + cur_mac)
             for key in all_topo_files.keys():
                 if cur_mac == key:                                         
                     if all_topo_files[key] != 'N/A':
                         printf('Found topo image <=== ' + cur_mac)
-                        self.story.append(get_image(all_topo_files[key], height=30*cm, width=20*cm))
+                        ptext_topo_sub = """<a name="NH_TITLE"/><font color="black" size="12"><b>SN: """ + cur_sn + """ MAC: """ + cur_mac +"""</b></font>"""
+                        topo_title_sub = Paragraph(ptext_topo_sub, bm_title)
+                        topo_title_sub.keepWithNext = True
+                        self.story.append(topo_title_sub)
+                        self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
+                        self.story.append(get_image(all_topo_files[key], height=21*cm, width=15.5*cm))
+                        self.story.append(PageBreak())
                     else:
                         printf('Cannot find topo image <=== ' + cur_mac)
                     break
-            #self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
-            break # only show one systems topo
+            
+            #break # only show one systems topo
         ########################################Node by Node PCI Topo END##################################################
         
         #Sensor reading charts
-        self.story.append(PageBreak())
+        #self.story.append(PageBreak())
         ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12"><b>Sensor Reading Report</b></font>"""
         sr_title = Paragraph(ptext_sr, centered)
         sr_title.keepWithNext = True
