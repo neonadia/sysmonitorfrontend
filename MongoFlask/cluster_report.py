@@ -117,6 +117,7 @@ bmcMacAddress = []
 benchmark_node = []
 benchmark_data = []
 benchmark_unit = []
+result_name = []
 benchmark_name = {}
 
 for data in list(collection2.find({})):
@@ -139,6 +140,7 @@ for i in range(len(benchmark_map)):
     benchmark_node.append([])
     benchmark_data.append(('N/A'))
     benchmark_unit.append([])
+    result_name.append([])
 
 printf("#####################benchmark_map#####################")
 printf(benchmark_map)
@@ -165,6 +167,10 @@ for i, bm in enumerate(list(benchmark_map.keys())):
                 benchmark_unit[i].append(data['unit'])
             except:
                 benchmark_unit[i].append('N/A')
+            try:
+                result_name[i].append(data['result_name'])
+            except:
+                result_name[i].append('N/A')
             counter += 1
     cur_benchmark_data = list(map(list, zip(*cur_benchmark_data)))
     cur_benchmark_tuple = []
@@ -1318,7 +1324,7 @@ class Test(object):
         
         
         
-        for data, unit, node, name in zip(benchmark_data,benchmark_unit,benchmark_node,list(benchmark_map.keys())):
+        for data, unit, r_name, node, name in zip(benchmark_data,benchmark_unit, result_name, benchmark_node,list(benchmark_map.keys())):
             printf('Unit is:')
             printf(unit)
             
@@ -1394,11 +1400,11 @@ class Test(object):
                         formatted_line_data = []
                     if item is data:
                         for b_index, b in enumerate(item):
-                            ptext = "<font size=%s>%s</font>" % (font_size-1, 'Result No.' + str(b_index))
+                            ptext = "<font size=%s>%s</font>" % (font_size-1, cleanUnits(r_name,b_index) + ' ' + cleanUnits(unit,b_index))
                             p1 = Paragraph(ptext, centered)
                             formatted_line_data.append(p1)
                             for c in b:
-                                ptext = "<font size=%s>%s</font>" % (font_size-1, str(c) + ' ' + cleanUnits(unit,b_index))
+                                ptext = "<font size=%s>%s</font>" % (font_size-1, str(c))
                                 p1 = Paragraph(ptext, centered)
                                 formatted_line_data.append(p1)
                             data3.append(formatted_line_data)
@@ -1430,7 +1436,7 @@ class Test(object):
                         formatted_line_data = []
                     if item is data:
                         for b_index, b in enumerate(item):
-                            ptext = "<font size=%s>%s</font>" % (font_size-1, 'Result No.' + str(b_index))
+                            ptext = "<font size=%s>%s</font>" % (font_size-1, cleanUnits(r_name,b_index))
                             p1 = Paragraph(ptext, centered)
                             formatted_line_data.append(p1)
                             for c in b:

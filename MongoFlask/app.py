@@ -3186,6 +3186,7 @@ def benchmark_result_parser():
                                         'cmd':config['prefix'] + " " + config['exe'] + " " + config['config'],\
                                         'benchmark':config['log'],\
                                         'unit':config['unit'],\
+                                        'result_name':config['resultName'],\
                                         'raw_result':conclusionAndResult['raw_result'],\
                                         'star':-1}
                                 #print(file_data)
@@ -3204,6 +3205,7 @@ def benchmark_result_parser():
                                         'cmd':config['prefix'] + " " + config['exe'] + " " + config['config'],\
                                         'benchmark':config['log'],\
                                         'unit':['N/A'],\
+                                        'result_name':['N/A'],\
                                         'raw_result':['N/A'],\
                                         'star':-1} 
                             udp_collection.insert(file_data)       

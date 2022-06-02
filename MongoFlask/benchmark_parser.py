@@ -28,16 +28,17 @@ def parseInput(filepath):
     "dfs":[" "], # default seperator
     "index":[-2],
     "unit":["ops/s"],
+    "resultName":["Throughput"],
     "criteriaType":["numericType"],
     "criteria":[[0,99999]]
     }
     '''
     # all keys
     basicKeys = ['category','exe','prefix','config','log','walltime','parseResultLog']
-    parserKeys = ['selfLog','selfLogPath','numOfResults','keywords','addRow','dfs','index','unit','criteriaType','criteria']
+    parserKeys = ['selfLog','selfLogPath','numOfResults','keywords','addRow','dfs','index','unit','resultName','criteriaType','criteria']
     # key type, note that keywords not included inside either strkeys nor intKeys
-    strKeys = ['category','exe','prefix','config','log','walltime','selfLogPath','dfs','unit','criteriaType']
-    listKeys = ['keywords','addRow','dfs','index','unit','criteriaType','criteria']
+    strKeys = ['category','exe','prefix','config','log','walltime','selfLogPath','dfs','unit','resultName','criteriaType']
+    listKeys = ['keywords','addRow','dfs','index','unit','resultName','criteriaType','criteria']
     intKeys = ['parseResultLog','walltime','selfLog','numOfResults','addRow','index']
     specialKeys = ['criteria']
     print('Parsing json into dict...', flush=True)    
