@@ -3277,6 +3277,10 @@ def developmentnote08182020():
 def developmentnote04152021():
     return send_file("/app/templates/DevelopmentNoteV2.pdf",cache_timeout=0)
 
+@app.route('/developmentnote06022022')
+def developmentnote06022022():
+    return send_file("/app/templates/DevelopmentNoteV3.pdf",cache_timeout=0)
+
 ### Report Generation ###
 @app.route('/downloadClusterReport')
 def downloadClusterReport():
