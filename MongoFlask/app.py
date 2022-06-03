@@ -139,21 +139,13 @@ def system_telemetry():
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     bmc_ip = []
     mac_list = []
-    mongo_client = MongoClient('localhost', mongoport)
-    database = mongo_client.redfish
-    try:
-        database.validate_collection("metrics")  # Try to validate a collection
-    except pymongo.errors.OperationFailure:  # If the collection doesn't exist
-        internal_error("Database not ready!")
-    else:
-        cur = collection.find({},{"BMC_IP":1,"_id":0})#.limit(50)
-        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
-        for i in cur:
-            bmc_ip.append(i['BMC_IP'])
-            mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
-        mongo_client.close()
-        data = zip(mac_list,bmc_ip)
-        return render_template('system_telemetry.html',rackobserverurl = rackobserverurl, rackname = rackname, data = data, frontend_urls = get_frontend_urls())
+    cur = collection.find({},{"BMC_IP":1,"_id":0})
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    for i in cur:
+        bmc_ip.append(i['BMC_IP'])
+        mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
+    data = zip(mac_list,bmc_ip)
+    return render_template('system_telemetry.html',rackobserverurl = rackobserverurl, rackname = rackname, data = data, frontend_urls = get_frontend_urls())
 
 @app.route('/udp_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
 def udp_sesssion_handler():
