@@ -1151,10 +1151,10 @@ class Test(object):
                         ptext_topo_sub = """<a name="NH_TITLE"/><font color="black" size="12"><b>SN: """ + cur_sn + """ MAC: """ + cur_mac +"""</b></font>"""
                         topo_title_sub = Paragraph(ptext_topo_sub, bm_title)
                         topo_title_sub.keepWithNext = True
-                        self.story.append(topo_title_sub)
-                        self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
-                        self.story.append(get_image(all_topo_files[key], height=21*cm, width=15.5*cm))
-                        self.story.append(PageBreak())
+                        self.story.append(KeepTogether([topo_title_sub,spacer_tiny,get_image(all_topo_files[key], height=21*cm, width=15.5*cm),spacer_tiny,hr_line,spacer_tiny]))
+                        #self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
+                        #self.story.append(get_image(all_topo_files[key], height=21*cm, width=15.5*cm))
+                        #self.story.append(PageBreak())
                     else:
                         printf('Cannot find topo image <=== ' + cur_mac)
                     break
@@ -1163,7 +1163,7 @@ class Test(object):
         ########################################Node by Node PCI Topo END##################################################
         
         #Sensor reading charts
-        #self.story.append(PageBreak())
+        self.story.append(PageBreak())
         ptext_sr = """<a name="SR_TITLE"/><font color="black" size="12"><b>Sensor Reading Report</b></font>"""
         sr_title = Paragraph(ptext_sr, centered)
         sr_title.keepWithNext = True
