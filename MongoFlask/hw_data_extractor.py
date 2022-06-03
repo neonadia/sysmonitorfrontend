@@ -322,7 +322,8 @@ if found:
                                                     elif 'GPU memory vendor' in headers[iter]:
                                                         columns.update({"Memory Vendor":iter})
                                                     elif 'Serial Number' in headers[iter]:
-                                                        columns.update({'Serial No.':iter})
+                                                        columns.update({'Serial No.':iter}) 
+
                                                     elif 'PCI Bus' in headers[iter]:
                                                         columns.update({"PCI Bus":iter})
                                                     elif 'Card series' in headers[iter]:
@@ -358,7 +359,45 @@ if found:
                                     gpu_dict['Graphics']['GPU'][str(a)] = {"Device":device,'GPU Id':gpu_id,'VBIOS':vbios,'Max Power(W)':max_pwr,'Serial No.':serial,'PCI Bus':pci,"Series":series,"Model":model,'Vendor':vendor,"SKU":sku,'SClock':sclk,'Mem Clock':mclk} 
                                     a+=1
                                 gpu_dict['Graphics']['Number of GPUs'] = a
-                                collection.update_one({"Hostname":hostname},{"$set":gpu_dict})      
+                                collection.update_one({"Hostname":hostname},{"$set":gpu_dict})
+                    elif 'gpu' in file and '.log' in file:
+                        if os.path.getsize(file) != 0: 
+                            if GPU == "NVIDIA" or GPU == "nvidia":
+                                print("Parsing for NVIDIA gpu hw info.....",flush=True)
+                                # read the driver version
+                                gpu_dict = {'Graphics':{"Number of GPUs" : 0,"Manufacturer":"Nvidia", "Driver Version":"N/A","GPU":{}}}
+                                with open(file,"r") as cur_file:            
+                                    lines = cur_file.readlines()
+                                    current_device = 0
+                                    for iter,line in enumerate(lines):
+                                        if "Driver Version" in line:
+                                            driver_version = line.split(':')[1].strip()
+                                            gpu_dict["Graphics"]["Driver Version"] = driver_version
+                                        elif "Product Name" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)] = {}
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["Device"] = current_device
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["Model"] = line.split(":")[1].strip()
+                                        elif "Serial Number" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["Serial No."] = line.split(":")[1].strip()
+                                        elif "GPU UUID" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["GPU Id"] = line.split(":")[1].strip()
+                                        elif "VBIOS Version" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["VBIOS"] = line.split(":")[1].strip()
+                                        elif "GPU Part Number" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["SKU."] = line.split(":")[1].strip()
+                                        elif "Bus Id" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]["PCI Bus"] = line.split(":")[1].strip() + ":" + line.split(":")[2].strip() + ":" + line.split(":")[3].strip()
+                                        elif "Max Power Limit" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]['Max Power(W)'] = line.split(":")[1].strip()
+                                        elif "Architecture" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]['Series'] = line.split(":")[1].strip()
+                                        elif "Max Clocks" in line:
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]['SClock'] = lines[iter+1].split(":")[1].strip()
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]['Mem Clock'] = lines[iter+3].split(":")[1].strip()
+                                            gpu_dict["Graphics"]["GPU"][str(current_device)]['Vendor'] = "Nvidia"
+                                            current_device = current_device + 1
+                                            gpu_dict["Graphics"]["Number of GPUs"] = current_device
+                                collection.update_one({"Hostname":hostname},{"$set":gpu_dict})                                             
 
                     elif 'psu' in file and 'txt' in file:
                         if os.path.getsize(file) != 0: 

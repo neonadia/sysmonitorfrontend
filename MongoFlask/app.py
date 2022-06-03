@@ -4,6 +4,7 @@ from flask_weasyprint import HTML, render_pdf
 import json
 from bson import json_util
 from pymongo import MongoClient
+import pymongo
 from bson.objectid import ObjectId
 from json2html import *
 import get_data # including min_max
@@ -34,6 +35,9 @@ from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seper
 import secrets
 import flask_monitoringdashboard as dashboard
 from io import StringIO
+import gridfs
+import cv2
+import numpy as np
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -50,9 +54,106 @@ hardware_collection = db.hw_data
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 redfish_session_info = {'state': 'inactive', 'guid' : 'n/a'}
-
-err_list = ['Critical','critical','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Throttled','Failure','failure','Failed','faile','Processor','processor','Security','security'] # need more key words
+err_list = ['Critical','critical','AER','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Failure','failure','Failed','failed','Processor','processor','Security','security','thermal','Thermal','throttle','Throttle','Limited','limited'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
+
+@app.route('/get_host_details')
+def get_host_details():
+    mongo_client = MongoClient('localhost', mongoport)
+    database = mongo_client.redfish
+    found_collection = False
+    iter = 0
+    response = {}
+    while not found_collection:
+        try:
+            database.validate_collection("metrics")  # Try to validate a collection
+        except pymongo.errors.OperationFailure:  # If the collection doesn't exist
+            print("This collection doesn't exist")
+            if iter > 6:
+                response['Error'] = "No metrics collection found"
+                return json.dumps(response)
+            else:
+                iter = iter + 1
+                time.sleep(10)
+        else:
+            current_collection = database.metrics
+            found_collection = True
+    cur = current_collection.find({},{"Hostname":1, "OS":1, "Kernel":1,"_id":0})
+    for i in cur:
+        response[i['Hostname']] = {}
+        response[i['Hostname']]['OS'] = i['OS']
+        response[i['Hostname']]['Kernel'] = i['Kernel']
+    mongo_client.close()
+    return json.dumps(response)
+    
+def get_single_node_metrics(hostname):
+    mongo_client = MongoClient('localhost', mongoport)
+    database = mongo_client.redfish
+    current_collection = database.metrics
+    if current_collection.count_documents({ 'Hostname': hostname, "Memory": {"$exists": True}}, limit = 1) != 0:
+        i = current_collection.find_one({"Hostname":hostname},{"Hostname":1,"Disk":1,"NETCARDS":1,"Processes":1, "Network.Download Speed": 1,"Network.Upload Speed": 1,"CPU_Metrics.Usage":1, "CPU_Metrics.Frequency":1,"CPU_Metrics.Avg_load":1, "Memory":1, "dmesg":1,"_id":0})
+        response = {}
+        response[i['Hostname']] = {"CPU":{},"MEMORY":{},"NETWORK":{}, "DISK" : {}, "PROCESSES":{},"NICS":{}, "DMESG":[]}
+        response[i['Hostname']]['CPU'] = i['CPU_Metrics']
+        response[i['Hostname']]['MEMORY'] = i['Memory']
+        for msg in i['dmesg']:
+            for err in err_list:
+                if err in msg:
+                    response[i['Hostname']]['DMESG'].append(msg)
+                    break
+        response[i['Hostname']]['NETWORK'] = {"Download Speed": i['Network']['Download Speed'],"Upload Speed": i["Network"]['Upload Speed']}
+        for partition in i['Disk']:
+            if partition == '/':
+                response[i['Hostname']]['DISK']['/root'] = i['Disk'][partition]['Percent']
+            else:
+                response[i['Hostname']]['DISK'][partition] = i['Disk'][partition]['Percent']
+        response[i['Hostname']]['PROCESSES'] = i["Processes"]
+        for nic in i["NETCARDS"]:
+            for stat in i["NETCARDS"][nic]:
+                if stat == "incoming":
+                    download = i["NETCARDS"][nic]['incoming']["Download Speed"]
+                    upload = i["NETCARDS"][nic]['outgoing']["Upload Speed"]
+                    response[i['Hostname']]['NICS'][nic] = {"MAC":i["NETCARDS"][nic]['addresses']["MAC"]['address'], "Rx": download, "Tx":upload}
+        mongo_client.close()
+        return response
+    else:
+        mongo_client.close()
+
+@app.route('/cluster_metrics')
+def cluster_metrics():       
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    mac_list = list(df_pwd['mac'])
+    response = {}
+    for m in range(len(mac_list)):
+        mac_list[m] = mac_list[m].lower()
+        mac_list[m] = '-'.join(mac_list[m][i:i + 2] for i in range(0, len(mac_list[m]), 2))
+    with Pool() as p:
+        output = p.map(get_single_node_metrics, mac_list)
+    for i in output:
+        if i is not None:
+            response.update(i)
+    return json.dumps(response)
+
+@app.route('/system_telemetry')
+def system_telemetry():
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    bmc_ip = []
+    mac_list = []
+    mongo_client = MongoClient('localhost', mongoport)
+    database = mongo_client.redfish
+    try:
+        database.validate_collection("metrics")  # Try to validate a collection
+    except pymongo.errors.OperationFailure:  # If the collection doesn't exist
+        internal_error("Database not ready!")
+    else:
+        cur = collection.find({},{"BMC_IP":1,"_id":0})#.limit(50)
+        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+        for i in cur:
+            bmc_ip.append(i['BMC_IP'])
+            mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
+        mongo_client.close()
+        data = zip(mac_list,bmc_ip)
+        return render_template('system_telemetry.html',rackobserverurl = rackobserverurl, rackname = rackname, data = data, frontend_urls = get_frontend_urls())
 
 @app.route('/udp_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
 def udp_sesssion_handler():
@@ -3031,6 +3132,46 @@ def get_node_hardware_json():
     else:
         return send_file(filename,as_attachment=True,cache_timeout=0)
 
+@app.route('/check_Topo_file')
+def check_Topo_file():
+    hostname = request.args.get('hostname')
+    client = MongoClient('localhost', mongoport)
+    db_temp = client.redfish
+    hw_collec = db_temp.hw_data
+    node_dict = hw_collec.find_one({'Hostname':hostname})
+    try: 
+        image_id = node_dict['TOPO_file']['imageID']
+        image_shape = node_dict['TOPO_file']['shape']
+        topo_filename = node_dict['TOPO_file']['filename']
+    except:
+        response = {"response" : "Error"}
+    else:
+        response = {"response" : "OK"}
+    return json.dumps(response)
+
+@app.route('/get_node_Topo')
+def get_node_Topo():
+    hostname = request.args.get('hostname')
+    client = MongoClient('localhost', mongoport)
+    db_temp = client.redfish
+    hw_collec = db_temp.hw_data
+    fs = gridfs.GridFS(db_temp)
+    node_dict = hw_collec.find_one({'Hostname':hostname})
+    image_id = node_dict['TOPO_file']['imageID']
+    image_shape = node_dict['TOPO_file']['shape']
+    topo_filename = node_dict['TOPO_file']['filename']
+    gOut = fs.get(image_id)
+    img = np.frombuffer(gOut.read(), dtype=np.uint8)
+    img = np.reshape(img, image_shape)
+    filepath = os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname + '/' + topo_filename
+    if not os.path.exists(os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname):
+        path = os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname
+        md = 0o666
+        os.mkdir(path, md)
+    topo_image = cv2.imwrite(filepath,img)
+    client.close()
+    return send_file(filepath,as_attachment=True,cache_timeout=0)
+
 @app.route('/get_node_serialNums_txt')
 def get_node_serialNums_txt():
     filename = request.args.get('file')
@@ -3072,7 +3213,8 @@ def check_serial_num():
     else:
         data = {"response": "OK","file":filename}
     result = json.dumps(data)
-    return result                                                                    
+    return result   
+
 @app.route("/get_hardware_details")
 def get_hardware_details():
     bmc_ip = request.args.get('ip')
@@ -3080,6 +3222,7 @@ def get_hardware_details():
     details = get_data.fetch_hardware_details(bmc_ip,hardware)
     data = json.dumps(details)
     return data
+
 @app.route('/SMC_db_handshake')
 def SMC_db_handshake():
     os.system("chmod +wx SMC_db_handshake.py")

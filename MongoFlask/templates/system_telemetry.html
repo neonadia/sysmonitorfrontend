@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta http-equiv="refresh" content="300"> -->
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>System Telemetry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.2/css/buttons.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/all/gauge.min.js"></script>
+    <style>
+        table, thead, tr, tbody, th, td {
+            text-align: center;
+            width: 100px;
+            vertical-align:middle;
+        }
+        .dropdown-menu li {
+          position: relative;
+          width: max-content;
+        }
+        .dropdown-submenu {
+            display: none;
+            position: absolute;
+            right: 100%;
+            top: -7px;
+            width: max-content;
+        }
+        .dropright .dropdown-menu{
+            width: max-content;
+            height: min-content;
+            text-align: center;
+            margin: 0%;
+        }
+        .dropdown-menu{
+            min-width: 0rem;
+        }
+        .scrollable-menu {
+            height: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            width: max-content;
+
+        }
+        .dropdown-menu > li:hover > .dropdown-submenu {
+            display: block;
+        }
+        body {
+            padding-bottom: 300px;
+        }
+        /* CSS classes for key word highlighting in the console output */
+        .error{
+            color:rgb(255, 46, 46);
+        }
+        .ok{
+            color:chartreuse;
+        }
+        .info{
+            color:aqua;
+        }
+        .ip{
+            color:#FF00FF;
+            font-weight:bold;
+        }
+        .warning{
+            color: orange;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+<ul class="navbar-nav">
+
+    <li class='nav-item'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-home"></i>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+            {% for url in frontend_urls %}
+                <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+            {% endfor %}
+        </div>
+    </li>
+    <li class='dropdown'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-database"></i>
+        </button>
+        <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+            {% for url in frontend_urls %}
+                <a class="dropdown-item" href="{{ url[1] }}/system_telemetry" target="_blank"> {{url[0]}} Cluster Telemetry</a>
+            {% endfor %}
+        </div>
+    </li>
+    <li class='nav-item'>
+        <a class="btn btn-primary btn-lg mr-1" href="{{ url_for('index') }}" role="button" target="_blank">{{ rackname }}</a>
+    </li>
+    {% include "advancedfeatures_menu.html" %}
+    {% include "documentationButton.html" %}
+    <!-- <li class='dropdown'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="clockstopper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ cur_time }}
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+             <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
+        </div>
+    </li> -->
+
+</ul>
+</nav>
+<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
+    <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
+        <thead class="thead-dark" >
+            <th class="align-middle" style="width: 100px"><i class="fas fa-desktop"></i> NODE</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-microchip' style='font-size:24px'></i> CPU Usage (%)</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-microchip' style='font-size:24px'></i> CPU Speed</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-memory' style='font-size:24px'></i> MEMORY USED (MB)</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-ethernet' style='font-size:24px'></i> NETWORK </th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-hdd' style='font-size:24px'></i> DISK USAGE</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-stream' style='font-size:24px'></i> PROCESSES</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-stream' style='font-size:24px'></i> DMESG</th>
+        </thead>
+        <tbody>
+            {% for hostname,bmc_ip in data %}
+                <tr>
+                    <td class="align-left font-weight-bold"  style="text-align: left; vertical-align:middle;">
+                        <ul>
+                            <li>
+                                {{ hostname }}
+                            </li>
+                            <li>
+                                {{ bmc_ip }}
+                            </li>
+                            <div id="{{hostname}}"></div>
+                        </ul>
+                    </td>
+                    <td class="align-middle" style="align-items: center;">
+                        <canvas data-type="radial-gauge" data-units="%" data-value="0"
+                         id="canvas-cpuUsage_{{hostname}}"
+                         data-units="Usage (%)"
+                         data-width="150"
+                         data-height="150"
+                         data-highlights='[
+                         { "from": 0, "to": 40, "color": "rgba(0,255,0,.15)" },
+                         { "from": 40, "to": 80, "color": "rgba(255,255,0,.15)" },
+                         { "from": 80, "to": 100, "color": "rgba(255,30,0,.25)" }
+                        ]'> 
+                        </canvas>
+                        <div  id=cpuUsage_{{hostname}} style="font-weight: bolder; background-color: rgb(232, 243, 254); align-items: center; border-color: #658bed;border-width: 5px; border-style: outset; border-radius: 10px;" >N/A</div>
+                    </td>
+                    <td class="align-middle" style="align-items: center;">
+                        <canvas data-type="radial-gauge" data-units="GHz" data-max-value="6.0" data-value="0"
+                            data-min-value="0"
+                            data-width="150"
+                            data-height="150"
+                            data-major-ticks="0,1.0,2.0,3.0,4.0,5.0,6.0"
+                            id="canvas-cpuFreq_{{hostname}}"
+                            data-highlights='[
+                            { "from": 0, "to": 2, "color": "rgba(0,255,0,.15)" },
+                            { "from": 2, "to": 4, "color": "rgba(255,255,0,.15)" },
+                            { "from": 4, "to": 6, "color": "rgba(255,30,0,.25)" }
+                            ]'> 
+                        </canvas>
+                        <div id=cpuFreq_{{hostname}} style="font-weight: bolder; background-color: rgb(232, 243, 254); align-items: center; border-color: #658bed;border-width: 5px; border-style: outset; border-radius: 10px;" >N/A</div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="align-middle font-weight-bold" style="padding: 0%; text-align: left;">
+                            <ul>
+                                <li id="{{hostname}}_memPerc">
+                                    Standby...
+                                </li>
+                            </ul>
+                            <!-- <ul>
+                                <span id="{{hostname}}_memPerc_%">45%</span>
+                            </ul>    -->
+                        </div>
+                        <div class="align-middle font-weight-bold" style="padding: 0%; text-align: left;">
+                            <ul>
+                                <li>
+                                    @ <span id="{{hostname}}_mem_speed">Standby...</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td class="align-middle" style="padding: 0%; text-align: left; width:10%;">
+                        <a class="font-weight-bold " href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{hostname}}_nics')">
+                            <ul>
+                                <li>Tx:
+                                    <ul>
+                                        <li id="{{hostname}}_upload"> <span style='color:#ff8c00'>Standby...</span></li>
+                                    </ul>
+                                </li>
+                                <li>Rx:
+                                    <ul>
+                                        <li id="{{hostname}}_download"><span style='color:#228b22'>Standby...</span></li>
+                                    </ul>
+                                </li>
+                            </u1>
+                        </a>
+                        <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{hostname}}_nics_submenu"  style="width: max-content; display: none"> 
+                            <div class="dropdown-divider"></div>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="font-weight-bold" style="text-align: left;">
+                            <ul>
+                                <li>
+                                    Partitions:
+                                    <ul id="{{hostname}}_partitions_menu">Standby...</ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="dropdown dropleft">
+                            <button class="btn btn-info btn-block font-weight-bold" style="background-color:#1a6eff; color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Running...
+                            <span class="badge font-weight-bold text-white" id="{{hostname}}_proc_num" style="background-color:#1ac2ff">Standby...</span>
+                            </button>
+                            <div class="dropdown-menu scrollable-menu dropleft">
+                                <ul style="border-radius: 10px; width: fit-content; border: 20%; padding:15px;" id="{{hostname}}_process_list">
+                                    <li> Standby...</li> 
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="dropdown dropleft">
+                            <button class="btn btn-danger btn-block font-weight-bold" style="color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Errors
+                            <span class="badge font-weight-bold text-white" id="{{hostname}}_dmesg_num" style="background-color:#fa685b">Standby...</span>
+                            </button>
+                            <div class="dropdown-menu scrollable-menu dropleft" id="{{hostname}}_dmesg_dropdown" style="background-color: black; color: white; font-weight: bolder;">
+                                <ul style="border-radius: 10px; width: fit-content; border: 20%; padding:15px;" id="{{hostname}}_dmesg_list">
+                                    <li> Standby...</li> 
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    <!-- Footer -->
+    <footer class="page-footer font-small teal pt-4 bg-primary text-white">
+      <!-- Footer Text -->
+      <div class="container-fluid text-center text-md-left">
+            <!-- Content -->
+            <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+            </p>
+      </div>
+      <!-- Footer Text -->
+      <!-- Copyright  class="footer-copyright text-center py-3" -->
+      <div class="text-center text-light bg-dark">Copyright © 2021 
+        <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+        All Rights Reserved
+      </div>
+      <!-- Copyright -->
+    </footer>
+    <script>
+        function parse_dmesg_string(msg){
+            //// Format key words in the html element's text with REGEX
+            let reError = /\b(Reset|reset|RESET|AER|Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+            let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+            let reInfo = /\b(Information|information|INFO|info)\b/g;
+            let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+            let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+            let reDate = /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(0[1-9]|[1-2]?[0-9]|3[01])\s+(2[0-3]|[0-1][0-9]):([0-5][0-9]):([0-5][0-9])\s+(19[0-9]{2}|[2-9][0-9]{3})\b/g;
+            let reWarning = /\b(WARNING|Warning|warning|limited|Limited)\b/g;
+            var formatted = msg.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>").replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>");
+            return formatted
+        }
+        function show_details(menu_id){
+            id = menu_id + "_submenu";
+            menu = document.getElementById(id)
+            if (menu.style.display === "block"){
+			    menu.style.display = "none";
+		    }
+            else{
+                menu.style.display = "block";
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            get_host_details();
+        }, false);
+        function get_host_details(){
+            $.host_details();
+        }
+        $.host_details = function(){
+            $.ajax({
+                url: '/get_host_details',
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    for(var host in data){
+                        hostname = host.replaceAll("-","").toUpperCase();
+                        host_details = document.getElementById(hostname);
+                        host_details.insertAdjacentHTML('beforeend',"<li>" + data[host]['OS'] + "</li>");
+                        host_details.insertAdjacentHTML('beforeend',"<li>" + data[host]['Kernel'] + "</li>");
+                    }
+                }
+            });
+        }
+        function adjust_gauge(hostname,cpu_usage,cpu_freq){
+            var gauge_usage = document.gauges.get('canvas-cpuUsage_' + hostname);
+            var gauge_freq = document.gauges.get('canvas-cpuFreq_' + hostname);
+            var freq = document.getElementById('cpuFreq_' + hostname);
+            var usage = document.getElementById('cpuUsage_' + hostname);
+            if(gauge_usage && gauge_freq){
+                gauge_usage.value = cpu_usage;
+                gauge_freq.value = cpu_freq;
+                freq.innerHTML = cpu_freq + "GHz";
+                usage.innerHTML = cpu_usage + "%";
+            }
+        }
+        function adjust_memory(hostname,memUsed,memTotal,memSpeed,speedCheck){
+            var mem_used = document.getElementById(hostname + '_memPerc');
+            var mem_speed = document.getElementById(hostname + "_mem_speed");
+            if(mem_used && mem_speed){
+                mem_used.innerHTML = "  " + memUsed + "/" + memTotal;
+                mem_speed.innerHTML = " " + memSpeed;
+                if (speedCheck == "false"){
+                    mem_speed.innerHTML = " " + memSpeed + "!"
+                }
+                else{
+                    mem_speed.innerHTML = " " + memSpeed
+                }
+            }
+        }
+        function adjust_network(hostname,downloadTotal,uploadTotal,nic_dict){
+            var download = document.getElementById(hostname + "_download");
+            var upload = document.getElementById(hostname + "_upload");
+            var nic_submenu = document.getElementById(hostname + "_nics_submenu");
+            if (download && upload && nic_submenu){
+                upload.innerHTML =  "<span style='color:#ff8c00'>" + uploadTotal + "</span>";
+                download.innerHTML = "<span style='color:#228b22'>" + downloadTotal + "</span>";
+                nic_submenu.innerHTML = "";
+                for(var i in nic_dict){
+                    var interface = i
+                    nic_submenu.insertAdjacentHTML('beforeend',"<li><span style='color:blue'>"+ interface  + "</span>:<ul id=" + interface+hostname + "> </ul></li>");
+                    interface_menu = document.getElementById(interface+hostname);
+                    interface_menu.insertAdjacentHTML('beforeend',"<li>MAC: <span style='color:#b452ff'>" + nic_dict[interface]["MAC"] + "</span></li>");
+                    interface_menu.insertAdjacentHTML('beforeend',"<li>Tx: <span style='color:#ff8c00'>" + nic_dict[interface]["Tx"] + "</span></li>");
+                    interface_menu.insertAdjacentHTML('beforeend',"<li>Rx: <span style='color:#228b22'>" + nic_dict[interface]["Rx"] + "</span></li>");
+                }
+            }
+        }
+        function adjust_partitions(hostname,partitions){
+            var partitions_menu = document.getElementById(hostname + '_partitions_menu')
+            if(partitions_menu){
+                partitions_menu.innerHTML = "";
+                for(var part in partitions){
+                    partitions_menu.insertAdjacentHTML('beforeend',"<li>" + part + ": " + partitions[part] + "</li>");
+                }
+            }
+        }
+        function adjust_processes(hostname,procs){
+            var proc_nums = document.getElementById(hostname + "_proc_num");
+            var proc_list = document.getElementById(hostname + "_process_list");
+            if(proc_nums && proc_list){
+                proc_list.innerHTML = "";
+                var iter = 0
+                for(var i in procs){
+                    iter++;
+                    proc_list.insertAdjacentHTML('beforeend', "<li>" + "PID: " + procs[i]['pid'] + " ------ " + procs[i]['name'] + "</li>" )
+                }
+                proc_nums.innerHTML = iter;
+            }
+        }
+        function adjust_dmesg(hostname,dmesg){
+            var dmesg_nums = document.getElementById(hostname + "_dmesg_num");
+            var dmesg_list = document.getElementById(hostname + "_dmesg_list");
+            if(dmesg_nums && dmesg_list){
+                if(dmesg.length != dmesg_nums.innerHTML){
+                    dmesg_list.innerHTML = "";
+                    for(var i in dmesg){
+                        dmesg_list.insertAdjacentHTML('beforeend', "<li>"  + parse_dmesg_string(dmesg[i]) + "</li>" )
+                    }
+                    dmesg_nums.innerHTML = dmesg.length;
+                    if(dmesg.length == 0){
+                        document.getElementById(hostname + "_dmesg_dropdown").style.visibility = "hidden";
+                    }
+                    else{
+                        document.getElementById(hostname + "_dmesg_dropdown").style.visibility = "visible";
+                    }
+                }
+                
+            }
+        }
+        
+        function get_metrics(){
+            $.metrics();
+        }
+        $.metrics = function(){
+            $.ajax({
+                url: '/cluster_metrics',
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    for(var host in data){
+                        if(host == "ERROR" || host == "STDERR"){
+                            console.log(data[host]);
+                        }
+                        else{
+                            hostname = host.replaceAll("-","").toUpperCase()
+                            adjust_gauge(hostname,data[host]["CPU"]["Usage"],data[host]["CPU"]["Frequency"]);
+                            adjust_memory(hostname,data[host]['MEMORY']["RAM Used MB"],data[host]['MEMORY']["Total RAM"],data[host]['MEMORY']["Speed"],data[host]['MEMORY']['All dimms same speed']);
+                            adjust_network(hostname,data[host]['NETWORK']["Download Speed"],data[host]['NETWORK']["Upload Speed"],data[host]["NICS"]);
+                            adjust_partitions(hostname,data[host]['DISK']);
+                            adjust_processes(hostname,data[host]["PROCESSES"]);
+                            adjust_dmesg(hostname,data[host]['DMESG']);
+                        } 
+                    }
+                }
+            });
+        }
+        
+        const interval = setInterval(() => { 
+            get_metrics();
+        }, 1000);
+        $(document).ready(function() {
+            $('#indexpage').DataTable( {
+                "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
+                "pageLength" : -1,
+                dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
+                stateSave: true,
+                buttons: [
+                        'colvis'
+                ],
+            } );
+        } );
+    </script>

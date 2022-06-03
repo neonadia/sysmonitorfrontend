@@ -86,6 +86,9 @@
         color:#FF00FF;
         font-weight:bold;
     }
+    .warning{
+        color: rgb(255, 195, 29);
+    }
 </style>
 <body>
     <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
@@ -210,7 +213,7 @@
                 <div id = " col-auto background" style="background-color: black; color: rgb(255, 255, 255); width: auto; max-block-size: auto; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;" >
                     <div id = "console">
                             <!-- Commandline output here -->
-                        <pre id="inputbar" >/><input id = "textinput" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>
+                        <pre id="inputbar" >/><input id = "textinput" spellcheck="false" onkeydown = "checkInput();" autocomplete='off' style="height: min-content; width: 800px;"></pre>
                     </div>
                 </div>
             </div> 
@@ -237,6 +240,9 @@
         // var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var output_counter = 0; ///Increasing counter to identify the console output lines. This counter serves as a ID to highlight the keywords.
         var cursor_lock = 0;
+        var global_counter = 0;
+        var global_time = 0;
+        var cycle_test = false;
         var console_history = new Array(); //// Array that contains commands executed in the console.
         console_history.push("");
         var position = 0; ///Console History iterator
@@ -260,19 +266,30 @@
                 dataType: "JSON",
                 data: {command: command}, // Send Command to server to execute
                 beforeSend: function(){ ///Write executing to console while sending and retrieving data.
-                    addLine("Executing command...... please wait");
+                    if(!cycle_test){
+                        addLine("Executing command...... please wait");
+                    }
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
                     console.log(data); ////FOR DEBUG PURPOSESs
                     cursor_lock = 0;
-                    addLine("Successfully got server response")
                     for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
                         if (key == "ERROR"){
                             addLine("================= Error ===============================");
                             addLine(data[key]);
                             addLine("================ End of Error =========================");
 
+                        }
+                        else if(cycle_test){
+                            for(var token in data[key]){
+                                for(var output in data[key][token]){
+                                    var line = data[key][token][output];
+                                    if(line != ""){
+                                        script_addLine("<span class='ip'>" + key + "</span>: <span class='ok'>" + line);
+                                    }
+                                }
+                            }
                         }
                         else{ //// Display the response as a succesful command
                             addLine("<span style='color:purple'>============================== Response from " + key +" ================================</span>");
@@ -293,6 +310,57 @@
                     console.log(xhr);
                 }        
             }); 
+        }
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        function insert_inputbar(){
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' autocomplete='off' spellcheck='false' onkeydown = 'checkInput();'' style='height: width: 800px;''></pre>") ///Place at the end of html element console.
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
+            PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }
+        async function DC_Cycle_Test(times,off_time,on_time){
+            var cycles = parseInt(times);
+            var off_t = parseInt(off_time) * 60000;
+            var on_t = parseInt(on_time) * 60000;
+            cycle_test = true;
+            document.getElementById("inputbar").remove(); //Remove the input bar
+            for(var i = 0; i < cycles; i ++){
+                script_addLine("---------------------------------------------------------------------------")
+                script_addLine("Cycle: " + i );
+                script_addLine('sending power off');
+                $.sendCommandtoServer("chassis power soft");
+                script_addLine('waiting ' + off_t + ' ms')
+                loading_icons(true);
+                await sleep(off_t);
+                loading_icons(false);
+                script_addLine('sending power on');
+                $.sendCommandtoServer("chassis power on");
+                script_addLine('waiting ' + on_t + ' ms')
+                loading_icons(true);
+                await sleep(on_t);
+                loading_icons(false);
+                script_addLine("---------------------------------------------------------------------------")
+            }
+            cycle_test = false;
+            insert_inputbar();
+        }
+        function loading_icons(on){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
+            if(on){
+                global_counter++;
+                command_running = true;
+                id = "loading" + global_counter;
+                script_addLine("<span id='"+id+"'></span>")
+                var span = document.getElementById(id);
+                var int = setInterval(function() {
+                    if ((span.innerHTML += '.').length == 100) 
+                        span.innerHTML = '';
+                }, 100);
+            }
+            else{
+                document.getElementById(id).remove();
+                command_running = false;
+            }
         }
         function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var ipstart = document.getElementById('inputform')['ipstart'].value; /// Start IP range
@@ -538,8 +606,36 @@
                     addLine("-----> Enter 'show selected' to show the selected IPs");
                     addLine("-----> Enter 'history' to display console history or history -s (phrase)");
                     addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter 'DC Cycle test (times) (off time - minutes) (On time - minutes)'");
                     addLine("-----> Enter '-h' to display ipmtool help message");
                     addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD.split(" ")[0] == "DC"){
+                    addLine(CMD);
+                    let DC_options = CMD.split(" ").filter(element => { ///Split history command in an array in the form of [history,-s,sel,list]
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if(DC_options.length == 6){ ///If length of array is not 6, wrong command.
+                        var numberRegex = /^\d+$/; ///Regex for integer
+                        if(numberRegex.test(DC_options[3]) && numberRegex.test(DC_options[4]) && numberRegex.test(DC_options[5])){ ///Check if second string in command is '-s' if not through error
+                            script_addLine("<span class='ok'>DC Cycle Testing Starting...</span>")
+                            script_addLine("Cycles: "  + DC_options[3]);
+                            script_addLine("Off Time: "  + DC_options[4] + "min");
+                            script_addLine("On Time: "  + DC_options[5] + "min");
+                            script_addLine("<span class='warning'>Reload this page to stop the test. WARNING: Your systems might be in an off or on state.</span>")
+                            DC_Cycle_Test(DC_options[3],DC_options[4],DC_options[5]);
+                        }
+                        else{
+                            addLine("Invalid options for DC Cycles test commands:");
+                            addLine("Please enter in this format:");
+                            addLine('DC Cycle test (times) (off time - minutes) (On time - minutes)');
+                        }
+                    }
+                    else{
+                        addLine("-----> Enter DC Cycle test (times) (off time - minutes) (On time - minutes)");
+                    }
                 }
                 else if(CMD == "show selected"){
                     addLine(CMD);
@@ -653,9 +749,13 @@
             output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
             document.getElementById("textinput").value = ""; /// Set your console input to nothing
             document.getElementById("inputbar").remove(); //Remove the input bar
-            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: width: 800px;''></pre>") ///Place at the end of html element console.
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' autocomplete='off' spellcheck='false' onkeydown = 'checkInput();'' style='height: width: 800px;''></pre>") ///Place at the end of html element console.
             document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
             PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }
+        function script_addLine(line){
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line + "</pre>" );
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
         }  
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         document.getElementById('file').addEventListener('change', handleFileSelect, false);
@@ -743,6 +843,7 @@
                         console.log("No history");
                     }
                     PosEnd(document.getElementById('textinput'));
+                    ad
                     break;
             }
         });
