@@ -1227,9 +1227,9 @@ def deselectIPs():
         else:
             if os.path.isfile(savepath):
                 if request.args.get('inputtype') == "suminput":
-                    df_ipmi = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
+                    df_ipmi = pd.read_csv(savepath,header=None,sep='\s+',names=['ip','user','pwd'])
                 else:
-                    df_ipmi = pd.read_csv(savepath,names=['ip'])
+                    df_ipmi = pd.read_csv(savepath,header=None,names=['ip'])
                 selected_ips = list(df_ipmi['ip'])
                 if sel_ip in selected_ips:
                     selected_ips.remove(sel_ip)
