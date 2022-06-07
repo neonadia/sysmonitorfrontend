@@ -257,100 +257,113 @@
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
             <td class="align-middle">
                 <div class="dropdown dropleft">
-                <a
-                    class="fas fa-chart-line text-primary"
-                    id="dropdownMenuButton3"
-                    data-toggle="dropdown"
-                    aria-expanded="false"
-                    style = "font-size: 24px"
-                    aria-haspopup="true"
-                    href= ""
-                ></a>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% if 'false' in show_names or 'No Value' in row[16] %}
-                        <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[0]}} Sensors</a>
-                    {%else%}
-                        <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[16]}} - {{row[0]}} Sensors</a>
-                    {%endif%}
-                    <div class="dropdown-divider"></div>
-
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0]}}" target="_self">
-                        &#x226A; CPU Temperatures
-                    </a>
-                   
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
-                        {% for cpu in cpu_temps[loop.index-1] %}
+                    <a
+                        class="fas fa-chart-line text-primary"
+                        id="dropdownMenuButton3"
+                        data-toggle="dropdown"
+                        aria-expanded="false"
+                        style = "font-size: 24px"
+                        aria-haspopup="true"
+                        href= ""
+                    ></a>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% if 'false' in show_names or 'No Value' in row[16] %}
+                            <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[0]}} Sensors</a>
+                        {%else%}
+                            <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[16]}} - {{row[0]}} Sensors</a>
+                        {%endif%}
+                        <div class="dropdown-divider"></div>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0]}}" target="_self">
+                                &#x226A; CPU Temperatures
+                            </a>
+                        
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                {% for cpu in cpu_temps[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0] }}?name={{ cpu}}" target="_self">{{cpu}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0]}}" target="_self">
+                                &#x226A; VRM Temperatures
+                            </a>
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                {% for vrm in vrm_temps[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0] }}?name={{ vrm}}">{{vrm}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ row[0] }}?name={{ cpu}}" target="_self">{{cpu}}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    </li>
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0]}}" target="_self">
-                        &#x226A; VRM Temperatures
-                    </a>
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
-                        {% for vrm in vrm_temps[loop.index-1] %}
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}" target="_self">
+                                &#x226A; DIMM Temperatures
+                            </a>
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu"> 
+                                {% for dimm in dimm_temps[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}?name={{ dimm}}">{{dimm}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% if gpu_temps[loop.index-1]|length > 0 %}
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ row[0] }}?name={{ vrm}}">{{vrm}}</a>
+                                <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ row[0] }}" target="_self">
+                                    &#x226A; GPU Temperatures
+                                </a>
+                                <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                    {% for gpu in gpu_temps[loop.index-1] %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ row[0]}}?name={{gpu}}">{{gpu}}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
                             </li>
-                        {% endfor %}
+                        {%endif%}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0] }}" target="_self">
+                                &#x226A; System Temperatures
+                            </a>
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                {% for systemps in sys_temps[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0]}}?name={{ systemps}}">{{systemps}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}"  target="_self">
+                                &#x226A; Fans
+                            </a>
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                {% for sys_fans in sys_fans[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}?name={{ sys_fans}}">{{sys_fans}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}"  target="_self">
+                            &#x226A; System Voltages
+                        </a>
+                            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                                {% for sys_voltages in sys_voltages[loop.index-1] %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ row[0]}}" target="_self">Power Consumption</a> </li>
+                        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ row[0] }}" target="_self">Power Supplies Power</a></li>
+                        <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ row[0] }}" target="_self">Power Supplies Voltage</a></li>
                     </ul>
-                    </li>
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}" target="_self">
-                        &#x226A; DIMM Temperatures
-                    </a>
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu"> 
-                        {% for dimm in dimm_temps[loop.index-1] %}
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ row[0] }}?name={{ dimm}}">{{dimm}}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    </li>
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0] }}" target="_self">
-                        &#x226A; System Temperatures
-                    </a>
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
-                        {% for systemps in sys_temps[loop.index-1] %}
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0]}}?name={{ systemps}}">{{systemps}}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    </li>
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}"  target="_self">
-                        &#x226A; Fans
-                    </a>
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
-                        {% for sys_fans in sys_fans[loop.index-1] %}
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}?name={{ sys_fans}}">{{sys_fans}}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    </li>
-                    <li>
-                    <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}"  target="_self">
-                        &#x226A; System Voltages
-                    </a>
-                    <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
-                        {% for sys_voltages in sys_voltages[loop.index-1] %}
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    </li>
-                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ row[0]}}" target="_self">Power Consumption</a> </li>
-                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ row[0] }}" target="_self">Power Supplies Power</a></li>
-                    <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ row[0] }}" target="_self">Power Supplies Voltage</a></li>
-                </ul>
                 </div>
             </td>
             <td class="align-middle">

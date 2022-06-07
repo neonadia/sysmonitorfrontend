@@ -1,7 +1,7 @@
 {% extends "chart_base.html" %}
 
 {% block canvas %}
-        <canvas id="canvas_othertemperatures"></canvas>
+     <canvas id="canvas_gputemperatures"></canvas>
 {% endblock%}
 
 {% block config %}
@@ -15,7 +15,7 @@
                 responsive: true,
                 title: {
                     display: true,
-                    text: dataset.RACK + ' | ' + dataset.bmc_ip + ' | System Temperatures',
+                    text: dataset.RACK + ' | ' + dataset.bmc_ip + ' | GPU Temperatures',
                     fontSize: 30
                 },
                 tooltips: {
@@ -73,20 +73,31 @@
         var skip = "{{skip}}";//A signal that allows the script to skip submitting a custom scope
 
         for (i = 0; i < dataset.Temperatures.length; i++){
-            if (!(dataset['Temperatures'][i]['Name'].includes('CPU') || dataset['Temperatures'][i]['Name'].includes('VRM') || dataset['Temperatures'][i]['Name'].includes('DIMM') || dataset['Temperatures'][i]['Name'].includes('GPU')) ) {
+            if (dataset['Temperatures'][i]['Name'].includes('GPU')) { // GPU only
                 colorNames = Object.keys(window.chartColors);
                 colorName = colorNames[config_temperatures.data.datasets.length % colorNames.length];
                 newColor = window.chartColors[colorName];
-                if(name != "None" ){
-                    if(name !== dataset['Temperatures'][i]['Name']){
-                        newDataset = {
-                            label: dataset['Temperatures'][i]['Name'],
-                            backgroundColor: newColor,
-                            borderColor: newColor,
-                            data: dataset['Temperatures'][i]['Reading'],
-                            fill: false,
-                            hidden: true
-                        };
+                    if(name != "None" ){
+                        if(name !== dataset['Temperatures'][i]['Name']){
+                            newDataset = {
+                                label: dataset['Temperatures'][i]['Name'],
+                                backgroundColor: newColor,
+                                borderColor: newColor,
+                                data: dataset['Temperatures'][i]['Reading'],
+                                fill: false,
+                                hidden: true
+                            };
+                        }
+                        else{
+                            newDataset = {
+                                label: dataset['Temperatures'][i]['Name'],
+                                backgroundColor: newColor,
+                                borderColor: newColor,
+                                data: dataset['Temperatures'][i]['Reading'],
+                                fill: false,
+                                hidden: false
+                            };
+                        }
                     }
                     else{
                         newDataset = {
@@ -94,29 +105,19 @@
                             backgroundColor: newColor,
                             borderColor: newColor,
                             data: dataset['Temperatures'][i]['Reading'],
-                            fill: false,
-                            hidden: false
+                            fill: false
                         };
                     }
-                }
-                else{
-                    newDataset = {
-                        label: dataset['Temperatures'][i]['Name'],
-                        backgroundColor: newColor,
-                        borderColor: newColor,
-                        data: dataset['Temperatures'][i]['Reading'],
-                        fill: false
-                    };
-                }
                 config_temperatures.data.datasets.push(newDataset);
             }
         }
 
         window.onload = function() {
-            var ctx_temperatures = document.getElementById('canvas_othertemperatures').getContext('2d');
+            var ctx_temperatures = document.getElementById('canvas_gputemperatures').getContext('2d');
             window.myLine = new Chart(ctx_temperatures, config_temperatures);
-            
+
             if(skip == "no" && t_min != 'undefined' ){
+
                 var t_min = "{{ t_min }}";
                 var t_max = "{{ t_max }}"; 
                 document.getElementById("start").value = t_min;
@@ -133,10 +134,15 @@
                 document.getElementById("defaulttime").click();
             }
         };
+  
 {% endblock %}
+
+
+
 
 {% block submit %}
         document.getElementById('submit').addEventListener('click', function() {
+            
             start = document.getElementById("start").value;
             end = document.getElementById("end").value;
 
@@ -177,15 +183,16 @@
                 t_1 = start;
                 t_2 = end;
             }
-            
+
             var range = getRange(dataset.datetime, start, end);
             var n_labels = [];
             var i;
 
+
             // trimm those points which are unneccesarry
             var step = 1; 
-            if ( (range[1] - range[0]) > 100 ){ // only show 100 points
-                step = Math.round((range[1] - range[0])/100)
+            if ( (range[1] - range[0]) > 200 ){ // only show 200 points
+                step = Math.round((range[1] - range[0])/200)
             }
             //
 
@@ -198,7 +205,7 @@
             var counter = 0;
             for (j=0; j <= dataset['Temperatures'].length-1; j++) {
                 n_data = [];
-                if (!(dataset['Temperatures'][j]['Name'].includes('CPU') || dataset['Temperatures'][j]['Name'].includes('VRM') || dataset['Temperatures'][j]['Name'].includes('DIMM') || dataset['Temperatures'][i]['Name'].includes('GPU')) ) {
+                if (dataset['Temperatures'][j]['Name'].includes('GPU')) { // GPU only
                     for (i=range[0]; i <= range[1]; i=i+step) {
                         n_data.push(dataset['Temperatures'][j]['Reading'][i]);
                     }

@@ -93,6 +93,20 @@
               {% endfor %}
           </ul>
         </li>
+        {% if gpu_temps|length > 0 %}
+        <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ bmc_ip }}" target="_self">
+                GPU Temperatures &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                {% for gpu in gpu_temps %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ bmc_ip }}?name={{gpu}}">{{gpu}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+      {%endif%}
         <li>
           <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_self">
             System Temperatures &Rang;
