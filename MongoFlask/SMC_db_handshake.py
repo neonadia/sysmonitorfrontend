@@ -69,11 +69,11 @@ for file in os.listdir(inputdir):
                             if data in df_sn.values:
                                 print("Found serial in DB for " + DIMMS)
                                 temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "True"
-                            elif data != "N/A" and data not in df_sn.values:
+                            elif data != "N/A" and data not in df_sn.values and data != "UNKNOWN":
                                 all_components_accounted_for = False
                                 temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "False"
                                 print("Memory")
-                            elif data == "N/A" or data == "":
+                            elif data == "N/A" or data == "" or data == "UNKNOWN":
                                 temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "TBD"
                         else:
                             temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "N/A"
@@ -124,11 +124,11 @@ for file in os.listdir(inputdir):
                             if data in df_sn.values:
                                 print("Found serial in DB for PSU no. " + str(unit))
                                 temp_dict[component][str(unit)]["SMC DB handshake"] = "True"
-                            elif data != "N/A" and data not in df_sn.values:
+                            elif data != "N/A" and data not in df_sn.values and data != "TO BE FILLED BY O.E.M.":
                                 all_components_accounted_for = False
                                 temp_dict[component][str(unit)]["SMC DB handshake"] = "False"
                                 print("PSU")
-                            elif data == "N/A" or data == "":
+                            elif data == "N/A" or data == "" or data =="TO BE FILLED BY O.E.M.":
                                 temp_dict[component][str(unit)]["SMC DB handshake"] = "TBD"
                     collection.update_one({"Hostname":i[2]},{"$set":temp_dict})
                 elif component == "Chassis":
