@@ -115,6 +115,21 @@
             {%endif%}                   
         </div>
     </li>
+    <li class="nav-item">
+      <label class="sr-only" for="inlineFormInputGroup">Number</label>
+      <div class="input-group mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text text-primary font-weight-bold">Datetime: {{ events_date }}<p></div>
+          <div class="input-group-text text-primary font-weight-bold">Total: {{ total_counts }}</div>
+        </div>
+        <input type="text" class="form-control form-control-lg" id="selected_id_for_event" placeholder="" value="{{ selected_one }}">
+      </div>
+    </li>
+    <li class="nav-item">
+       <a class="btn btn-primary btn-lg mr-1 text-white text-bold" type="button" id="submit_id" aria-haspopup="true" aria-expanded="false" onclick="change_event_id()">
+        SUBMIT
+       </a>
+    </li>
 </ul>
 </nav>
 <div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
@@ -132,20 +147,48 @@
             {% for id, date, severity, action, sensor, redfish_msg, ipmitool_msg in data %}
                     <tr>
                     <td class="align-middle font-weight-bold text-primary" ><h4>{{ id }}</h4></td>
+                    
+                    {% if severity|length > 0 %} 
                     <td class="align-middle font-weight-bold text-info" ><h4>{{ date }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
+                    {% endif %}
+                    
                     {% if 'Warning'  in severity %}
                     <td class="align-middle font-weight-bold text-warning" ><h4>{{ severity }}</h4></td>
                     {% elif 'Critical' in severity %}
                     <td class="align-middle font-weight-bold text-danger" ><h4>{{ severity }}</h4></td>
                     {% elif 'OK' in severity %}
                     <td class="align-middle font-weight-bold text-success" ><h4>{{ severity }}</h4></td>
-                    {% else %}
+                    {% elif severity|length > 0 %} 
                     <td class="align-middle font-weight-bold text-info" ><h4>{{ severity }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
                     {% endif %}
+                    
+                    {% if action|length > 0 %} 
                     <td class="align-middle font-weight-bold text-info" ><h4>{{ action }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
+                    {% endif %}
+                    
+                    {% if sensor|length > 0 %} 
                     <td class="align-middle font-weight-bold text-info" ><h4>{{ sensor }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
+                    {% endif %}
+                    
+                    {% if redfish_msg|length > 0 %} 
                     <td class="align-middle font-weight-bold text-info" ><h4>{{ redfish_msg }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
+                    {% endif %}
+                    
+                    {% if ipmitool_msg|length > 0 %}                     
                     <td class="align-middle font-weight-bold text-success" ><h4>{{ ipmitool_msg }}</h4></td>
+                    {% else %}
+                    <td class="align-middle font-weight-bold text-info" ><h4>No Event</h4></td>
+                    {% endif %}
                     </tr>
             {% endfor %}
         </tbody>
@@ -210,6 +253,20 @@
             }
         });
     };
+    
+    var event_id_form = document.getElementById("selected_id_for_event");
+    event_id_form.addEventListener("keyup",function(event){
+        if(event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("submit_id").click();
+        }
+
+    });
+    
+    function change_event_id(){
+        var event_id_val = document.getElementById('selected_id_for_event').value;
+        window.location.href = "{{ event_url }}" + "&id=" + event_id_val
+    }
     function get_time(){
         bmc_ip = "{{bmc_ip}}"
         $.TimejQuery(bmc_ip);

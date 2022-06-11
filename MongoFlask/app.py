@@ -1938,6 +1938,12 @@ def list_helper(input_list,list_index):
 @app.route('/event')
 def event():
     ip = request.args.get('var')
+    event_url = "http://" + get_ip() + ":" + str(frontport) + '/event?var=' + str(ip) 
+    try:
+        e_id = int(request.args.get('id'))
+    except:
+        e_id = 0
+        printf("Info: using latest event")
     show_names = 'true' # Default value to pass to html to enable a list of nodenames
     ips_names = get_node_names()
     if isinstance(ips_names,bool) == True:
@@ -1950,10 +1956,19 @@ def event():
         ntp_status = get_data.get_ntp_status(ip,pwd)
     else:
         ntp_server = 'n/a'
-        ntp_status = ['n/a'] * 3        
-    for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).sort("_id",-1):
-        events = i['Event']
-        break
+        ntp_status = ['n/a'] * 3  
+    total_counts = monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).count()
+    if e_id >= total_counts:
+        e_id = total_counts -1 # can not exceed the length
+    elif e_id < 0:
+        e_id = 0
+    selected_one = e_id       
+    for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1, "Datetime":1}).sort("_id",-1):
+        if e_id <= 0:
+            events = i['Event']
+            events_date = i['Datetime']
+            break
+        e_id -= 1
     for i in range(len(events)):
         for key in IPMIdict.keys():
             if key in events[i]:
@@ -2010,9 +2025,13 @@ def event():
         ipmitool_msg.append("N/A")
     data = zip(sel_id,dates,severity,action,sensor,redfish_msg,ipmitool_msg)
     if show_names == "true":
-        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = ips_names,rackname=rackname,rackobserverurl = rackobserverurl)
+        return render_template('event.html',event_url = event_url, total_counts = total_counts, selected_one = selected_one, events_date = events_date, \
+        show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], \
+        modulation = ntp_status[2],bmc_ip=ip,ip_list = ips_names,rackname=rackname,rackobserverurl = rackobserverurl)
     else:
-        return render_template('event.html',show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
+        return render_template('event.html',event_url = event_url, total_counts= total_counts, selected_one = selected_one, events_date = events_date, \
+        show_names = show_names, date_time=date_time, ntp_server=ntp_server, data=data, ntp_on_off = ntp_status[0], daylight = ntp_status[1], \
+        modulation = ntp_status[2],bmc_ip=ip,ip_list = getIPlist(),rackname=rackname,rackobserverurl = rackobserverurl)
 
 @app.route('/udp_command_testor')
 def udp_command_testor():
