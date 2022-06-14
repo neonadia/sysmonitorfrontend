@@ -119,6 +119,7 @@
       <label class="sr-only" for="inlineFormInputGroup">Number</label>
       <div class="input-group mb-2">
         <div class="input-group-prepend">
+          <div class="input-group-text text-primary font-weight-bold">{{ bmc_ip }}<p></div>
           <div class="input-group-text text-primary font-weight-bold">Datetime: {{ events_date }}<p></div>
           <div class="input-group-text text-primary font-weight-bold">Total: {{ total_counts }}</div>
         </div>
@@ -225,8 +226,8 @@
 <script>
      $(document).ready(function() {
         $('#indexpage').DataTable( {
-            "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
-            "pageLength" : -1,
+            "lengthMenu": [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]],
+            "pageLength" : 100,
             dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
             stateSave: true,
             buttons: [
