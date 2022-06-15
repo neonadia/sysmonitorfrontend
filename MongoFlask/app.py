@@ -2023,6 +2023,13 @@ def event():
         sensor.append("N/A")
         redfish_msg.append("N/A")
         ipmitool_msg.append("N/A")
+    sel_id.reverse()
+    dates.reverse()
+    severity.reverse()
+    action.reverse()
+    sensor.reverse()
+    redfish_msg.reverse()
+    ipmitool_msg.reverse()
     data = zip(sel_id,dates,severity,action,sensor,redfish_msg,ipmitool_msg)
     if show_names == "true":
         return render_template('event.html',event_url = event_url, total_counts = total_counts, selected_one = selected_one, events_date = events_date, \
