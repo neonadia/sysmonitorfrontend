@@ -1942,7 +1942,7 @@ def event():
     try:
         e_id = int(request.args.get('id'))
     except:
-        e_id = 0
+        e_id = 1
         printf("Info: using latest event")
     show_names = 'true' # Default value to pass to html to enable a list of nodenames
     ips_names = get_node_names()
@@ -1958,13 +1958,13 @@ def event():
         ntp_server = 'n/a'
         ntp_status = ['n/a'] * 3  
     total_counts = monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1}).count()
-    if e_id >= total_counts:
-        e_id = total_counts -1 # can not exceed the length
-    elif e_id < 0:
-        e_id = 0
-    selected_one = e_id       
+    if e_id > total_counts:
+        e_id = total_counts  # can not exceed the length
+    elif e_id < 1:
+        e_id = 1
+    selected_one = e_id     
     for i in monitor_collection.find({"BMC_IP": ip}, {"_id":0, "Event":1, "Datetime":1}).sort("_id",-1):
-        if e_id <= 0:
+        if e_id <= 1:
             events = i['Event']
             events_date = i['Datetime']
             break
