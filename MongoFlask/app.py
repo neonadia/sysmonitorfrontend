@@ -843,11 +843,11 @@ def showipmisensor():
     if show_names == 'true':
         return render_template('showipmisensor.html',\
         rackname=rackname,data=zip(name_list,reading_list,unit_list,severity_list,lownr_list,lowct_list,highct_list,highnr_list),\
-        bmc_ip = bmc_ip, ip_list =  ips_names, rackobserverurl = rackobserverurl)        
+        bmc_ip = bmc_ip, ip_list =  ips_names, rackobserverurl = rackobserverurl,show_names = show_names)        
     else:
         return render_template('showipmisensor.html',\
         rackname=rackname,data=zip(name_list,reading_list,unit_list,severity_list,lownr_list,lowct_list,highct_list,highnr_list),\
-        bmc_ip = bmc_ip, ip_list = getIPlist(), rackobserverurl = rackobserverurl)   
+        bmc_ip = bmc_ip, ip_list = getIPlist(), rackobserverurl = rackobserverurl,show_names = show_names)   
 
 @app.route('/updateipmisensor')
 def updateipmisensor():
