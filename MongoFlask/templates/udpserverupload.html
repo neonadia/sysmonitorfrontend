@@ -81,66 +81,149 @@
         height: 10px;
         background-color: rgb(2, 163, 2);
     }
+    #overlay {
+        position:fixed;
+        display: block;
+        top: 14%; right: 5%;
+        text-align: left;   
+    }
+    body {
+        font-family: "Lato", sans-serif;
+        transition: background-color .5s;
+    }
+    .sidenav {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        background-color: rgb(43, 109, 250);
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 60px;
+    }
+    .sidenav a {
+        padding: 8px 8px 8px 20px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #ffffff;
+        display: block;
+        transition: 0.3s;
+    }
+    .sidenav a:hover, .offcanvas a:focus{
+        color: #f1f1f1;
+    }
+    .sidenav .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+    }
+    #main {
+        transition: margin-left .5s;
+        padding: 16px;
+    }
+
+    @media screen and (max-height: 450px) {
+        .sidenav {padding-top: 15px;}
+        .sidenav a {font-size: 18px;}
+    }
+    ul li::marker {
+        color: white;
+        font-size: 1.5em;
+    }
 </style>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
-        <ul class="navbar-nav">
-            <li class='nav-item'>
-                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-home"></i>
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
-                    {% for url in frontend_urls %}
-                        <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
-                    {% endfor %}
+    <nav class="navbar navbar-expand-md navbar-primary bg-primary">
+        <div class="container-fluid">	 
+            <ul class="navbar-nav">
+                <li class='nav-item'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-home"></i>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </button>
+                    <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Server Deployment</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    UDP SERVER
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item">Beta Version 1.0</a> 
+                    </div>
+                </li>
+                <li class='nav-item'>
+                    <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('udpoutput') }}" role="button">
+                    UDP Benchmark Results
+                    </a>
+                </li>
+                <li class='nav-item'>
+                    <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('hardware_output') }}" role="button">
+                    Hardware Database
+                    </a>
+                </li>
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Current Selected OS IPs
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for ip, indicator in data %}
+                        {% if indicator == 1 %}
+                            <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
+                        {% else %}
+                            <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </li>
+                {% include "advancedfeatures_menu.html" %}
+                {% include "documentationButton.html" %}
+                <div id="mySidenav" class="sidenav">
+                    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                    <div style="margin-bottom:25%; color: #ffffff; align-items: center;">
+                        <h4 style="text-align: center;"> Auto-Fill Benchmarks </h4>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-divider"></div>
+                        <div id= "div1" style="align-items: center;">
+                            <div style="padding: 2%;" style="align-items: center;">
+                                <button type="button" class="btn btn-info btn-small btn-block font-weight-bold " id="Stress-NG"  onclick="(choose_benchmark('Stress-NG'))" >Stress-NG</button>
+                            </div>
+                            <div style="padding: 2%;" style="align-items: center;">
+                                <button type="button"class="btn btn-info btn-small btn-block font-weight-bold " id="StressAppTest"  onclick="(choose_benchmark('StressAppTest'))" >StressAppTest</button>
+                            </div>
+                            <div style="padding: 2%;">
+                                <button type="button"class="btn btn-info btn-small btn-block font-weight-bold "  id="xHPL"  onclick="(choose_benchmark('xHPL'))" >xHPL</button>
+                            </div>
+                            <div style="padding: 2%;">
+                                <button type="button"class="btn btn-info btn-small btn-block font-weight-bold "  id="GPU_Burn"  onclick="(choose_benchmark('GPU_Burn'))" >GPU Burn</button>
+                            </div>
+                            <div style="padding: 2%;">
+                                <button type="button" class="btn btn-info btn-small btn-block font-weight-bold " id="xHPCG"  onclick="(choose_benchmark('xHPCG'))" >xHPCG</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </li>
-            <li class='dropdown'>
-                <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-broadcast-tower"></i>
-                </button>
-                <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
-                    {% for url in frontend_urls %}
-                        <a class="dropdown-item" href="{{ url[1] }}/udpserverupload" target="_blank"> {{url[0]}} UDP Server Deployment</a>
-                    {% endfor %}
-                </div>
-            </li>
-            <li class='dropdown'>
-                <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                UDP SERVER
-                </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item">Beta Version 1.0</a> 
-                </div>
-            </li>
-            <li class='nav-item'>
-                <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('udpoutput') }}" role="button">
-                UDP Benchmark Results
-                </a>
-            </li>
-            <li class='nav-item'>
-                <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('hardware_output') }}" role="button">
-                Hardware Database
-                </a>
-            </li>
-            <li class='dropdown'>
-                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Current Selected OS IPs
-                </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% for ip, indicator in data %}
-                    {% if indicator == 1 %}
-                        <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
-                    {% else %}
-                        <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-            </li>
-            {% include "advancedfeatures_menu.html" %}
-            {% include "documentationButton.html" %}
-        </ul>
+            </ul>
+            <div class="d-flex ms-auto order-5">
+                <button type="button" class="btn btn-info btn-lg" id="display_info"  onclick="openNav()"> <span class='fas fa-angle-left'></span> Quick Benchmarks</button>
+            </div>
+        </div>
     </nav>
     <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
         <div class ="row">
@@ -280,6 +363,15 @@
     </footer>
     <!-- Footer -->
     <script type="text/javascript">
+        const benchmarks = ['GPU_Burn','Stress-NG','StressAppTest','xHPL','xHPCG'];
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "18%";
+            document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+        }
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+            document.body.style.backgroundColor = "white";
+        }
         var session_auth = "{{ session_auth }}";
         var ips = {}; ///IP dictionary to keep track of succesfull UDP client initiation
         global_counter = 0;
@@ -327,7 +419,9 @@
                 document.getElementById('bench_input').disabled = true;
                 document.getElementById('inputfile').disabled = true;
                 document.getElementById('bench').disabled = true;
-
+                for(var i = 0; i < benchmarks.length; i++){
+                    document.getElementById(benchmarks[i]).disabled = true;
+                }
             }
             else{
                 checkServer_button.disabled = false;
@@ -342,16 +436,25 @@
                 document.getElementById('bench_input').disabled = false;
                 document.getElementById('inputfile').disabled = false;
                 document.getElementById('bench').disabled = false;
+                for(var i = 0; i < benchmarks.length; i++){
+                    document.getElementById(benchmarks[i]).disabled = false;
+                }
             }
         }
         function checkClientState(clientState){///// Takes a state to check JSON file produced by the UDP container (latest,START,DONE,OK,ONLINE,RESTART)
-            $.check_client_Online(clientState)
+            if(clientState == "START"){
+                $.check_client_Online(clientState,20000);
+            }
+            else{
+                $.check_client_Online(clientState,99999999999999) 
+            }
         }
-        $.check_client_Online = function(clientState){
+        $.check_client_Online = function(clientState,timeout){
             $.ajax({
                 url: '/check_UDP_clientState', 
                 type: 'GET',
                 dataType: "JSON",
+                timeout: timeout,
                 data: {state: clientState},
                 beforeSend: function(){ 
                     semaphore = true; 
@@ -449,7 +552,18 @@
                             addLine("ERROR: Failed to initiate one or more servers, check your clients' UDP Client.");
                         }
                     }
-                }        
+                },
+                error: function(request, status, err) {
+                    loading_icons(false);
+                    disableAllButtons(false);
+                    if (status == "timeout") {
+                        addLine('Error: No response from UDP Client');
+                        addLine('Timeout waiting for response: ' + clientState);
+                    } 
+                    else {
+                        alert("Error: " + request + status + err);
+                    }
+                }    
             }); 
         }
         function call_ignition(){
@@ -462,14 +576,16 @@
                 type: 'GET',
                 dataType: "JSON",
                 beforeSend: function(){ 
+                    loading_icons(true);
                     addLine("info: Sending UDP ignition signal to server...");
                 },
                 success: function(result){
                     var data = result;
                     var complete = true;
+                    loading_icons(false);
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                         if (key === "ERROR"){ ///If error in key report output to terminal
-                            addLine(data[key])
+                            addLine(data[key]);
                             complete = false
                         }
                         else{
@@ -627,14 +743,28 @@
             });
         }
         function uploadBenchmark(input_id, button_id){
-            terminal.innerHTML = "";
-            var file_name = document.getElementById(input_id).files[0]['name']; ///Upload file from the form element 'file'
-            addLine('Uploading Benchmark: ' + file_name + ' to server...');
-            if(input_id == "bminputfile"){
-                $.UploadBenchmarkInput("BenchmarkInput", input_id, button_id,file_name);
+            if(quickBenchLoaded == true){
+                terminal.innerHTML = "";
+                document.getElementById('bench').disabled = true;
+                quickBenchLoaded = false;
+                start_bench("Benchmark",'benchmark');
             }
             else{
-                $.UploadBenchmark("Benchmark", input_id, button_id);
+                terminal.innerHTML = "";
+                try {
+                    var file_name = document.getElementById(input_id).files[0]['name']; ///Upload file from the form element 'file'
+                } 
+                catch (e) {
+                    console.log(e);
+                    addLine("No file uploaded");
+                }
+                addLine('Uploading Benchmark: ' + file_name + ' to server...');
+                if(input_id == "bminputfile"){
+                    $.UploadBenchmarkInput("BenchmarkInput", input_id, button_id,file_name);
+                }
+                else{
+                    $.UploadBenchmark("Benchmark", input_id, button_id);
+                }
             }
         }
         $.UploadBenchmarkInput = function(form_id, inputField_id, inputButton_id,file_name){
@@ -948,6 +1078,34 @@
             agentForm.append("session_guid",session_auth)
             navigator.sendBeacon("/udp_session_handler", agentForm);
         });
+        var quickBenchLoaded = false;
+        function choose_benchmark(benchmark_name){
+            $.LoadQuickBenchmark(benchmark_name);
+        }
+        $.LoadQuickBenchmark = function(benchmark_name){
+            $.ajax({
+                url: '/generate_quickBench',
+                dataType : "JSON",
+                type : "GET",
+                data: {'bench': benchmark_name},
+                success: function(result){
+                    terminal.innerHTML = "";
+                    addLine("SUCCESS!!!")
+                    addLine("Benchmark loaded successfully")
+                    quickBenchLoaded = true;
+                    document.getElementById('bench').disabled = false;
+                    document.getElementById("dict").innerHTML = "";
+                    output = "";
+                    for(key in result){
+                        addLine(key + ':' + result[key]);
+                        output = output + '<strong class="text-primary">' + key + ':</strong> ' + result[key] + '<br>';
+                    }
+                    addLine("Press the Run Benchmark button to start!");
+                    document.getElementById("dict").innerHTML = output;
+                }
+            });
+        }
+
     </script>
 </body>
 </html>

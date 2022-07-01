@@ -1190,6 +1190,8 @@ def checkSelectedIps():
     try:
         if request.args.get('filetype') == "suminput": # sum input file is different
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,sep='\s+',names=['ip','user','pwd'])
+        elif request.args.get('filetype') == "ansible":
+            df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
         else:
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
@@ -1215,7 +1217,10 @@ def checkSelectedIps():
 def deselectIPs():
     if request.method == "GET":
         sel_ip = request.args.get('ip')
-        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        if request.args.get('inputtype') == "ansible":
+            savepath = '/app/inventory.ini'
+        else:
+            savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
         if "all" in sel_ip:
             if os.path.isfile(savepath):
                 os.remove(savepath)
@@ -1261,6 +1266,17 @@ def deselectIPs():
             else:
                 response = {"ERROR": "Error: Could not remove IP from selection, no IPs selected"}
                 return json.dumps(response)
+                
+@app.route('/generate_quickBench')
+def generate_quickBench():
+    if request.method == 'GET':
+        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+        bench_config = get_data.quick_benchmark_configs(request.args.get('bench'))
+        with open(savepath+"udpinput.json",'w') as file:
+            json.dump(bench_config,file)
+        response = json.dumps(bench_config)
+        return response
+
 
 @app.route('/uploadinputipsfileforall',methods=["POST"]) # used for all input file upload
 def uploadinputipsfileforall():
@@ -1273,7 +1289,7 @@ def uploadinputipsfileforall():
         allips = list(df_pwd['ip'])    
     if request.method == "POST":
         if request.files:
-            if "Benchmark" not in filetype:
+            if "Benchmark" not in filetype and "ansible" not in filetype:
                 ipfile = request.files["file"]
                 if ipfile.filename == "":
                     printf("Input file must have a filename")
@@ -1290,7 +1306,7 @@ def uploadinputipsfileforall():
                     response = {"response": "inputfile has been saved as " + filetype + ".txt" }
                 response = json.dumps(response)
             else:
-                if filetype == "Benchmark":
+                if filetype == "Benchmark": # benchmark json file
                     udpinputfile = request.files["inputfile"]
                     if udpinputfile.filename == "":
                         printf("Input file must have a filename")
@@ -1299,7 +1315,14 @@ def uploadinputipsfileforall():
                         udpinputfile.save(savepath+"udpinput.json")
                         printf("{} has been saved as udpinput.json".format(udpinputfile.filename))
                         response = {"SUCCESS":"{} has been saved".format(udpinputfile.filename)}
-                else:
+                elif filetype == "ansible_playbook": # ansible playbook
+                    playbookfile = request.files["playbook"]
+                    if playbookfile.filename == "":
+                        response = {"ERROR":"Input file must have a filename"}
+                    else:
+                        playbookfile.save('/app/ansible-playbook_l12cm.yml')                    
+                        response = {"SUCCESS":"{} has been saved as ansible-playbook_l12cm.yml".format(playbookfile.filename)}                      
+                else: # benchmark input file
                     udpinputfile = request.files["bminputfile"]
                     if udpinputfile.filename == "":
                         response = {"ERROR":"Input file must have a filename"}
@@ -1309,6 +1332,79 @@ def uploadinputipsfileforall():
                         response = {"SUCCESS":"{} has been saved".format(udpinputfile.filename)}
                 response = json.dumps(response)
             return response
+            
+@app.route('/ansible_syntax_check', methods=["GET"])
+def ansible_syntax_check():
+    process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.ini --syntax-check', shell=True, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate(timeout=2)
+    output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
+    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+    output_strip = []
+    for line in output:
+        output_strip.append(line.strip())
+    if 'ERROR' in output_string:
+        output_strip.append("Info: /app/ansible-playbook_l12cm.yml failed the syntax check.")
+        output_strip.append("Syntax-Check: FAILED")
+        output_strip.append("********************************************************************************")
+        response = {"ERROR": output_strip}
+    else:
+        output_strip.append("Info: /app/ansible-playbook_l12cm.yml passed the syntax check.")
+        output_strip.append("Syntax-Check: PASS")
+        output_strip.append("********************************************************************************")
+        response = {"SUCCESS": output_strip}  
+    response = json.dumps(response)
+    return response
+    
+@app.route('/ansible_controller')
+def ansible_controller():
+    savepath = "/app/"
+    try:
+        df_input = pd.read_csv(savepath+"inventory.ini",header=None,names=['os_ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['os_ip'])
+    indicators = []
+    for i in range(len(allips)):
+        if allips[i] in inputips:
+            indicators.append(1)
+        else:
+            indicators.append(0)
+    return render_template('ansible_controller.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
+@app.route('/ansibleplaybookexecute',methods=["GET"])
+def ansibleplaybookexecute():
+    ansible_usr = str(request.args.get('usr'))
+    ansible_pwd = str(request.args.get('pwd'))
+    ansible_become = int(request.args.get('become'))
+    ansible_become_usr = str(request.args.get('become_usr'))
+    ansible_become_pwd = str(request.args.get('become_pwd'))
+    if ansible_become == 0:
+        ansible_become = 'False'
+    else:
+        ansible_become = 'True'
+    
+    if len(ansible_pwd) * len(ansible_usr) == 0:
+        response = {"ERROR":"ansible cfg file can not be created due to invalid inputs: lengh equals 0."}
+    else:
+        df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
+        iplist = list(df_input['ip'])
+        with open('/app/inventory.tmp', 'w') as ansible_inventory_file:
+            for cur_ip in iplist:
+                ansible_inventory_file.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(cur_ip, cur_ip, ansible_usr, ansible_pwd))
+        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.tmp', shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate(timeout=100)
+        output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
+        output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+        output_strip = []
+        for line in output:
+            output_strip.append(line.strip())      
+        response = {"SUCCESS": output_strip}
+    os.remove("/app/inventory.tmp")
+    printf('Removed inventory.tmp file')
+    response = json.dumps(response)
+    return response
 
 @app.route('/bmceventcleanerstart',methods=["GET"])
 def bmceventcleanerstart():
@@ -1599,7 +1695,10 @@ def advanceinputgenerator_ajaxVerison():
 @app.route('/advanceinputgenerator_all_ajaxVersion', methods=["GET"])
 def advanceinputgenerator_all_ajaxVerison():
     if request.method == "GET":
-        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        if 'ansible' in str(request.args.get('inputtype')):
+            savepath = '/app/inventory.ini'
+        else:
+            savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
         ip_list = list(df_pwd['ip'])
         osip_list = list(df_pwd['os_ip'])

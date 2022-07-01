@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ansible-Controller</title>
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script> -->
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script> -->
+    <script src="https://kit.fontawesome.com/bc21244e72.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+</head>
+<style>
+    .options{
+        padding: 5%;
+    }
+    ul span {
+        color: green;
+    }
+    hr.dotted {
+        border-top: 3px dotted #0275d8;
+    }
+    hr.solid {
+        border-top: 3px solid #0275d8;
+    }
+    /* Background contains everything that is the console */
+    #background {
+        position: relative;
+        background-color: black;
+        width: 800px;
+        height: 600px;
+        max-height: 600px;
+        overflow-y: auto;
+        text-align: left;
+    }
+    .terminal{
+        background-color: black;
+        color: chartreuse;
+        border: 5px solid greenyellow;
+        font-weight: normal;
+        padding-top: 1%;
+        height: 100%;
+        border-radius: 15px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        /* position: fixed; */
+    }
+    /* Console output formatting */
+    pre {
+        color: rgb(255, 255, 255);
+        margin: 0px 0px 0px 0px;
+    }
+    /* More console input formatting to make input box larger */
+    input#textinput {
+        width: 950px;
+    }
+    /* CSS classes for key word highlighting in the console output */
+    .error{
+        color:red;
+    }
+    .ok{
+        color:chartreuse;
+    }
+    .info{
+        color:aqua;
+    }
+    .ip{
+        color:#FF00FF;
+        font-weight:bold;
+    }
+    .warning{
+        color: orange;
+    }
+    #myProgress {
+        width: 100%;
+        background-color: grey;
+    }
+    #myBar {
+        width: 1%;
+        height: 10px;
+        background-color: rgb(2, 163, 2);
+    }
+    #overlay {
+        position:fixed;
+        display: block;
+        top: 14%; right: 5%;
+        text-align: left;   
+    }
+    body {
+        font-family: "Lato", sans-serif;
+        transition: background-color .5s;
+    }
+    .sidenav {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        background-color: rgb(43, 109, 250);
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 60px;
+    }
+    .sidenav a {
+        padding: 8px 8px 8px 20px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #ffffff;
+        display: block;
+        transition: 0.3s;
+    }
+    .sidenav a:hover, .offcanvas a:focus{
+        color: #f1f1f1;
+    }
+    .sidenav .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+    }
+    #main {
+        transition: margin-left .5s;
+        padding: 16px;
+    }
+
+    @media screen and (max-height: 450px) {
+        .sidenav {padding-top: 15px;}
+        .sidenav a {font-size: 18px;}
+    }
+    ul li::marker {
+        color: white;
+        font-size: 1.5em;
+    }
+    body {
+    font-size: .875rem;
+    }
+
+    .feather {
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+    }
+
+    /*
+    * Sidebar
+    */
+
+    .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100; /* Behind the navbar */
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+
+    .sidebar-sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 48px; /* Height of navbar */
+    height: calc(100vh - 48px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    }
+
+    .sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+    }
+
+    .sidebar .nav-link .feather {
+    margin-right: 4px;
+    color: #999;
+    }
+
+    .sidebar .nav-link.active {
+    color: #007bff;
+    }
+
+    .sidebar .nav-link:hover .feather,
+    .sidebar .nav-link.active .feather {
+    color: inherit;
+    }
+
+    .sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+    }
+
+    /*
+    * Navbar
+    */
+
+    .navbar-brand {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    font-size: 1rem;
+    background-color: rgba(0, 0, 0, .25);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+    }
+
+    .navbar .form-control {
+    padding: .75rem 1rem;
+    border-width: 0;
+    border-radius: 0;
+    }
+
+    .form-control-dark {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .1);
+    border-color: rgba(255, 255, 255, .1);
+    }
+
+    .form-control-dark:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
+    }
+
+    /*
+    * Utilities
+    */
+
+    .border-top { border-top: 1px solid #e5e5e5; }
+    .border-bottom { border-bottom: 1px solid #e5e5e5; }
+</style>
+<body>
+    <nav class="navbar navbar-expand-md navbar-primary bg-primary sticky-top flex-md-nowrap p-1.5">
+        <div class="container-fluid">	 
+            <ul class="navbar-nav">
+                <li class='nav-item'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-home"></i>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </button>
+                    <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}/ansible_controller" target="_blank"> {{url[0]}} Ansible Controller</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    ANSIBLE CONTROLLER
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item">Beta Version 1.0</a> 
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Current Selected OS IPs
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for ip, indicator in data %}
+                        {% if indicator == 1 %}
+                            <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
+                        {% else %}
+                            <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </li>
+                {% include "advancedfeatures_menu.html" %}
+                {% include "documentationButton.html" %}
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-4 d-none d-md-block bg-light sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item" style="padding-bottom: 3%; padding-top: 5%;">
+                            <a class="nav-link active font-weight-bold" href="#" style="font-size: 24px;">
+                                <span data-feather="home"></span>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item border-bottom border-top" style="padding:2%; margin-left: 2%;">
+                            <form id = "inputform">
+                                <h5><u class="font-weight-bold text-primary"> 1) Select IP Range</u></h5>
+                                <div class="form-group container-fluid">
+                                    <label>Input IP range</label>
+                                    <div class="container-fluid row" >
+                                        <div class="col">
+                                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                                        </div>
+                                        <div class="col">
+                                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
+                                        </div>
+                                        <input type="hidden" id="inputtype" name="inputtype" value="ansible">
+                                        <input type="hidden" id="iptype" name="iptype" value="os">
+                                        <input type="hidden" id="ip" name="ip" value="all">
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="container-fluid" style="align-content: center;">
+                                <button class="btn btn-primary btn-sm" id="uploadRange" onclick="uploadIPs()" style="margin-right: 2%;">SELECT RANGE</button>                                        
+                                <button  class="btn btn-primary btn-sm" id="uploadall" onclick="uploadallIPs()" style="margin-right: 2%;">SELECT ALL</button>  
+                                <a id="unselectall" class="btn btn-warning text-white disabled btn-sm" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>
+                            </div>
+                        </li>
+                        <li class="nav-item border-bottom" style="padding:2%; margin-left: 2%;">
+                            <form id = "playbook_upload">
+                                <h5><u class="font-weight-bold text-primary"> 2) Upload Playbook</u></h5>
+                                <div class="custom-file" style="padding-top: 2%;">
+                                    <input type="file" class="form-control-file form-primary" name="playbook" id="playbook" required>
+                                    <small id="help1" class="form-text text-muted">Please upload the necessary playbook</small>
+                                    <br>                            
+                                </div>
+                            </form>
+                            <div id="upload_btn">
+                                <button  type="submit" class="btn btn-primary btn-sm" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>
+                            </div>
+                        </li>
+                        <li class="nav-item" style="padding:2%; margin-left: 2%;" >
+                            <h5><u class="font-weight-bold text-primary"> 3) Execute Playbook:</u></h5>
+                            <form id = "ansible_userANDpass">
+                                <div class="row">
+                                    <div class="form-group col-auto">
+                                        <label style="font-weight: bold;">Ansible User</label>
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="user" name="user" required="" id="ansible_usr">
+                                            </div>
+                                            <div class="form-group form-check">
+                                                <input type="checkbox" class="form-check-input" id="become">
+                                                <label class="form-check-label" for="become">Run as root?</label>
+                                            </div>
+                                        </div>
+                                        <label style="padding-top: 2%; font-weight: bold;">Ansible Password</label>
+                                        <input type="password" name="password" autocomplete="current-password" required="" id="ansible_pwd">
+                                        <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i>
+                                    </div>
+                                    <div class="form-group col-auto" id="become_usr_form">
+                                        <label style="font-weight: bold;">Become User</label>
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="user" name="user" required="" id="ansible_become_usr">
+                                            </div>
+                                        </div>
+                                        <label style="padding-top: 5%; font-weight: bold;">Become Password</label>
+                                        <input type="password" name="become_password" autocomplete="current-password" required="" id="ansible_become_pwd">
+                                        <i class="far fa-eye" id="toggleBecomePassword" style="margin-left: -30px; cursor: pointer;"></i>
+                                    </div>
+                                </div>
+                            </form>
+                            <div id="run_btn">
+                                <button type="submit" class="btn btn-primary btn-sm" id="run_playbook" onclick="execute_playbook()" target="_blank">RUN</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <main role="main" class="col-md-9 col-lg-10 pt-4 px-1" style="margin-left:35%; max-width: 63%; height: 700px;">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Terminal Output</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group mr-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="clearTerminal()">Clear Output</button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="exportTerminal()">Export Output</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto scroll terminal" id = "upload_terminal" style="height: 100%; width: 100%;"></div>
+            </main>
+        </div>
+    </div>
+    <script type="text/javascript">
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#ansible_pwd');
+        const toggleBecomePassword = document.querySelector('#toggleBecomePassword');
+        const become_password = document.querySelector('#ansible_become_pwd');
+        var run_as_root = 0;
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.classList.toggle('fa-eye-slash');
+        });
+        toggleBecomePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = become_password.getAttribute('type') === 'password' ? 'text' : 'password';
+            become_password.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.classList.toggle('fa-eye-slash');
+        });
+        $(document).on('change','#become',function() {
+            a = $("input[type='checkbox']").val();
+            if(this.checked){
+                run_as_root = 1;
+                document.getElementById('become_usr_form').style.display = "block";
+            }
+            else{
+                run_as_root = 0;
+                document.getElementById('become_usr_form').style.display = "none";
+            }
+        });
+        function toggle_spinner(on_off,btn){
+            if(on_off == true){
+                if(btn == "run_btn"){
+                    document.getElementById('run_btn').innerHTML = "";
+                    document.getElementById('run_btn').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                }
+                else{
+                    document.getElementById('upload_btn').innerHTML = "";
+                    document.getElementById('upload_btn').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                }
+            }
+            else{
+                if(btn == "run_btn"){
+                    document.getElementById('run_btn').innerHTML = "";
+                    document.getElementById('run_btn').innerHTML = '<button type="submit" class="btn btn-primary" id="run_playbook"  onclick="execute_playbook()" target="_blank">RUN</button>';
+                    document.getElementById('run_btn').disabled = true;
+                }
+                else{
+                    document.getElementById('upload_btn').innerHTML = "";
+                    document.getElementById('upload_btn').innerHTML = '<button  type="submit" class="btn btn-primary" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>';
+                    document.getElementById('upload_btn').disabled = true;
+                }
+            }
+        }
+        // var session_auth = "{{ session_auth }}";
+        global_counter = 0;
+        var upload_playbook_btn = document.getElementById('upload_playbook');
+        var execute_playbook_btn = document.getElementById('run_playbook');
+        var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var unselectButton = document.getElementById('unselectall');
+        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
+        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
+        var reWarning = /\b(WARNING|Warning|warning)\b/g;
+        var reInfo = /\b(Information|information|INFO|info)\b/g;
+        var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+        document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
+            $.CheckIPs();
+            upload_playbook_btn.disabled = true;
+            execute_playbook_btn.disabled = true;
+            document.getElementById('become_usr_form').style.display = "none";
+        }, false);
+        function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
+            if(on_off){
+                global_counter++;
+                id = "loading" + global_counter;
+                addLine("<span id='"+id+"'></span>")
+                var span = document.getElementById(id);
+                var int = setInterval(function() {
+                    if ((span.innerHTML += '.').length == 25) 
+                        span.innerHTML = '';
+                }, 100);
+            }
+            else{
+                document.getElementById(id).remove();
+            }
+        }
+        function clearTerminal(){
+            terminal.innerHTML="";
+        }
+        function exportTerminal() {
+            let currentDate = new Date();
+            let cDay = currentDate.getDate()
+            let cMonth = currentDate.getMonth() + 1
+            let cYear = currentDate.getFullYear()
+            let time = currentDate.getHours() + "-" + currentDate.getMinutes() + "-" + currentDate.getSeconds();
+            var data = terminal.innerText;
+            var c = document.createElement("a");
+            c.download = "ansible_terminal_output_" + cMonth + "-" + cDay + "-" + cYear + "_" + time + ".log";
+            var t = new Blob([data],{
+                type: "text/plain"
+            });
+            c.href = window.URL.createObjectURL(t);
+            c.click();
+        }
+        function disableAllButtons(on_off){
+            if(on_off){
+                document.getElementById('uploadRange').disabled = true;
+                document.getElementById('uploadall').disabled = true;
+            }
+            else{
+                document.getElementById('uploadRange').disabled = false;
+                document.getElementById('uploadall').disabled = false;
+            }
+        }
+        $.CheckIPs = function(){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+            $.ajax({
+                url: '/checkSelectedIPs?filetype=ansible&iptype=os',
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    var hasIPs = false;
+                    ips = data;
+                    addLine('Reading file with selected IPs');
+                    for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
+                        var ip = document.getElementById(key)
+                        console.log(key);
+                        if (data[key] == 'true'){
+                            hasIPs = true;
+                            ip.classList.add("text-success");
+                            ip.classList.add("font-weight-bold");
+                            addLine('Selecting ' + key + '...');
+                        }
+                        else{
+                            ip.classList.remove("text-success");
+                            ip.classList.remove("font-weight-bold");
+                        }
+                    }
+                    if (hasIPs === false){
+                        unselectButton.classList.add("disabled")
+                        addLine('No IPs selected from this Rack');
+                    }
+                    else{
+                        addLine('Current Selected IPs has been updated');
+                        unselectButton.classList.remove("disabled")
+                    }
+                }
+            });
+        }
+        function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var ipstart = document.getElementById('inputform')['ipstart'].value;
+            var ipend = document.getElementById('inputform')['ipend'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            terminal.innerHTML = "";
+            addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
+        }
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            addLine('Could not get range from server...');
+                            addLine('Server response: ' + data[key]);
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        addLine('Gettting IP range from server....');
+                        $.CheckIPs();
+                    }
+                }        
+            }); 
+        }
+        function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            terminal.innerHTML = "";
+            addLine('Selecting all the IPs ...');
+            $.CallAdvancedAllGenerator(inputtype,iptype);
+        }
+        $.CallAdvancedAllGenerator = function(inputtype,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_all_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            addLine('Could not generate the file...');
+                            addLine('Server response: ' + data[key]);
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        addLine('Getting IP range from server...');
+                        $.CheckIPs();
+                    }
+                }        
+            }); 
+        }    
+        function uploadPlaybook(){
+            try {
+                var file_name = document.getElementById('playbook').files[0]['name']; ///Upload file from the form element 'file'
+                toggle_spinner(true,'upload_btn');
+                $.UploadPlaybook();
+            } 
+            catch (e) {
+                console.log(e);
+                addLine("No file uploaded");
+            }
+        }
+        $.UploadPlaybook = function(){
+            $.ajax({
+                url: '/uploadinputipsfileforall?filetype=ansible_playbook', 
+                type: 'POST',
+                data: new FormData($("#playbook_upload")[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false,
+                beforeSend: function(){
+                    console.log(new FormData($("#playbook_upload")[0]));
+                }                    // Using FormData, no need to process data.
+            }).done(function(){
+                addLine("Playbook successfully uploaded")
+                $.verify_playbook();
+            }).fail(function(){
+                toggle_spinner(false,'upload_btn');
+                addLine("Error occurred uploading playbook... Check your connection server");
+            });
+        }
+        $.verify_playbook = function(){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/ansible_syntax_check', 
+                type: 'GET',
+                dataType: "JSON",
+                beforeSend: function(){ 
+                    addLine("Verifying playbook...");
+                    disableAllButtons(true);
+                    loading_icons(true);
+                },
+                success: function(result){
+                    var data = result;
+                    loading_icons(false);
+                    toggle_spinner(false,'upload_btn');
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "ERROR"){
+                                for(var i = 0; i < data[key].length; i++){
+                                    addLine(data[key][i]);
+                                }
+                                disableAllButtons(false);
+                                break;
+                        }
+                        else{
+                            for(var i = 0; i < data[key].length; i++){
+                                addLine(data[key][i]);
+                            }
+                            execute_playbook_btn.disabled = false;
+                            disableAllButtons(false);
+                            break;
+                        }   
+                    }
+                }        
+            }); 
+        }
+        function execute_playbook(){
+            var pwd = document.getElementById('ansible_pwd').value;
+            var usr = document.getElementById('ansible_usr').value;
+            var root_usr = "";
+            var root_pwd = "";
+            if (usr == ""){
+                addLine("ERROR: Please add a User to execute command");
+                return;
+            }
+            else if(pwd == ""){
+                addLine("WARNING: No password submitted");
+            }
+            if(run_as_root == 1 ){
+                root_usr = document.getElementById('ansible_become_usr').value;
+                root_pwd = document.getElementById('ansible_become_pwd').value;
+                if(root_usr == ""){
+                    addLine("ERROR: Please add a Root User to execute command");
+                    return;
+                }
+                else if(root_pwd == ""){
+                    addLine("ERROR: Please add a Root Password to execute command");
+                    return;
+                }
+            }
+            toggle_spinner(true,'run_btn');
+            execute_playbook_btn.disabled = false;
+            $.execute_playbook(usr,pwd,run_as_root,root_usr,root_pwd);
+        }
+        $.execute_playbook = function(usr, pwd, become, become_usr, become_pwd){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/ansibleplaybookexecute', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {usr: usr, pwd: pwd, become: become, become_usr: become_usr, become_pwd: become_pwd},
+                beforeSend: function(){ 
+                    addLine("Executing playbook please wait...");
+                    disableAllButtons(true);
+                    loading_icons(true);
+                },
+                success: function(result){
+                    var data = result;
+                    loading_icons(false);
+                    toggle_spinner(false,'run_btn');
+                    disableAllButtons(false);
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                    if (key == "ERROR"){
+                            addLine("ERROR Occurred!");
+                            for(var i = 0; i < data[key].length; i++){
+                                addLine(data[key][i]);
+                            }
+                            break;
+                        }
+                        else{
+                            for(var i = 0; i < data[key].length; i++){
+                                addLine(data[key][i]);
+                            }
+                        }   
+                    }
+                }        
+            }); 
+        }
+        // Clear selected IPs function. Takes a single IP or "all" to unselect all.
+        function CallIPCleaner(){
+            var ip = document.getElementById('inputform')['ip'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            $.clearIPs(inputtype,ip,iptype);
+        }
+        $.clearIPs = function(inputtype,ip,iptype){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/deselectIP', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, ip: ip, iptype: iptype},
+                beforeSend: function(){ 
+                    terminal.innerHTML = ""
+                    addLine('Modifying Selection...');
+                },
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "SUCCESS"){
+                            addLine(data[key]);
+                            $.CheckIPs(inputtype,iptype);
+                        }
+                        else{
+                            addLine(data[key]);
+                        }
+                    }
+                }        
+            }); 
+        }
+        function addLine(line) {
+            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
+            var line = line.replace(reIP,"<span class='ip'>$&</span>");
+            terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        function clearInput(){
+            document.getElementById('playbook').value = null;
+        }
+        document.getElementById('playbook').addEventListener('click',clearInput,false);
+        document.getElementById('playbook').addEventListener('change', parsePlaybook, false);
+        function parsePlaybook() {
+            terminal.innerHTML = "";
+            var file = document .getElementById("playbook").files[0];
+            addLine("PLAYBOOK: " + file['name'])
+            if (file['name'].includes(".yml") || file['name'].includes(".yaml")){ //// File type must be in .txt format. This avoids erroneos output when parsing data for valid ips
+                var reader = new FileReader();
+                reader.readAsText(file, "UTF-8");
+                reader.onload = function (evt) {
+                    const inputarray = evt.target.result.split("\n");
+                    for(i = 0; i < inputarray.length; i++ ){
+                        addLine(inputarray[i]);
+                    }
+                }
+                upload_playbook_btn.disabled = false;
+            }
+            else{
+                addLine('ERROR: Please upload a .yml type file');
+            }
+        }        
+        // ////// Session agent for communicating with the LCM server to send session states ////
+        // window.addEventListener('beforeunload', function (e) {
+        //     var agentForm = new FormData();
+        //     var state = 'inactive'
+        //     agentForm.append("session_state",state)
+        //     agentForm.append("session_guid",session_auth)
+        //     navigator.sendBeacon("/udp_session_handler", agentForm);
+        // });
+    </script>
+</body>
+</html>
+
