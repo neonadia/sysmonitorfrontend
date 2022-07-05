@@ -1381,8 +1381,7 @@ def ansibleplaybookexecute():
     ansible_become_pass = str(request.args.get('become_pwd'))  
     if ansible_become == 1:
         # copy the ansible cfg file
-        shutil.copyfile('/app/ansible_cfg_config', '/app/ansible.cfg')
-        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 --become-user {}  -b --extra-vars="ansible_become_pass={}"'\
+        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"'\
          .format(ansible_become_usr,ansible_become_pass), shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
@@ -1391,7 +1390,6 @@ def ansibleplaybookexecute():
         for line in output:
             output_strip.append(line.strip())      
         response = {"SUCCESS": output_strip}
-        os.remove("/app/ansible.cfg")
     else:
         process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
@@ -1667,11 +1665,8 @@ def advanceinputgenerator():
 def advanceinputgenerator_ajaxVerison():
     if request.method == "GET":
         if 'ansible' in str(request.args.get('inputtype')):
-            # write a cfg config file for excution part to use
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
-            with open('/app/ansible_cfg_config', 'w') as ansible_cfg_file:
-                ansible_cfg_file.write('[defaults]\ninventory=inventory.ini\nremote_user={}\nansible_pass={}'.format(ansible_usr, ansible_pwd))
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1720,8 +1715,6 @@ def advanceinputgenerator_all_ajaxVerison():
             # write a cfg config file for excution part to use
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
-            with open('/app/ansible_cfg_config', 'w') as ansible_cfg_file:
-                ansible_cfg_file.write('[defaults]\ninventory=inventory.ini\nremote_user={}\nansible_pass={}'.format(ansible_usr, ansible_pwd))
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
