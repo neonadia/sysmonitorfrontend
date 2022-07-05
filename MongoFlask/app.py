@@ -1379,29 +1379,48 @@ def ansibleplaybookexecute():
     ansible_pwd = str(request.args.get('pwd'))
     ansible_become = int(request.args.get('become'))
     ansible_become_usr = str(request.args.get('become_usr'))
-    ansible_become_pwd = str(request.args.get('become_pwd'))
+    ansible_become_pass = str(request.args.get('become_pwd'))
     if ansible_become == 0:
-        ansible_become = 'False'
+        ansible_become = False
     else:
-        ansible_become = 'True'
+        ansible_become = True
     
     if len(ansible_pwd) * len(ansible_usr) == 0:
-        response = {"ERROR":"ansible cfg file can not be created due to invalid inputs: lengh equals 0."}
-    else:
-        df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
-        iplist = list(df_input['ip'])
-        with open('/app/inventory.tmp', 'w') as ansible_inventory_file:
-            for cur_ip in iplist:
-                ansible_inventory_file.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(cur_ip, cur_ip, ansible_usr, ansible_pwd))
-        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.tmp', shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate(timeout=100)
+        response = {"ERROR":["ansible-playbook can not be ran due to invalid inputs: user or password lengh equals 0."]}
+    elif ansible_become and len(ansible_pwd) * len(ansible_usr) == 0:
+        response = {"ERROR":["ansible-playbook can not be ran due to invalid inputs: become_user or become_password lengh equals 0."]}
+    elif ansible_become:
+        with open('/app/ansible.cfg', 'w') as ansible_cfg_file:
+            ansible_cfg_file.write('''[defaults]
+inventory=inventory.ini
+remote_user={}
+ansible_pass={}            
+'''.format(ansible_usr, ansible_pwd)) 
+        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 --become-user {}  -b --extra-vars="ansible_become_pass={}"'\
+         .format(ansible_become_usr,ansible_become_pass), shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
         output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
         output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
         output_strip = []
         for line in output:
             output_strip.append(line.strip())      
         response = {"SUCCESS": output_strip}
-    os.remove("/app/inventory.tmp")
+        os.remove("/app/ansible.cfg")
+    else:
+        df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
+        iplist = list(df_input['ip'])
+        with open('/app/inventory.tmp', 'w') as ansible_inventory_file:
+            for cur_ip in iplist:
+                ansible_inventory_file.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(cur_ip, cur_ip, ansible_usr, ansible_pwd))
+        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.tmp', shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
+        output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+        output_strip = []
+        for line in output:
+            output_strip.append(line.strip())      
+        response = {"SUCCESS": output_strip}
+        os.remove("/app/inventory.tmp")
     printf('Removed inventory.tmp file')
     response = json.dumps(response)
     return response
