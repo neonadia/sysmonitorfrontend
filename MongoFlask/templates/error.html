@@ -41,32 +41,7 @@
     <div><a id="back-link">Back to previous page</a></div>
     <div><a href="{{ url_for('index') }}">Back to home page</a></div>
 </div>
-
-  <footer class="page-footer font-small teal pt-4 bg-primary text-white">
-
-  <!-- Footer Text -->
-  <div class="container-fluid text-center text-md-left">
-
-
-
-        <!-- Content -->
-        <p>LINUX CLUSTER MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to mointor the system status on super sever remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
-        </p>
-
-
-
-  </div>
-  <!-- Footer Text -->
-
-  <!-- Copyright  class="footer-copyright text-center py-3" -->
-  <div class="text-center text-light bg-dark">Copyright © 2021 
-    <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
-    All Rights Reserved
-  </div>
-  <!-- Copyright -->
-
-</footer>
-<!-- Footer -->
+{% include "footer.html" %}
 <script>
 var element = document.getElementById('back-link');
 
