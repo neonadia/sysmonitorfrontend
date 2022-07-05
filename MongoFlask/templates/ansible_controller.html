@@ -295,12 +295,12 @@
                                 Dashboard
                             </a>
                         </li>
-                        <li class="nav-item border-bottom border-top" style="padding:2%; margin-left: 2%;">
+                        <li class="nav-item border-top border-bottom" style="padding:2%; margin-left: 2%;">
+                            <h5><u class="font-weight-bold text-primary"> 1) Client Setup</u></h5>
                             <form id = "inputform">
-                                <h5><u class="font-weight-bold text-primary"> 1) Select IP Range</u></h5>
-                                <div class="form-group container-fluid">
-                                    <label>Input IP range</label>
-                                    <div class="container-fluid row" >
+                                <div class="container-fluid border-bottom" style="padding-bottom: 2%;">
+                                    <label style="font-weight: bold;">Input IP range</label>
+                                    <div class='row justify-content-start'>
                                         <div class="col">
                                             <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
                                         </div>
@@ -313,59 +313,79 @@
                                     </div>
                                 </div>
                             </form>
-                            <div class="container-fluid" style="align-content: center;">
-                                <button class="btn btn-primary btn-sm" id="uploadRange" onclick="uploadIPs()" style="margin-right: 2%;">SELECT RANGE</button>                                        
-                                <button  class="btn btn-primary btn-sm" id="uploadall" onclick="uploadallIPs()" style="margin-right: 2%;">SELECT ALL</button>  
-                                <a id="unselectall" class="btn btn-warning text-white disabled btn-sm" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>
+                            <form id = "ansible_userANDpass">
+                                <div class="container-fluid border-bottom" style="padding-bottom: 2%">
+                                    <label style="font-weight: bold; padding-top: 2%;">Client Credentials</label>
+                                    <div class='row justify-content-start'>
+                                        <div class="col">
+                                                <label style="font-weight: bold;">User</label>
+                                                <input type="form-control" name="user" required="" id="ansible_usr" autocomplete="off" >
+                                        </div>
+                                        <div class="col">
+                                            <label style="font-weight: bold;">Pass</label>
+                                            <input type="form-control" name="password" autocomplete="current-password" required="" id="ansible_pwd">
+                                            <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="container-fluid">
+                                <label style="font-weight: bold; padding-top: 2%;">Submit</label>
+                                <div class='row justify-content-start'>
+                                    <div class="col">
+                                        <button class="btn btn-primary btn-sm" id="uploadRange" onclick="uploadIPs()" style="margin-right: 2%;">SELECT RANGE</button>                                        
+                                        <button  class="btn btn-primary btn-sm" id="uploadall" onclick="uploadallIPs()" style="margin-right: 2%;">SELECT ALL</button>  
+                                        <a id="unselectall" class="btn btn-warning text-white disabled btn-sm" name="unselectall" onclick="CallIPCleaner()">UNSELECT ALL</a>
+                                    </div>
+                                </div>
                             </div>
                         </li>
                         <li class="nav-item border-bottom" style="padding:2%; margin-left: 2%;">
+                            <h5><u class="font-weight-bold text-primary"> 2) Upload Playbook</u></h5>
                             <form id = "playbook_upload">
-                                <h5><u class="font-weight-bold text-primary"> 2) Upload Playbook</u></h5>
-                                <div class="custom-file" style="padding-top: 2%;">
-                                    <input type="file" class="form-control-file form-primary" name="playbook" id="playbook" required>
-                                    <small id="help1" class="form-text text-muted">Please upload the necessary playbook</small>
-                                    <br>                            
+                                <div class="container-fluid">
+                                    <div class="custom-file" style="padding-top: 2%;">
+                                        <input type="file" class="form-control-file form-primary" name="playbook" id="playbook" required>
+                                        <small id="help1" class="form-text text-muted">Please upload the necessary playbook</small>                      
+                                    </div>
                                 </div>
                             </form>
-                            <div id="upload_btn">
-                                <button  type="submit" class="btn btn-primary btn-sm" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>
+                            <div class="container-fluid" style="padding-top: 2%; padding-bottom: 2%;">
+                                <div id="upload_btn">
+                                    <button  type="submit" class="btn btn-primary btn-sm" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>
+                                </div>
                             </div>
                         </li>
                         <li class="nav-item" style="padding:2%; margin-left: 2%;" >
                             <h5><u class="font-weight-bold text-primary"> 3) Execute Playbook:</u></h5>
-                            <form id = "ansible_userANDpass">
-                                <div class="row">
-                                    <div class="form-group col-auto">
-                                        <label style="font-weight: bold;">Ansible User</label>
-                                        <div class="row">
-                                            <div class="col">
-                                                <input type="user" name="user" required="" id="ansible_usr">
-                                            </div>
+                            <form id = "inputform-run">
+                                <div class="container-fluid" style="padding-top: 2%;">
+                                    <div class="row justify-content-start">
+                                        <div class='col-auto' id="run_btn">
+                                            <button type="submit" class="btn btn-primary btn-sm" id="run_playbook" onclick="execute_playbook()" target="_blank">RUN</button>
+                                        </div>
+                                        <div class="form-group col-auto">
                                             <div class="form-group form-check">
                                                 <input type="checkbox" class="form-check-input" id="become">
-                                                <label class="form-check-label" for="become">Run as root?</label>
+                                                <label class="form-check-label" for="become">Become?</label>
                                             </div>
                                         </div>
-                                        <label style="padding-top: 2%; font-weight: bold;">Ansible Password</label>
-                                        <input type="password" name="password" autocomplete="current-password" required="" id="ansible_pwd">
-                                        <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i>
                                     </div>
-                                    <div class="form-group col-auto" id="become_usr_form">
-                                        <label style="font-weight: bold;">Become User</label>
-                                        <div class="row">
-                                            <div class="col">
-                                                <input type="user" name="user" required="" id="ansible_become_usr">
-                                            </div>
-                                        </div>
-                                        <label style="padding-top: 5%; font-weight: bold;">Become Password</label>
+                                </div>
+                            </form>
+                            <div class="container-fluid border-top" id="become_usr_form">
+                                <label style="font-weight: bold; padding-top: 2%;">Become Credentials</label>
+                                <div class="row justify-content-start">
+                                    <div class="col">
+                                        <label style="font-weight: bold;">User</label>
+                                        <input type="user" name="user" required="" id="ansible_become_usr">
+                                    </div>
+                                    <div class="col">
+                                        <label style="font-weight: bold;">Pass</label>
                                         <input type="password" name="become_password" autocomplete="current-password" required="" id="ansible_become_pwd">
                                         <i class="far fa-eye" id="toggleBecomePassword" style="margin-left: -30px; cursor: pointer;"></i>
                                     </div>
                                 </div>
-                            </form>
-                            <div id="run_btn">
-                                <button type="submit" class="btn btn-primary btn-sm" id="run_playbook" onclick="execute_playbook()" target="_blank">RUN</button>
                             </div>
                         </li>
                     </ul>
@@ -430,12 +450,12 @@
             else{
                 if(btn == "run_btn"){
                     document.getElementById('run_btn').innerHTML = "";
-                    document.getElementById('run_btn').innerHTML = '<button type="submit" class="btn btn-primary" id="run_playbook"  onclick="execute_playbook()" target="_blank">RUN</button>';
+                    document.getElementById('run_btn').innerHTML = '<button type="submit" class="btn btn-primary btn-sm" id="run_playbook"  onclick="execute_playbook()" target="_blank">RUN</button>';
                     document.getElementById('run_btn').disabled = true;
                 }
                 else{
                     document.getElementById('upload_btn').innerHTML = "";
-                    document.getElementById('upload_btn').innerHTML = '<button  type="submit" class="btn btn-primary" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>';
+                    document.getElementById('upload_btn').innerHTML = '<button  type="submit" class="btn btn-primary btn-sm" onclick="uploadPlaybook()" id="upload_playbook" target="_blank">UPLOAD & VERIFY</button>';
                     document.getElementById('upload_btn').disabled = true;
                 }
             }
@@ -536,20 +556,29 @@
             });
         }
         function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var pwd = document.getElementById('ansible_pwd').value;
+            var usr = document.getElementById('ansible_usr').value;
+            if (usr == ""){
+                addLine("ERROR: Please add a User");
+                return;
+            }
+            else if(pwd == ""){
+                addLine("WARNING: No user password submitted");
+            }
             var ipstart = document.getElementById('inputform')['ipstart'].value;
             var ipend = document.getElementById('inputform')['ipend'].value;
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = "";
             addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
-            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype,usr,pwd);
         }
-        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype){
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype,usr,pwd){
             $.ajax({
                 url: '/advanceinputgenerator_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -574,18 +603,27 @@
             }); 
         }
         function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var pwd = document.getElementById('ansible_pwd').value;
+            var usr = document.getElementById('ansible_usr').value;
+            if (usr == ""){
+                addLine("ERROR: Please add a User");
+                return;
+            }
+            else if(pwd == ""){
+                addLine("WARNING: No user password submitted");
+            }
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             terminal.innerHTML = "";
             addLine('Selecting all the IPs ...');
-            $.CallAdvancedAllGenerator(inputtype,iptype);
+            $.CallAdvancedAllGenerator(inputtype,iptype,usr,pwd);
         }
-        $.CallAdvancedAllGenerator = function(inputtype,iptype){
+        $.CallAdvancedAllGenerator = function(inputtype,iptype,usr,pwd){
             $.ajax({
                 url: '/advanceinputgenerator_all_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                data: {inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -673,17 +711,8 @@
             }); 
         }
         function execute_playbook(){
-            var pwd = document.getElementById('ansible_pwd').value;
-            var usr = document.getElementById('ansible_usr').value;
             var root_usr = "";
             var root_pwd = "";
-            if (usr == ""){
-                addLine("ERROR: Please add a User to execute command");
-                return;
-            }
-            else if(pwd == ""){
-                addLine("WARNING: No password submitted");
-            }
             if(run_as_root == 1 ){
                 root_usr = document.getElementById('ansible_become_usr').value;
                 root_pwd = document.getElementById('ansible_become_pwd').value;
@@ -698,14 +727,14 @@
             }
             toggle_spinner(true,'run_btn');
             execute_playbook_btn.disabled = false;
-            $.execute_playbook(usr,pwd,run_as_root,root_usr,root_pwd);
+            $.execute_playbook(run_as_root, root_usr, root_pwd);
         }
-        $.execute_playbook = function(usr, pwd, become, become_usr, become_pwd){//// Clear IP ajax function to send command and variables to server for processing
+        $.execute_playbook = function(become, become_usr, become_pwd){//// Clear IP ajax function to send command and variables to server for processing
             $.ajax({
                 url: '/ansibleplaybookexecute', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {usr: usr, pwd: pwd, become: become, become_usr: become_usr, become_pwd: become_pwd},
+                data: {become: become, become_usr: become_usr, become_pwd: become_pwd},
                 beforeSend: function(){ 
                     addLine("Executing playbook please wait...");
                     disableAllButtons(true);

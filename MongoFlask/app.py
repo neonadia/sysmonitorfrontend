@@ -38,6 +38,7 @@ from io import StringIO
 import gridfs
 import cv2
 import numpy as np
+import shutil
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -1179,6 +1180,7 @@ def bmceventcleanerupload():
         else:
             indicators.append(0)
     return render_template('bmceventcleanerupload.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
 @app.route('/checkSelectedIPs')
 def checkSelectedIps():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1191,7 +1193,7 @@ def checkSelectedIps():
         if request.args.get('filetype') == "suminput": # sum input file is different
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,sep='\s+',names=['ip','user','pwd'])
         elif request.args.get('filetype') == "ansible":
-            df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
+            df_input = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
         else:
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
@@ -1357,9 +1359,8 @@ def ansible_syntax_check():
     
 @app.route('/ansible_controller')
 def ansible_controller():
-    savepath = "/app/"
     try:
-        df_input = pd.read_csv(savepath+"inventory.ini",header=None,names=['os_ip'])
+        df_input = pd.read_csv("/app/inventory.ini",header=None,names=['ip','host','user','pwd'])
         inputips = list(df_input['ip'])
     except:
         inputips = []
@@ -1375,27 +1376,12 @@ def ansible_controller():
 
 @app.route('/ansibleplaybookexecute',methods=["GET"])
 def ansibleplaybookexecute():
-    ansible_usr = str(request.args.get('usr'))
-    ansible_pwd = str(request.args.get('pwd'))
     ansible_become = int(request.args.get('become'))
     ansible_become_usr = str(request.args.get('become_usr'))
-    ansible_become_pass = str(request.args.get('become_pwd'))
-    if ansible_become == 0:
-        ansible_become = False
-    else:
-        ansible_become = True
-    
-    if len(ansible_pwd) * len(ansible_usr) == 0:
-        response = {"ERROR":["ansible-playbook can not be ran due to invalid inputs: user or password lengh equals 0."]}
-    elif ansible_become and len(ansible_pwd) * len(ansible_usr) == 0:
-        response = {"ERROR":["ansible-playbook can not be ran due to invalid inputs: become_user or become_password lengh equals 0."]}
-    elif ansible_become:
-        with open('/app/ansible.cfg', 'w') as ansible_cfg_file:
-            ansible_cfg_file.write('''[defaults]
-inventory=inventory.ini
-remote_user={}
-ansible_pass={}            
-'''.format(ansible_usr, ansible_pwd)) 
+    ansible_become_pass = str(request.args.get('become_pwd'))  
+    if ansible_become == 1:
+        # copy the ansible cfg file
+        shutil.copyfile('/app/ansible_cfg_config', '/app/ansible.cfg')
         process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 --become-user {}  -b --extra-vars="ansible_become_pass={}"'\
          .format(ansible_become_usr,ansible_become_pass), shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
@@ -1407,12 +1393,7 @@ ansible_pass={}
         response = {"SUCCESS": output_strip}
         os.remove("/app/ansible.cfg")
     else:
-        df_input = pd.read_csv('/app/inventory.ini',header=None,names=['ip'])
-        iplist = list(df_input['ip'])
-        with open('/app/inventory.tmp', 'w') as ansible_inventory_file:
-            for cur_ip in iplist:
-                ansible_inventory_file.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(cur_ip, cur_ip, ansible_usr, ansible_pwd))
-        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.tmp', shell=True, stdout=PIPE, stderr=PIPE)
+        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
         output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
@@ -1420,11 +1401,22 @@ ansible_pass={}
         for line in output:
             output_strip.append(line.strip())      
         response = {"SUCCESS": output_strip}
-        os.remove("/app/inventory.tmp")
-    printf('Removed inventory.tmp file')
     response = json.dumps(response)
     return response
 
+@app.route('/ansiblecommandline',methods=["GET"])
+def ansiblecommandline():
+    ansible_command = str(request.args.get('ansible_cmd'))
+    process = Popen('ansible {} -f 300 -i /app/inventory.ini all'\
+    .format(ansible_command), shell=True, stdout=PIPE, stderr=PIPE)    
+    output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
+    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+    output_strip = []
+    for line in output:
+        output_strip.append(line.strip())  
+    response = {"SUCCESS": output_strip}
+    return response
+    
 @app.route('/bmceventcleanerstart',methods=["GET"])
 def bmceventcleanerstart():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1674,7 +1666,15 @@ def advanceinputgenerator():
 @app.route('/advanceinputgenerator_ajaxVersion', methods=["GET"])
 def advanceinputgenerator_ajaxVerison():
     if request.method == "GET":
-        savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+        if 'ansible' in str(request.args.get('inputtype')):
+            # write a cfg config file for excution part to use
+            ansible_usr = str(request.args.get('usr'))
+            ansible_pwd = str(request.args.get('pwd'))
+            with open('/app/ansible_cfg_config', 'w') as ansible_cfg_file:
+                ansible_cfg_file.write('[defaults]\ninventory=inventory.ini\nremote_user={}\nansible_pass={}'.format(ansible_usr, ansible_pwd))
+            savepath = '/app/inventory.ini'
+        else:
+            savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
         ipstart = request.args.get('ipstart')
         ipend = request.args.get('ipend')
         iplist = IPRangeToList(ipstart,ipend)
@@ -1695,7 +1695,9 @@ def advanceinputgenerator_ajaxVerison():
         osip_list = list(df_pwd['os_ip'])
         with open(savepath,"w") as cleanerinput:
             for ip in iplist:
-                if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
+                if 'ansible' in str(request.args.get('inputtype')):
+                    cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(ip, ip, ansible_usr, ansible_pwd))
+                elif request.args.get('iptype') == "ipmi" and ip in ipmi_list:
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
                     if 'suminput' in savepath:
                         cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
@@ -1715,6 +1717,11 @@ def advanceinputgenerator_ajaxVerison():
 def advanceinputgenerator_all_ajaxVerison():
     if request.method == "GET":
         if 'ansible' in str(request.args.get('inputtype')):
+            # write a cfg config file for excution part to use
+            ansible_usr = str(request.args.get('usr'))
+            ansible_pwd = str(request.args.get('pwd'))
+            with open('/app/ansible_cfg_config', 'w') as ansible_cfg_file:
+                ansible_cfg_file.write('[defaults]\ninventory=inventory.ini\nremote_user={}\nansible_pass={}'.format(ansible_usr, ansible_pwd))
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1722,8 +1729,10 @@ def advanceinputgenerator_all_ajaxVerison():
         ip_list = list(df_pwd['ip'])
         osip_list = list(df_pwd['os_ip'])
         with open(savepath,"w") as cleanerinput:
-            for ip, osip in zip(ip_list, osip_list):
-                if request.args.get('iptype') == "ipmi":
+            for ip, osip in zip(ip_list, osip_list):                
+                if 'ansible' in str(request.args.get('inputtype')):
+                    cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(osip, osip, ansible_usr, ansible_pwd))
+                elif request.args.get('iptype') == "ipmi":
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
                     if 'suminput' in savepath:
                         cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
@@ -1732,7 +1741,7 @@ def advanceinputgenerator_all_ajaxVerison():
                 elif request.args.get('iptype') == "os":
                     cleanerinput.write(osip + '\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
-            print("Saved file...",flush=True)
+            print("Saved file...",flush=True)        
         if os.path.isfile(savepath):
             return json.dumps(response)
         else:
