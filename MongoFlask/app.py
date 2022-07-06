@@ -1406,8 +1406,8 @@ def ansibleplaybookexecute():
 def ansiblecommandline():
     ansible_command = str(request.args.get('ansible_cmd'))
     process = Popen('ansible {} -f 300 -i /app/inventory.ini all'\
-    .format(ansible_command), shell=True, stdout=PIPE, stderr=PIPE)    
-    output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
+    .format(ansible_command), shell=True, stdout=PIPE, stderr=PIPE)
+    stdout,stderr = process.communicate()    
     output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
     output_strip = []
     for line in output:
@@ -1700,6 +1700,12 @@ def advanceinputgenerator_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os" and ip in osip_list:
                     cleanerinput.write(ip + '\n')
+        if 'ansible' in str(request.args.get('inputtype')):
+            if 'ansible.cfg' not in os.listdir('/app'):
+                with open('/app/ansible.cfg','w') as cfg:
+                    cfg.write('[defualts]\n')
+                    cfg.write('host_key_checking=False\n')
+                    cfg.write('deprecation_warnings=False\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)
         if os.path.isfile(savepath):
@@ -1733,6 +1739,12 @@ def advanceinputgenerator_all_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os":
                     cleanerinput.write(osip + '\n')
+        if 'ansible' in str(request.args.get('inputtype')):
+            if 'ansible.cfg' not in os.listdir('/app'):
+                with open('/app/ansible.cfg','w') as cfg:
+                    cfg.write('[defualts]\n')
+                    cfg.write('host_key_checking = false\n')
+                    cfg.write('deprecation_warnings=False\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)        
         if os.path.isfile(savepath):
@@ -1812,8 +1824,6 @@ def sumtoolboxupload():
         else:
             indicators.append(0)
     return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = sum_session_info['guid'])
-
-
 
 @app.route('/sumtoolboxterminal')
 def sumtoolboxterminal():

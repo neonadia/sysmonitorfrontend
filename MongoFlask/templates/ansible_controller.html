@@ -50,10 +50,36 @@
         overflow-y: auto;
         /* position: fixed; */
     }
+    /* Console is a box in the background class */
+    #console {
+        margin: 0px;
+        padding: 0px;
+        width: 100%;
+        height: 1000px;
+        overflow-y: auto;
+        text-align: left;
+        border-radius: 15px;
+    }
+    div#console {
+        padding-left: 10;
+    }
+    /* Input font formatting for console */
+    #textinput {
+        height: max-content;
+        margin: 0px 0px 0px 0px;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        color: rgb(255, 255, 255);
+        font-family: Monospace;
+        overflow: hidden;
+        padding: 0%;
+    }
     /* Console output formatting */
     pre {
         color: rgb(255, 255, 255);
         margin: 0px 0px 0px 0px;
+        overflow-x: hidden;
     }
     /* More console input formatting to make input box larger */
     input#textinput {
@@ -388,12 +414,25 @@
                                 </div>
                             </div>
                         </li>
+                        <li class="nav-item">
+                            <div class="container-fluid text-center text-md-left " style="bottom:0; position:absolute; background-color: #007bff; padding: 2%; color:#ffffff">
+                                <!-- Content -->
+                                <p>
+                                    L12 MONITOR is an easy deploy program based on Redfish and Intelligent Platform Management Interface aims to monitor the system status remotely. It includes multiple functions: real-time device status monitor, cluster hardware software summary, benchmark results reader and system report generation.       
+                                </p>
+                            </div>
+                            <div class="container-fluid text-center text-md-center " style="bottom:0; color: #ffffff; position:absolute; background-color: black;">
+                                <!-- Content -->
+                                <a class="text-white" href="https://www.supermicro.com/"> Super Micro Computer Inc.</a>
+                                All Rights Reserved
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </nav>
             <main role="main" class="col-md-9 col-lg-10 pt-4 px-1" style="margin-left:35%; max-width: 63%; height: 700px;">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Terminal Output</h1>
+                    <h1 class="h2">Console</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group mr-2">
                             <button class="btn btn-sm btn-outline-secondary" onclick="clearTerminal()">Clear Output</button>
@@ -401,11 +440,284 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-auto scroll terminal" id = "upload_terminal" style="height: 100%; width: 100%;"></div>
+                <!-- <div class="col-auto scroll terminal" id = "upload_terminal" style="height: 100%; width: 100%;"></div> -->
+                <div class ="col-auto" style="height: 100%; width: 100%;" onclick="addCursor()">
+                    <div class="terminal scroll" id = "console" style="padding-top: 1%; padding-left: 1%; height: 115%;">
+                            <!-- Commandline output here -->
+                        <pre id="inputbar" >/><input id = "textinput" spellcheck="false" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>
+                    </div>
+                </div> 
             </main>
         </div>
     </div>
+
     <script type="text/javascript">
+        ///////////////////////////////////////////////  CONSOLE VARIABLES /////////////////////////////////
+        var output_counter = 0; ///Increasing counter to identify the console output lines. This counter serves as a ID to highlight the keywords.
+        var cursor_lock = 0;
+        var console_history = new Array(); //// Array that contains commands executed in the console.
+        console_history.push("");
+        var position = 0; ///Console History iterator
+        function submitCommand(command){
+            cursor_lock = 1; // lock the cursor when command submitted
+            $.sendCommandtoServer(command); /// Pass command as argument to ajax function
+        }
+        $.sendCommandtoServer = function(command){
+            $.ajax({
+                url: '/ansiblecommandline',
+                type: 'GET',
+                dataType: "JSON",
+                data: {ansible_cmd: command}, // Send Command to server to execute
+                beforeSend: function(){ ///Write executing to console while sending and retrieving data.
+                    addLine("Executing command...... please wait");
+                    loading_icons(true);
+                    toggle_spinner(true,'run_btn');
+                },
+                success: function(result){ ///Server response and error handling
+                    var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
+                    cursor_lock = 0;
+                    loading_icons(false);
+                    toggle_spinner(false,'run_btn');
+                    addLine("Successfully got server response")
+                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                        for(var i = 0; i < data[key].length; i++){
+                            addLine(data[key][i]);
+                        }
+                        disableAllButtons(false);
+                        break;
+                    }
+                }, /// Ajax error output, rare but neccessary in certain circumstances
+                error: function (xhr, textStatus) {
+                    loading_icons(false);
+                    cursor_lock = 0;
+                    addLine("Server Error with backend");
+                    console.log(xhr);
+                }        
+            }); 
+        }
+        ///// Add commmand to history array and update iterator.  
+        function addHistory(command){
+            console_history.pop();
+            if (console_history.length == 0){ /// If history array empty push to array
+                console_history.push(command);
+            }
+            else if(console_history[console_history.length-1] !== command){ // Check if last command in history array is the same as current command.
+                console_history.push(command);
+            }
+            console_history.push("");
+            position = console_history.length - 1; ///Position iterator and the end of list whenever a command is entered (LIFO data structure)
+        }
+        function checkInput() {
+            var event = window.event || event.which; 
+            if (event.keyCode == 13) { ///// When enter key is entered for console
+                var CMD = document.getElementById("textinput").value;
+                addHistory(CMD); /// Add command to history array.
+                //// Parse command and check for internal console command, if not send to server to process as ipmitool commmand.
+                //// INTERNAL CONSOLE COMMANDS ARE HERE!.  Modify or add commands in this area. The else statement sends command to LCM server. ///////////////////////////////
+                if (CMD.trim() === ""){ /// For no input.
+                    addLine("");
+                }                    
+                else if(CMD == "clear" ){ /// Clear function clears console output.
+                    clearTerminal();
+                    $.CheckIPs(inputtype,iptype);
+                    document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+                    PosEnd(document.getElementById('textinput'));
+                }
+                else if(CMD == "select all" || CMD == "Select all" ){
+                    addLine(document.getElementById("textinput").value);
+                    uploadallIPs(); /// Select all IPS function
+                }
+                else if(CMD ==  "help" || CMD == "Help"){
+                    addLine(document.getElementById("textinput").value);
+                    addLine("-----> Enter '-m <module> -a <args>'       ex:   -m command -a 'whoami'");
+                    addLine("-----> To BECOME run with these args: '-m module -a args -b --become_user=root --extra-vars='ansible_become_pass=XXXXXX'");
+                    addLine("-----> Enter 'select all' to select all IPs");
+                    addLine("-----> Enter 'unselect all' to unselect all IPs");
+                    addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
+                    addLine("-----> Enter 'show selected' to show the selected IPs");
+                    addLine("-----> Enter 'history' to display console history or history -s (phrase)");
+                    addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD.trim() == "show selected"){
+                    addLine(CMD);
+                    $.CheckIPs(inputtype,iptype);
+                }
+                else if(CMD.split(" ")[0] =="unselect"){
+                    addLine(CMD);
+                    let split = CMD.split(" ").filter(element => {
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if (split[1] == "all"){
+                        CallIPCleaner("all");
+                    }
+                    else{
+                        if (split.length == 2){
+                            console.log(split[1]);
+                            if(ValidateIPaddress(split[1]) == false){
+                                addLine("Enter a valid IP address... or enter 'all' to unselect all")
+                            }
+                            else{
+                                CallIPCleaner(split[1]);
+                            }
+                        }
+                        else{
+                            addLine("Please enter unselect in the form of 'unselect <ip>' or 'unselect all'");
+                        }
+                    }
+                }
+                else if(CMD.split(" ")[0] == "history"){ /// History function
+                    addLine(CMD);
+                    let history_options = CMD.split(" ").filter(element => { ///Split history command in an array in the form of [history,-s,sel,list]
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if(history_options.length > 1){ ///If length of array is bigger than one, assume user is searching for a command. If not, display ALL history.
+                        if(history_options[1] == "-s"){ ///Check if second string in command is '-s' if not through error
+                            if (history_options.length == 2){ /// If user only input 'history -s' throw error to user
+                                addLine("Please provide search criteria to the console history command: history -s (your search term)");
+                            }
+                            else{
+                                var search_term = "";
+                                for(var i = 0; i < history_options.length; i++){ /// Concantenate all the string after '-s' from array ['sel','list'] = "sel list"
+                                    if (i > 1){
+                                        search_term += history_options[i] + " ";
+                                    }
+                                }
+                                addLine("======================= Console Histroy ============================");
+                                for (var i = 0; i < console_history.length; i++){
+                                    console.log(console_history[i] + " ===== " + search_term);
+                                    if (console_history[i].trim().includes(search_term.trim())){ /// Check if the string are equal and display. Trim() to delete the spaces from outside of the string, but not inbetween.
+                                        addLine(i +" "+console_history[i]);
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            addLine("Invalid option for history commands:");
+                            addLine("History commands:");
+                            addLine("       -s         Search for phrase in console history");
+                        }
+                    }
+                    else{
+                        addLine("======================= Console Histroy ============================");
+                        for (var i = 0; i < console_history.length; i++){
+                            if(i != console_history.length - 1){
+                                addLine(i +" "+console_history[i]);
+                            }
+                        }
+                    }
+                }
+                else{
+                        var command = document.getElementById("textinput").value;
+                        addLine(document.getElementById("textinput").value);
+                        console.log(document.getElementById("textinput").value);
+                        addLine(document.getElementById("textinput").value);
+                        submitCommand(command);
+                }
+            }
+            else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
+                var CMD = document.getElementById("textinput").value;
+                if (CMD.trim() !== ""){ /// For no input.
+                    addHistory(CMD);
+                }
+                addLine(CMD);
+                loading_icons(false);
+            }
+        }
+        ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
+        ////Do not tamper unless you know what you are doing.
+        function addLine(line) {
+            if(!line.includes('span')){
+                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line + "</pre>" ); ///Insert string to console with a unique ID
+                var sentence = document.getElementById(output_counter); /// Acquire html element with ID
+                var text = sentence.textContent; /// Get text from html element
+                //// Format key words in the html element's text with REGEX
+                let reError = /\b(Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+                let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+                let reInfo = /\b(Information|information|INFO|info)\b/g;
+                let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+                let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+                let reWarning = /\b(WARNING|Warning|warning)\b/g;
+                var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
+                var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
+                sentence.innerHTML = replaceWord; /// Replace string in html element
+                output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
+            }
+            else{
+                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line + "</pre>" );
+            }
+            document.getElementById("textinput").value = ""; /// Set your console input to nothing
+            document.getElementById("inputbar").remove(); //Remove the input bar
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' spellcheck='false' onkeydown = 'checkInput();' style='height: width: 800px;'></pre>") ///Place at the end of html element console.
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
+            PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        function ValidateIPaddress(ipaddress) { ////Validate IP address format
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+        ///Function to move cursor to input bar in console.
+        function PosEnd(end) {
+            var len = end.value.length;
+            // Mostly for Web Browsers
+            if (document.getSelection().toString().length == 0 && cursor_lock == 0){ // if nothing selected and nothing running
+                end.focus();
+            }
+            else if (end.createTextRange) {
+                var t = end.createTextRange();
+                t.collapse(true);
+                t.moveEnd('character', len);
+                t.moveStart('character', len);
+                t.select();
+            }
+        }
+        function addCursor(){
+            PosEnd(document.getElementById('textinput'));
+        }
+        document.addEventListener('keydown', function(e) { ///// UP and DOWN arrow key listeners to scroll through command history
+            switch (e.keyCode) {/// Switch statment to process UP AND DOWN. Update iterator according and change the input bar text.
+                case 38:///key code 38 is UP arrow
+                    if (console_history.length !== 0 && position == 0){ 
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 0){
+                        console.log("No history");
+                    }
+                    else{
+                        if(position == console_history.length - 1){
+                            position--;
+                        }
+                        document.getElementById("textinput").value = console_history[position];
+                        position--;
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+                case 40:///key code 40 is DOWN arrow key
+                    console.log("Down");
+                    if (console_history.length-1 !== position && console_history.length !== 0){
+                        position++;
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 1){
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else{
+                        console.log("No history");
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+            }
+        });
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#ansible_pwd');
         const toggleBecomePassword = document.querySelector('#toggleBecomePassword');
@@ -460,11 +772,10 @@
                 }
             }
         }
-        // var session_auth = "{{ session_auth }}";
-        global_counter = 0;
+        var global_counter = 0;
         var upload_playbook_btn = document.getElementById('upload_playbook');
         var execute_playbook_btn = document.getElementById('run_playbook');
-        var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        // var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
         var unselectButton = document.getElementById('unselectall');
         var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
         var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
@@ -493,7 +804,8 @@
             }
         }
         function clearTerminal(){
-            terminal.innerHTML="";
+            document.getElementById("console").innerHTML="";
+            document.getElementById("console").innerHTML='<pre id="inputbar">/><input id = "textinput" spellcheck="false" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>'
         }
         function exportTerminal() {
             let currentDate = new Date();
@@ -501,7 +813,7 @@
             let cMonth = currentDate.getMonth() + 1
             let cYear = currentDate.getFullYear()
             let time = currentDate.getHours() + "-" + currentDate.getMinutes() + "-" + currentDate.getSeconds();
-            var data = terminal.innerText;
+            var data =  document.getElementById("console").innerText;
             var c = document.createElement("a");
             c.download = "ansible_terminal_output_" + cMonth + "-" + cDay + "-" + cYear + "_" + time + ".log";
             var t = new Blob([data],{
@@ -520,7 +832,7 @@
                 document.getElementById('uploadall').disabled = false;
             }
         }
-        $.CheckIPs = function(){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+        $.CheckIPs = function(){ /// CheckIPfunction, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
             $.ajax({
                 url: '/checkSelectedIPs?filetype=ansible&iptype=os',
                 dataType : "JSON",
@@ -569,7 +881,7 @@
             var ipend = document.getElementById('inputform')['ipend'].value;
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
-            terminal.innerHTML = "";
+            clearTerminal();
             addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
             $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype,usr,pwd);
         }
@@ -614,7 +926,7 @@
             }
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
-            terminal.innerHTML = "";
+            clearTerminal();
             addLine('Selecting all the IPs ...');
             $.CallAdvancedAllGenerator(inputtype,iptype,usr,pwd);
         }
@@ -692,11 +1004,11 @@
                     toggle_spinner(false,'upload_btn');
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
                         if (key == "ERROR"){
-                                for(var i = 0; i < data[key].length; i++){
-                                    addLine(data[key][i]);
-                                }
-                                disableAllButtons(false);
-                                break;
+                            for(var i = 0; i < data[key].length; i++){
+                                addLine(data[key][i]);
+                            }
+                            disableAllButtons(false);
+                            break;
                         }
                         else{
                             for(var i = 0; i < data[key].length; i++){
@@ -776,7 +1088,7 @@
                 dataType: "JSON",
                 data: {inputtype: inputtype, ip: ip, iptype: iptype},
                 beforeSend: function(){ 
-                    terminal.innerHTML = ""
+                    clearTerminal()
                     addLine('Modifying Selection...');
                 },
                 success: function(result){
@@ -793,19 +1105,13 @@
                 }        
             }); 
         }
-        function addLine(line) {
-            var line = line.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
-            var line = line.replace(reIP,"<span class='ip'>$&</span>");
-            terminal.insertAdjacentHTML('beforeend',"<pre> > " +  line + "</pre>" );
-            terminal.scrollTop = terminal.scrollHeight;
-        }
         function clearInput(){
             document.getElementById('playbook').value = null;
         }
         document.getElementById('playbook').addEventListener('click',clearInput,false);
         document.getElementById('playbook').addEventListener('change', parsePlaybook, false);
         function parsePlaybook() {
-            terminal.innerHTML = "";
+            clearTerminal();
             var file = document .getElementById("playbook").files[0];
             addLine("PLAYBOOK: " + file['name'])
             if (file['name'].includes(".yml") || file['name'].includes(".yaml")){ //// File type must be in .txt format. This avoids erroneos output when parsing data for valid ips
@@ -823,15 +1129,6 @@
                 addLine('ERROR: Please upload a .yml type file');
             }
         }        
-        // ////// Session agent for communicating with the LCM server to send session states ////
-        // window.addEventListener('beforeunload', function (e) {
-        //     var agentForm = new FormData();
-        //     var state = 'inactive'
-        //     agentForm.append("session_state",state)
-        //     agentForm.append("session_guid",session_auth)
-        //     navigator.sendBeacon("/udp_session_handler", agentForm);
-        // });
     </script>
 </body>
 </html>
-
