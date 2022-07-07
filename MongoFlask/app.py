@@ -1413,6 +1413,27 @@ def ansiblecommandline():
     for line in output:
         output_strip.append(line.strip())  
     response = {"SUCCESS": output_strip}
+    response = json.dumps(response)
+    return response
+
+@app.route('/ansiblebuiltinpackage',methods=["GET"])
+def ansiblebuiltinpackage():
+    package_name = str(request.args.get('packagename'))
+    if package_name == "udpclient.deb":        
+        with open("/app/ansiblepackages/playbook-udpclient-package-ubuntu.yaml", 'r') as input_f:
+            yml_file = input_f.read().format('{{ item.name }}','{{ item.name }}','{{ packages }}',get_ip() + ':8888')
+        with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
+            output_f.write(yml_file)
+    else:
+        return json.dumps({"ERROR": ['Package is not supported.']})    
+    process = Popen('ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
+    stdout,stderr = process.communicate()    
+    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+    output_strip = []
+    for line in output:
+        output_strip.append(line.strip())  
+    response = {"SUCCESS": output_strip}
+    response = json.dumps(response)
     return response
     
 @app.route('/bmceventcleanerstart',methods=["GET"])
@@ -1664,9 +1685,14 @@ def advanceinputgenerator():
 @app.route('/advanceinputgenerator_ajaxVersion', methods=["GET"])
 def advanceinputgenerator_ajaxVerison():
     if request.method == "GET":
-        if 'ansible' in str(request.args.get('inputtype')):
+        if 'ansible' in str(request.args.get('inputtype')):           
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
+            if 'ansible.cfg' not in os.listdir('/app'):
+                with open('/app/ansible.cfg','w') as cfg:
+                    cfg.write('[defualts]\n')
+                    cfg.write('host_key_checking=False\n')
+                    cfg.write('deprecation_warnings=False\n')
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1700,12 +1726,6 @@ def advanceinputgenerator_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os" and ip in osip_list:
                     cleanerinput.write(ip + '\n')
-        if 'ansible' in str(request.args.get('inputtype')):
-            if 'ansible.cfg' not in os.listdir('/app'):
-                with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defualts]\n')
-                    cfg.write('host_key_checking=False\n')
-                    cfg.write('deprecation_warnings=False\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)
         if os.path.isfile(savepath):
@@ -1719,6 +1739,11 @@ def advanceinputgenerator_all_ajaxVerison():
     if request.method == "GET":
         if 'ansible' in str(request.args.get('inputtype')):
             # write a cfg config file for excution part to use
+            if 'ansible.cfg' not in os.listdir('/app'):
+                with open('/app/ansible.cfg','w') as cfg:
+                    cfg.write('[defualts]\n')
+                    cfg.write('host_key_checking = false\n')
+                    cfg.write('deprecation_warnings=False\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
             savepath = '/app/inventory.ini'
@@ -1739,14 +1764,8 @@ def advanceinputgenerator_all_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os":
                     cleanerinput.write(osip + '\n')
-        if 'ansible' in str(request.args.get('inputtype')):
-            if 'ansible.cfg' not in os.listdir('/app'):
-                with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defualts]\n')
-                    cfg.write('host_key_checking = false\n')
-                    cfg.write('deprecation_warnings=False\n')
-            response = {"response" : "SUCCESS: saved file: " + savepath}
-            print("Saved file...",flush=True)        
+                response = {"response" : "SUCCESS: saved file: " + savepath}
+                print("Saved file...",flush=True)        
         if os.path.isfile(savepath):
             return json.dumps(response)
         else:
