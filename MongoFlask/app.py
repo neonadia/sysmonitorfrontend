@@ -1690,9 +1690,10 @@ def advanceinputgenerator_ajaxVerison():
             ansible_pwd = str(request.args.get('pwd'))
             if 'ansible.cfg' not in os.listdir('/app'):
                 with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defualts]\n')
+                    cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
+                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + 'ansible.log\n')
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1741,9 +1742,10 @@ def advanceinputgenerator_all_ajaxVerison():
             # write a cfg config file for excution part to use
             if 'ansible.cfg' not in os.listdir('/app'):
                 with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defualts]\n')
-                    cfg.write('host_key_checking = false\n')
+                    cfg.write('[defaults]\n')
+                    cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
+                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + 'ansible.log\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
             savepath = '/app/inventory.ini'
