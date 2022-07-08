@@ -7,6 +7,10 @@
         required: True
       - name: net-tools
         required: True
+      - name: python-setuptools
+        required: True
+      - name: python3-setuptools
+        required: True
   tasks:
     - name: Install "{}" on Debian
       apt:
@@ -19,14 +23,17 @@
       pip:
         name: pymongo
         executable: pip3
-
+      when: ansible_os_family == "Debian"
+      
     - name: Sent udpclient package
       copy:
         src: /app/ansiblepackages/udpclient-2022.06.30.x86_64.deb
         dest: /root/udpclient-2022.06.30.x86_64.deb
-
+      when: ansible_os_family == "Debian"
+      
     - name: Install package
       command: /usr/bin/dpkg -i /root/udpclient-2022.06.30.x86_64.deb
+      when: ansible_os_family == "Debian"
       
     - name: Change udp server ip address
       lineinfile:
@@ -35,9 +42,11 @@
         line: ExecStart=/usr/bin/python3 /root/client/udpclient.py {}
         owner: root
         group: root
-
+      when: ansible_os_family == "Debian"
+      
     - name: Restart udpclient with daemon_reload
       systemd:
         state: restarted
         daemon_reload: yes
         name: udpclient.service
+      when: ansible_os_family == "Debian"
