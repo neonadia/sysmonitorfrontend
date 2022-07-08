@@ -1,0 +1,68 @@
+-
+  name: UDP control
+  hosts: all
+  vars:
+    packages:
+      - name: python3-pip
+        type: all
+      - name: net-tools
+        type: all
+      - name: python3-setuptools
+        type: all
+  tasks:
+    - name: Install "{{ item.name }}" on Debian
+      apt:
+        name: "{{ item.name }}"
+        state: present
+      when: ansible_os_family == "Debian" and (item.type == "all" or item.type == "deb")
+      loop: "{{ packages }}"
+
+    - name: Install "{{ item.name }}" on RedHat
+      yum:
+        name: "{{ item.name }}"
+        state: present
+      when: ansible_os_family == "RedHat"  and (item.type == "all" or item.type == "rpm")
+      loop: "{{ packages }}"
+
+    - name: Install pymongo
+      pip:
+        name: pymongo
+        executable: pip3
+      
+    - name: Sent udpclient package to Debian
+      copy:
+        src: /app/ansiblepackages/udpclient-2022.06.30.x86_64.deb
+        dest: /root/udpclient-2022.06.30.x86_64.deb
+      when: ansible_os_family == "Debian"
+
+    - name: Sent udpclient package to RedHat
+      copy:
+        src: /app/ansiblepackages/udpclient-2022.06.22.x86_64-0.x86_64.rpm
+        dest: /root/udpclient-2022.06.22.x86_64-0.x86_64.rpm
+      when: ansible_os_family == "RedHat"
+      
+    - name: Install package on Debian
+      apt:
+        deb: /root/udpclient-2022.06.30.x86_64.deb
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install package on RedHat
+      yum:
+        name: /root/udpclient-2022.06.22.x86_64-0.x86_64.rpm
+        state: present
+      when: ansible_os_family == "RedHat"
+      
+    - name: Change udp server ip address
+      lineinfile:
+        path: /etc/systemd/system/udpclient.service
+        regexp: '^ExecStart='
+        line: ExecStart=/usr/bin/python3 /root/client/udpclient.py %s
+        owner: root
+        group: root
+      
+    - name: Restart udpclient with daemon_reload
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: udpclient.service

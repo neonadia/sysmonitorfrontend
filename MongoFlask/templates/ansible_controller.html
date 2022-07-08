@@ -646,13 +646,13 @@
                     if(CMD.split(" ").length != 2){
                     addLine("Invalid arguments. Try: install [package name]")
                     }
-                    else if(CMD.split(" ")[1] == "udpclient.deb"){
+                    else if(CMD.split(" ")[1] == "udpclient"){
                     addLine("Start udpclient installation...")
-                    installbuiltinpackage("udpclient.deb");
+                    installbuiltinpackage("udpclient");
                     }
                     else{
                     addLine("The package you want to install is not supported, avaliable packages:")
-                    addLine("1. udpclient.deb: install udpclient.deb")
+                    addLine("1. udpclient: install udpclient")
                     }
                 }        
                 else{

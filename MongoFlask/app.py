@@ -1419,9 +1419,9 @@ def ansiblecommandline():
 @app.route('/ansiblebuiltinpackage',methods=["GET"])
 def ansiblebuiltinpackage():
     package_name = str(request.args.get('packagename'))
-    if package_name == "udpclient.deb":        
-        with open("/app/ansiblepackages/playbook-udpclient-package-ubuntu.yaml", 'r') as input_f:
-            yml_file = input_f.read().format('{{ item.name }}','{{ item.name }}','{{ packages }}',get_ip() + ':8888')
+    if package_name == "udpclient":        
+        with open("/app/ansiblepackages/playbook-udpclient-package.yaml", 'r') as input_f:
+            yml_file = input_f.read() % (get_ip() + ':8888')
         with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
             output_f.write(yml_file)
     else:
