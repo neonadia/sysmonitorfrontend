@@ -1434,6 +1434,28 @@ def ansiblebuiltinpackage():
         output_strip.append(line.strip())  
     response = {"SUCCESS": output_strip}
     response = json.dumps(response)
+    os.remove("/app/ansible-playbook_builtin_package.yml")
+    return response
+
+@app.route('/ansibleuninstall',methods=["GET"])
+def ansibleuninstall():
+    package_name = str(request.args.get('packagename'))
+    if package_name == "udpclient":        
+        with open("/app/ansiblepackages/playbook-udpclient-uninstall.yaml", 'r') as input_f:
+            yml_file = input_f.read()
+        with open("/app/ansible-playbook_uninstall.yml", "w") as output_f:
+            output_f.write(yml_file)
+    else:
+        return json.dumps({"ERROR": ['Package is not supported.']})    
+    process = Popen('ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
+    stdout,stderr = process.communicate()    
+    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+    output_strip = []
+    for line in output:
+        output_strip.append(line.strip())  
+    response = {"SUCCESS": output_strip}
+    response = json.dumps(response)
+    os.remove("/app/ansible-playbook_uninstall.yml")
     return response
     
 @app.route('/bmceventcleanerstart',methods=["GET"])

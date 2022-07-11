@@ -524,6 +524,44 @@
                 }        
             });         
         }
+        function uninstallbuiltinpackage(packagename){
+                    cursor_lock = 1; // lock the cursor when command submitted
+            $.startuninstallbuiltinpackage(packagename); /// Pass command as argument to ajax function
+        }
+        $.startuninstallbuiltinpackage = function(packagename){
+            $.ajax({
+                url: '/ansibleuninstall',
+                type: 'GET',
+                dataType: "JSON",
+                data: {packagename: packagename}, // Send Command to server to execute
+                beforeSend: function(){ ///Write executing to console while sending and retrieving data.
+                    addLine("Start uninstallation...... please wait");
+                    loading_icons(true);
+                    toggle_spinner(true,'run_btn');
+                },
+                success: function(result){ ///Server response and error handling
+                    var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
+                    cursor_lock = 0;
+                    loading_icons(false);
+                    toggle_spinner(false,'run_btn');
+                    addLine("Successfully got server response")
+                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                        for(var i = 0; i < data[key].length; i++){
+                            addLine(data[key][i]);
+                        }
+                        disableAllButtons(false);
+                        break;
+                    }
+                }, /// Ajax error output, rare but neccessary in certain circumstances
+                error: function (xhr, textStatus) {
+                    loading_icons(false);
+                    cursor_lock = 0;
+                    addLine("Server Error with backend");
+                    console.log(xhr);
+                }        
+            });         
+        }
         ///// Add commmand to history array and update iterator.  
         function addHistory(command){
             console_history.pop();
@@ -568,6 +606,7 @@
                     addLine("-----> Enter 'clear' to clear the output");
                     addLine("-----> Enter 'help' to display this message");
                     addLine("-----> Enter 'install [package name]' to install builtin packages");
+                    addLine("-----> Enter 'uninstall [package name]' to uninstall builtin packages");
                 }
                 else if(CMD.trim() == "show selected"){
                     addLine(CMD);
@@ -654,7 +693,21 @@
                     addLine("The package you want to install is not supported, avaliable packages:")
                     addLine("1. udpclient: install udpclient")
                     }
-                }        
+                }
+                else if(CMD.split(" ")[0] == "uninstall"){
+                    addLine(CMD);
+                    if(CMD.split(" ").length != 2){
+                    addLine("Invalid arguments. Try: uninstall [package name]")
+                    }
+                    else if(CMD.split(" ")[1] == "udpclient"){
+                    addLine("Start uninstall udpclient...")
+                    uninstallbuiltinpackage("udpclient");
+                    }
+                    else{
+                    addLine("The package you want to uninstall is not supported, avaliable packages:")
+                    addLine("1. udpclient: uninstall udpclient")
+                    }
+                }                    
                 else{
                         var command = document.getElementById("textinput").value;
                         addLine(document.getElementById("textinput").value);
