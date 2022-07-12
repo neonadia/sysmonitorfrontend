@@ -1,24 +1,24 @@
 -
-  name: UDP uninstall
+  name: l12-metrics uninstall
   hosts: all
   tasks:
     - name: Check Distribution family before uninstall
       debug: msg="{{ ansible_os_family }}"
  
-    - name: Stop udpclient daemon
+    - name: Stop l12-metrics daemon
       systemd:
         state: stopped
-        name: udpclient.service
+        name: l12-metrics.service
  
-    - name: Uninstall udpclient for Debian OS
+    - name: Uninstall l12-metrics for Debian OS
       apt:
-        name: udpclient-l12cm
+        name: l12-metrics
         state: absent
       when: ansible_os_family == "Debian"
       
-    - name: Uninstall udpclient for RedHat OS
+    - name: Uninstall l12-metrics for RedHat OS
       yum:
-        name: udpclient
+        name: l12-metrics
         state: absent
       when: ansible_os_family == "RedHat"
 

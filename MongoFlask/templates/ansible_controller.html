@@ -689,9 +689,14 @@
                     addLine("Start udpclient installation...")
                     installbuiltinpackage("udpclient");
                     }
+                    else if(CMD.split(" ")[1] == "l12-metrics"){
+                    addLine("Start l12-metrics installation...")
+                    installbuiltinpackage("l12-metrics");
+                    }
                     else{
                     addLine("The package you want to install is not supported, avaliable packages:")
                     addLine("1. udpclient: install udpclient")
+                    addLine("2. l12-metrics: install l12-metrics")
                     }
                 }
                 else if(CMD.split(" ")[0] == "uninstall"){
@@ -703,9 +708,14 @@
                     addLine("Start uninstall udpclient...")
                     uninstallbuiltinpackage("udpclient");
                     }
+                    else if(CMD.split(" ")[1] == "l12-metrics"){
+                    addLine("Start uninstall l12-metrics...")
+                    uninstallbuiltinpackage("l12-metrics");
+                    }
                     else{
                     addLine("The package you want to uninstall is not supported, avaliable packages:")
                     addLine("1. udpclient: uninstall udpclient")
+                    addLine("2. l12-metrics: uninstall l12-metrics")
                     }
                 }                    
                 else{

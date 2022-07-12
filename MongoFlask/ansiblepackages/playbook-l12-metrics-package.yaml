@@ -1,0 +1,72 @@
+---
+- name: Linux Cluster Monitor Metrics Agent
+  hosts: all
+  vars:
+    packages:
+      - name: python3-pip
+        type: all
+      - name: python3-setuptools
+        type: all
+    modules:
+      - name: psutil==5.9.0
+      - name: pymongo==4.1.1
+      - name: opencv-python==4.5.5.64
+      - name: numpy
+
+  tasks:
+          - name: Install "{{ item.name }}" on Debian
+            apt:
+              name: "{{ item.name }}"
+              state: present
+            when: ansible_os_family == "Debian" and (item.type == "all" or item.type == "deb")
+            loop: "{{ packages }}"
+
+          - name: Install "{{ item.name }}" on RedHat
+            yum:
+              name: "{{ item.name }}"
+              state: present
+            when: ansible_os_family == "RedHat"  and (item.type == "all" or item.type == "rpm")
+            loop: "{{ packages }}"
+
+          - name: Install "{{ item.name }}"
+            pip:
+              name: "{{ item.name }}"
+              executable: pip3
+            loop: "{{ modules }}"
+
+          - name: Copy deb to Debian systems
+            copy:
+              src: /app/ansiblepackages/l12-metrics_1.0-2_all.deb
+              dest: /root/l12-metrics_1.0-2_all.deb
+            when: ansible_os_family == "Debian"
+            
+          - name: Copy deb to RedHat systems
+            copy:
+              src: /app/ansiblepackages/l12-metrics-1.0-1.el7.x86_64.rpm
+              dest: /root/l12-metrics-1.0-1.el7.x86_64.rpm
+            when: ansible_os_family == "RedHat"
+            
+          - name: Install Cluster Debian Service
+            apt:
+              deb: /root/l12-metrics_1.0-2_all.deb
+              state: present
+            when: ansible_os_family == "Debian"
+
+          - name: Install Cluster RedHat Service
+            yum:
+              name: /root/l12-metrics-1.0-1.el7.x86_64.rpm
+              state: present
+            when: ansible_os_family == "RedHat"
+            
+          - name: Change IP argument for service
+            lineinfile:
+              path: /etc/systemd/system/l12-metrics.service
+              regexp: '^ExecStart='
+              line: ExecStart=/usr/bin/python3 /root/LCM_metrics/l12-metrics.py %s
+                
+          - name: Restart LCM_metrics with daemon_reload
+            systemd:
+              state: restarted
+              daemon_reload: yes
+              name: l12-metrics.service              
+
