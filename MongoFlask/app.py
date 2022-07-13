@@ -1337,8 +1337,13 @@ def uploadinputipsfileforall():
             
 @app.route('/ansible_syntax_check', methods=["GET"])
 def ansible_syntax_check():
-    process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.ini --syntax-check', shell=True, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = process.communicate(timeout=2)
+    cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.ini --syntax-check'
+    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+        ansible_log.write('\n')
+        ansible_log.write('**********************************************Ansible Syntax Check**********************************************\n')
+        ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate(timeout=5)
     output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
     output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
     output_strip = []
@@ -1381,8 +1386,12 @@ def ansibleplaybookexecute():
     ansible_become_pass = str(request.args.get('become_pwd'))  
     if ansible_become == 1:
         # copy the ansible cfg file
-        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"'\
-         .format(ansible_become_usr,ansible_become_pass), shell=True, stdout=PIPE, stderr=PIPE)
+        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"'.format(ansible_become_usr,ansible_become_pass)
+        with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+            ansible_log.write('\n')
+            ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
+            ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+        process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
         output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
@@ -1391,7 +1400,12 @@ def ansibleplaybookexecute():
             output_strip.append(line.strip())      
         response = {"SUCCESS": output_strip}
     else:
-        process = Popen('ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
+        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini'
+        with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+            ansible_log.write('\n')
+            ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
+            ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+        process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
         output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
@@ -1405,8 +1419,12 @@ def ansibleplaybookexecute():
 @app.route('/ansiblecommandline',methods=["GET"])
 def ansiblecommandline():
     ansible_command = str(request.args.get('ansible_cmd'))
-    process = Popen('ansible {} -f 300 -i /app/inventory.ini all'\
-    .format(ansible_command), shell=True, stdout=PIPE, stderr=PIPE)
+    cur_cmd = 'ansible {} -f 300 -i /app/inventory.ini all'.format(ansible_command)
+    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+        ansible_log.write('\n')
+        ansible_log.write('**********************************************Ansible Commandline**********************************************\n')
+        ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
     stdout,stderr = process.communicate()    
     output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
     output_strip = []
@@ -1429,7 +1447,12 @@ def ansiblebuiltinpackage():
         return json.dumps({"ERROR": ['Package is not supported.']})    
     with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
         output_f.write(yml_file)
-    process = Popen('ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
+    cur_cmd = 'ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini'
+    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+        ansible_log.write('\n')
+        ansible_log.write('**********************************************Ansible Pacakge Install**********************************************\n')
+        ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
     stdout,stderr = process.communicate()    
     output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
     output_strip = []
@@ -1453,7 +1476,12 @@ def ansibleuninstall():
         return json.dumps({"ERROR": ['Package is not supported.']})    
     with open("/app/ansible-playbook_uninstall.yml", "w") as output_f:
         output_f.write(yml_file)
-    process = Popen('ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini', shell=True, stdout=PIPE, stderr=PIPE)
+    cur_cmd = 'ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini'
+    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+        ansible_log.write('\n')
+        ansible_log.write('**********************************************Ansible Pacakge Uninstall**********************************************\n')
+        ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n')     
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
     stdout,stderr = process.communicate()    
     output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
     output_strip = []
