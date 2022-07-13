@@ -3,6 +3,8 @@
   hosts: all
   vars:
     packages:
+      - name: python3
+        type: all
       - name: python3-pip
         type: all
       - name: net-tools

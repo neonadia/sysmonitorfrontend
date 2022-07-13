@@ -1801,7 +1801,8 @@ def advanceinputgenerator_all_ajaxVerison():
         else:
             response = {"ERROR": "ERROR: could not save file " + savepath}
             return json.dumps(response)
-        
+
+# this page might be deprecated        
 @app.route('/sumlogpage',methods=['GET', 'POST'])
 def sumlogpage():
     sumlogout = sumLogOutput()

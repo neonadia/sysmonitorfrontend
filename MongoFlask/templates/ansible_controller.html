@@ -590,15 +590,22 @@
                     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
                     PosEnd(document.getElementById('textinput'));
                 }
-                else if(CMD == "select all" || CMD == "Select all" ){
+                else if(CMD.startsWith("select all") || CMD.startsWith("Select all" )){
                     addLine(document.getElementById("textinput").value);
-                    uploadallIPs(); /// Select all IPS function
+                    if (CMD.split(" ").length != 4){
+                      addLine("Syntax Error: usr/pwd needed to select all, correct syntax is 'select all (usr) (pwd)'");
+                    }
+                    else{
+                      document.getElementById('ansible_usr').value = CMD.split(" ")[2];
+                      document.getElementById('ansible_pwd').value = CMD.split(" ")[3];
+                      uploadallIPs(); /// Select all IPS function
+                    }
                 }
                 else if(CMD ==  "help" || CMD == "Help"){
                     addLine(document.getElementById("textinput").value);
                     addLine("-----> Enter '-m <module> -a <args>'       ex:   -m command -a 'whoami'");
                     addLine("-----> To BECOME run with these args: '-m module -a args -b --become_user=root --extra-vars='ansible_become_pass=XXXXXX'");
-                    addLine("-----> Enter 'select all' to select all IPs");
+                    addLine("-----> Enter 'select all (usr) (pwd)' to select all IPs");
                     addLine("-----> Enter 'unselect all' to unselect all IPs");
                     addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
                     addLine("-----> Enter 'show selected' to show the selected IPs");
