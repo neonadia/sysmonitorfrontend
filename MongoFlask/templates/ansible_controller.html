@@ -614,6 +614,7 @@
                     addLine("-----> Enter 'help' to display this message");
                     addLine("-----> Enter 'install [package name]' to install builtin packages");
                     addLine("-----> Enter 'uninstall [package name]' to uninstall builtin packages");
+                    addLine("-----> Enter 'check os' to check systems' distributions");
                 }
                 else if(CMD.trim() == "show selected"){
                     addLine(CMD);
@@ -690,21 +691,30 @@
                 else if(CMD.split(" ")[0] == "install"){
                     addLine(CMD);
                     if(CMD.split(" ").length != 2){
-                    addLine("Invalid arguments. Try: install [package name]")
+                    addLine("Invalid arguments. Try: install [package name]");
                     }
                     else if(CMD.split(" ")[1] == "udpclient"){
-                    addLine("Start udpclient installation...")
+                    addLine("Start udpclient installation...");
                     installbuiltinpackage("udpclient");
                     }
                     else if(CMD.split(" ")[1] == "l12-metrics"){
-                    addLine("Start l12-metrics installation...")
+                    addLine("Start l12-metrics installation...");
                     installbuiltinpackage("l12-metrics");
+                    }
+                    else if(CMD.split(" ")[1] == "python3"){
+                    addLine("Start python3 installation...");
+                    installbuiltinpackage("python3");                    
                     }
                     else{
                     addLine("The package you want to install is not supported, avaliable packages:")
-                    addLine("1. udpclient: install udpclient")
-                    addLine("2. l12-metrics: install l12-metrics")
+                    addLine("1. udpclient: install udpclient");
+                    addLine("2. l12-metrics: install l12-metrics");
+                    addLine("2. python3: install python3");
                     }
+                }
+                else if(CMD == "check os"){
+                    addLine(CMD);
+                    installbuiltinpackage("checkos");
                 }
                 else if(CMD.split(" ")[0] == "uninstall"){
                     addLine(CMD);

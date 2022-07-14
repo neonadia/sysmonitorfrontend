@@ -1461,6 +1461,12 @@ def ansiblebuiltinpackage():
     elif package_name == "l12-metrics":
         with open("/app/ansiblepackages/playbook-l12-metrics-package.yaml", 'r') as input_f:
             yml_file = input_f.read() % (get_ip())      
+    elif package_name == "python3":
+        with open("/app/ansiblepackages/playbook-python3-package.yaml", 'r') as input_f:
+            yml_file = input_f.read()       
+    elif package_name == "checkos":
+        with open("/app/ansiblepackages/playbook-checkOS.yaml", 'r') as input_f:
+            yml_file = input_f.read()   
     else:
         return json.dumps({"ERROR": ['Package is not supported.']})    
     with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
@@ -1468,7 +1474,7 @@ def ansiblebuiltinpackage():
     cur_cmd = 'ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini'
     with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
-        ansible_log.write('**********************************************Ansible Pacakge Install**********************************************\n')
+        ansible_log.write('**********************************************Ansible Builtin Package**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
     process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
     stdout,stderr = process.communicate()    
