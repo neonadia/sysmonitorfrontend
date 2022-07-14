@@ -1188,8 +1188,7 @@
             }); 
         }
         // Clear selected IPs function. Takes a single IP or "all" to unselect all.
-        function CallIPCleaner(){
-            var ip = document.getElementById('inputform')['ip'].value;
+        function CallIPCleaner(ip){
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             $.clearIPs(inputtype,ip,iptype);

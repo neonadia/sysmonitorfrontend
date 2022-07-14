@@ -545,20 +545,23 @@ def about():
 def details():
     ip = request.args.get('var')
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages,gpu_temps = get_sensor_names(ip)
-
-    details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1, "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1, "UpdateService.SmcFirmwareInventory.2.Version":1}  )
-    details2 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.CPU":1})
-    details3 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.Memory":1})
-    details4 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.SimpleStorage":1})
-    details5 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.PCIeDevices":1})
-
-    system = json2html.convert(json = details1)
-    cpu = json2html.convert(json = details2)
-    memory = json2html.convert(json = details3)
-    storage = json2html.convert(json = details4)
-    pcie = json2html.convert(json = details5)
-    return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
-
+    data = hardware_collection.find_one({"bmc_ip": ip},{'_id': 0,'TOPO_file': 0}) 
+    NoneType = type(None)
+    if isinstance(data,NoneType) == False:
+        return render_template('details_v2.html', data=json.dumps(data), ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
+    else:
+        details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1, "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1, "UpdateService.SmcFirmwareInventory.2.Version":1}  )
+        details2 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.CPU":1})
+        details3 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.Memory":1})
+        details4 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.SimpleStorage":1})
+        details5 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.PCIeDevices":1})
+        system = json2html.convert(json = details1)
+        cpu = json2html.convert(json = details2)
+        memory = json2html.convert(json = details3)
+        storage = json2html.convert(json = details4)
+        pcie = json2html.convert(json = details5)
+        return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
+                                                                                          
 @app.route('/systemresetupload',methods=["GET","POST"])
 def systemresetupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1235,10 +1238,18 @@ def deselectIPs():
             if os.path.isfile(savepath):
                 if request.args.get('inputtype') == "suminput":
                     df_ipmi = pd.read_csv(savepath,header=None,sep='\s+',names=['ip','user','pwd'])
+                elif request.args.get('inputtype') == "ansible":
+                    df_ipmi = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
+                    selected_users = list(df_ipmi['user'])
+                    selected_pwds = list(df_ipmi['pwd'])
                 else:
                     df_ipmi = pd.read_csv(savepath,header=None,names=['ip'])
                 selected_ips = list(df_ipmi['ip'])
                 if sel_ip in selected_ips:
+                    if request.args.get('inputtype') == "ansible":
+                        item_loc = selected_ips.index(sel_ip)
+                        del selected_users[item_loc]
+                        del selected_pwds[item_loc]
                     selected_ips.remove(sel_ip)
                 else:
                     response = {"ERROR": "Error: IP was not selected initially"}
@@ -1248,18 +1259,25 @@ def deselectIPs():
                 df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
                 ipmi_list = list(df_pwd['ip'])
                 osip_list = list(df_pwd['os_ip'])
-                with open(savepath,"w") as fileinput:
-                    for ip in iplist:
-                        if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
-                            current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
-                            if 'suminput' in savepath:
-                                fileinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
-                            else:
-                                fileinput.write(ip + '\n')
-                        elif request.args.get('iptype') == "os" and ip in osip_list:
-                            fileinput.write(ip + '\n')
+                if request.args.get('inputtype') == "ansible":                            
+                    with open(savepath,"w") as fileinput:
+                        for ip, ansible_usr, ansible_pwd in zip(iplist, selected_users, selected_pwds):
+                            fileinput.write('{} ansible_host={} {} {}\n'.format(ip, ip, ansible_usr, ansible_pwd))
                     response = {"SUCCESS" : "Removed " + sel_ip + " from selection"}
                     print("Saved file...",flush=True)
+                else:
+                    with open(savepath,"w") as fileinput:
+                        for ip in iplist:
+                            if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
+                                current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                                if 'suminput' in savepath:
+                                    fileinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
+                                else:
+                                    fileinput.write(ip + '\n')
+                            elif request.args.get('iptype') == "os" and ip in osip_list:
+                                fileinput.write(ip + '\n')
+                        response = {"SUCCESS" : "Removed " + sel_ip + " from selection"}
+                        print("Saved file...",flush=True)
                 if os.path.isfile(savepath):
                     return json.dumps(response)
                 else:
@@ -1338,7 +1356,7 @@ def uploadinputipsfileforall():
 @app.route('/ansible_syntax_check', methods=["GET"])
 def ansible_syntax_check():
     cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -i /app/inventory.ini --syntax-check'
-    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+    with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Syntax Check**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1387,7 +1405,7 @@ def ansibleplaybookexecute():
     if ansible_become == 1:
         # copy the ansible cfg file
         cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"'.format(ansible_become_usr,ansible_become_pass)
-        with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+        with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
             ansible_log.write('\n')
             ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
             ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1401,7 +1419,7 @@ def ansibleplaybookexecute():
         response = {"SUCCESS": output_strip}
     else:
         cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini'
-        with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:
+        with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
             ansible_log.write('\n')
             ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
             ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1420,7 +1438,7 @@ def ansibleplaybookexecute():
 def ansiblecommandline():
     ansible_command = str(request.args.get('ansible_cmd'))
     cur_cmd = 'ansible {} -f 300 -i /app/inventory.ini all'.format(ansible_command)
-    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+    with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Commandline**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1448,7 +1466,7 @@ def ansiblebuiltinpackage():
     with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
         output_f.write(yml_file)
     cur_cmd = 'ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini'
-    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+    with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Pacakge Install**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1477,7 +1495,7 @@ def ansibleuninstall():
     with open("/app/ansible-playbook_uninstall.yml", "w") as output_f:
         output_f.write(yml_file)
     cur_cmd = 'ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini'
-    with open(os.environ['UPLOADPATH'] + 'ansible.log','a') as ansible_log:    
+    with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Pacakge Uninstall**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n')     
@@ -1749,7 +1767,7 @@ def advanceinputgenerator_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
-                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + 'ansible.log\n')
+                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1774,7 +1792,7 @@ def advanceinputgenerator_ajaxVerison():
         with open(savepath,"w") as cleanerinput:
             for ip in iplist:
                 if 'ansible' in str(request.args.get('inputtype')):
-                    cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(ip, ip, ansible_usr, ansible_pwd))
+                    cleanerinput.write('{} ansible_host={} {} {}\n'.format(ip, ip, ansible_usr, ansible_pwd))
                 elif request.args.get('iptype') == "ipmi" and ip in ipmi_list:
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
                     if 'suminput' in savepath:
@@ -1801,7 +1819,7 @@ def advanceinputgenerator_all_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
-                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + 'ansible.log\n')
+                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
             savepath = '/app/inventory.ini'

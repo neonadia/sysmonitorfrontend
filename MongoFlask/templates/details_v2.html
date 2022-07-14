@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SystemInfo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/68eb215fd5.js" crossorigin="anonymous"></script>
+
+    <style>
+        .nav-btn{
+            width: 120px;
+            font-weight: bolder;
+            margin-right: 2%;
+        }
+        .ele {
+            animation: 1s fadeIn;
+            animation-fill-mode: forwards;
+            visibility: hidden;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                visibility: visible;
+                opacity: 1;
+            }
+        }
+        .hw_data_row{
+            border-bottom-style: groove;
+        }
+        .specs{
+            border-width: 5px;
+            border-color: #BCE672;
+        }
+        .header-item{
+            background-color: #BCE672; 
+            border-radius: 5px;
+        }
+        .menu-header {
+            background-color: #BCE672;
+            border-radius: 5px;
+            height: 50px;
+            align-items: center;
+            font-size: large;
+            font-weight: 500;
+            color: blue;
+        }
+        .page-footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        body {
+            min-height: 400px;
+            margin-bottom: 10%;
+            clear: both;
+        }
+        .accordian-control{
+            padding: 0%;
+        }
+        .accordian_btn{
+            margin: 1%;
+        }
+    </style>  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+    <ul class="navbar-nav">
+        <li class='nav-item'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-home"></i>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
+            <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+        </div>
+        </li>
+
+        <div class="dropdown">
+        <button
+            class="btn btn-primary dropdown-toggle btn-lg mr-1"
+            type="button"
+            id="dropdownMenuButton"
+            data-toggle="dropdown"
+            aria-expanded="false"
+        >
+            Sensors
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">
+                CPU Temperatures &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                {% for cpu in cpu_temps %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ cpu}}" target="_self">{{cpu}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}" target="_self">
+                VRM Temperatures &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                {% for vrm in vrm_temps %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ vrm}}">{{vrm}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}" target="_self">
+                DIMM Temperatures &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu"> 
+                {% for dimm in dimm_temps %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ dimm}}">{{dimm}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            {% if gpu_temps|length > 0 %}
+            <li>
+                <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ bmc_ip }}" target="_self">
+                    GPU Temperatures &Rang;
+                </a>
+                <ul class="dropdown-menu dropdown-submenu scrollable-menu dropleft" role="menu">
+                    {% for gpu in gpu_temps %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}chart_gputemperatures/{{ bmc_ip }}?name={{gpu}}">{{gpu}}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {%endif%}
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}" target="_self">
+                System Temperatures &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                {% for systemps in sys_temps %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ systemps}}">{{systemps}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}"  target="_self">
+                Fans &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                {% for sys_fans in sensor_fans %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ sys_fans}}">{{sys_fans}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            <li>
+            <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}"  target="_self">
+                System Voltages &Rang;
+            </a>
+            <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                {% for sys_voltages in sensor_voltages %}
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            </li>
+            <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_self">Power Consumption</a> </li>
+            <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliespower/{{ bmc_ip }}" target="_self">Power Supplies Power</a></li>
+            <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powersuppliesvoltage/{{ bmc_ip }}" target="_self">Power Supplies Voltage</a></li>
+        </ul>
+        </div>
+        
+        <li class='dropdown'>
+        <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Report Generator
+        </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item"  href="downloadNodeReport_PDF/{{ ip }}" target="_blank">PDF Report</a>
+            <a class="dropdown-item"  href="downloadNodeReport_JSON/{{ ip }}" target="_blank">JSON Report</a>
+            </div>
+        </li>
+        {% include "advancedfeatures_menu.html" %}
+        {% include "documentationButton.html" %}
+    </ul> 
+</nav>
+<!-- Parallax Section -->
+<div class="parallax-section parallax1">
+</div>
+<main>
+    <div class="container-fluid" style="padding: 1%;">
+        <div class="row justify-content-center">
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Summary')" id="Summary_BTN">Summary</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('System')" id="System_BTN">System</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('CPU')" id="CPU_BTN">CPU</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Storage')" id="Storage_BTN">Storage</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Memory')" id="Memory_BTN">Memory</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('NICS')" id="NICS_BTN">Networking</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Fans')" id="Fans_BTN">Fans</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('PSUs')" id="PSUs_BTN">PSUs</button>
+            <button class="btn btn-outline-info nav-btn" style="margin-right: 0%;"  onclick="open_tab('GPUs')" id="GPUs_BTN" hidden>GPUs</button>
+        </div>
+    </div>
+    <div class="container-fluid" id="main_canvas" style="width: 100%;">
+        <div class="container-fluid ele" style=" width: 100%;" id="Summary" >
+            <div class="container specs border" style="border-radius: 10px;" id="sum_cont_name" hidden>
+                <div class="row text-left" id="summary_name">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Host Info</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_system" hidden>
+                <div class="row text-left" id="summary_system">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">System</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_chassis" hidden>
+                <div class="row text-left" id="summary_chassis">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Chassis</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_board" hidden>
+                <div class="row text-left" id="summary_board">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">MotherBoard</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_cpu" hidden>    
+                <div class="row text-left" id="summary_cpu">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">CPU</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_memory" hidden>
+                <div class="row text-left" id="summary_memory">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Memory</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;"id="sum_cont_gpus" hidden>
+                <div class="row text-left" id="summary_gpus">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">GPU</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_storage" hidden>
+                <div class="row text-left" id="summary_storage">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Storage</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_network" hidden>
+                <div class="row text-left" id="summary_network">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Networking</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_fans" hidden>
+                <div class="row text-left" id="summary_fans">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Fans</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_psus" hidden>
+                <div class="row text-left" id="summary_psus">
+                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Power Supplies</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="System" hidden>
+            <div class="container specs border" style="border-radius: 5px;">
+                <div class="row text-left" id="system">
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="CPU" hidden>
+            <div class="container specs border" style="border-radius: 5px;">
+                <div class="row text-left" id="cpu">
+                    <div class="col d-flex justify-content-center menu-header">CPU</div>
+                    <div class="w-100"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="Memory" hidden>
+            <div class="container specs" style="border-radius: 5px;">
+                <div class="row text-left" id="memory">
+                    <div class="col accordian-control text-right" style="background-color: #aed4b9; border-radius: 5px;">
+                        <button class="btn btn-info accordian_btn" onclick="collapse_accordian('memory')">Collapse</button>
+                        <button class="btn btn-info accordian_btn" onclick="show_accordian('memory')">Show All</button>
+                    </div>
+                    <div class="w-100"></div>
+                    <div id="mem_accordian" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="Storage" hidden>
+            <div class="container specs" style="border-radius: 5px;">
+                <div class="row text-left" id="storage">
+                    <div class="col accordian-control text-right" style="background-color: #aed4b9; border-radius: 5px;">
+                        <button class="btn btn-info accordian_btn" onclick="collapse_accordian('storage')">Collapse</button>
+                        <button class="btn btn-info accordian_btn" onclick="show_accordian('storage')">Show All</button>
+                    </div>
+                    <div class="w-100"></div>
+                    <div id="storage_accordian" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="NICS" hidden>
+            <div class="container specs" style="border-radius: 5px;">
+                <div class="row text-left" id="networking_cards">
+                    <div class="col accordian-control text-right" style="background-color: #aed4b9; border-radius: 5px;">
+                        <button class="btn btn-info accordian_btn" onclick="collapse_accordian('nics')">Collapse</button>
+                        <button class="btn btn-info accordian_btn" onclick="show_accordian('nics')">Show All</button>
+                    </div>
+                    <div class="w-100"></div>
+                    <div id="network_accordian" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="Fans" hidden>
+            <div class="container specs border" style="border-radius: 5px;">
+                <div class="row text-left" id="fans">
+                    <div class="col d-flex justify-content-center menu-header">Fans</div>
+                    <div class="w-100"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="PSUs" hidden>
+            <div class="container specs border" style="border-radius: 5px;">
+                <div class="row text-left" id="psu">
+                    <div class="col d-flex justify-content-center menu-header">Power Supplies</div>
+                    <div class="w-100"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid ele" style=" width: 80%;" id="GPUs" hidden>
+            <div class="container specs" style="border-radius: 5px;">
+                <div class="row text-left" id="gpu_cards">
+                    <div class="col accordian-control text-right" style="background-color: #aed4b9; border-radius: 5px;">
+                        <button class="btn btn-info accordian_btn" onclick="collapse_accordian('gpus')">Collapse</button>
+                        <button class="btn btn-info accordian_btn" onclick="show_accordian('gpus')">Show All</button>
+                    </div>
+                    <div class="w-100"></div>
+                    <div class="col hw_data_row ">Manufacturer</div><div class="col hw_data_row" id="gpu_manufacturer"></div>
+                    <div class="w-100"></div>
+                    <div class="col hw_data_row ">Driver Version</div><div class="col hw_data_row" id="gpu_driver"></div>
+                    <div class="w-100"></div>
+                    <div id="gpu_accordian" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% include "footer.html" %}
+<script>
+    /// Dataset
+    var dataset = {{ data|tojson }};
+    var data = JSON.parse(dataset);
+    /// For DEBUGGING do not uncomment unless in offline mode // var dataset = '{"Hostname": "ac-1f-6b-99-06-a0", "Memory": {"DIMMS": "12", "Total Memory": "96", "Slots": {"DIMM0": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB2A92", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM1": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM2": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB2B71", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM3": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM4": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB213A", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM5": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM6": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB1FFD", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM7": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM8": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB1FF5", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM9": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM10": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB220B", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM11": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM12": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB1FF1", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM13": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM14": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB1FF0", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM15": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM16": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB2158", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM17": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM18": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB212C", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM19": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM20": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB2125", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM21": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}, "DIMM22": {"Manufacturer": "Micron Technology", "Serial No.": "1EEB21D4", "Part No.": "9ASF1G72PZ-2G6D1", "Max Speed": "2666 MT/s", "Configured Speed": "2666 MT/s", "Size": "8 GB", "Type": "DDR4"}, "DIMM23": {"Manufacturer": "NO DIMM", "Serial No.": "NO DIMM", "Part No.": "NO DIMM", "Max Speed": "Unknown", "Configured Speed": "Unknown", "Size": "No Module Installed", "Type": "Unknown"}}}, "CPU": {"Architecture": "x86_64", "CPU op-mode(s)": "32-bit, 64-bit", "Byte Order": "Little Endian", "Address sizes": "46 bits physical, 48 bits virtual", "CPU(s)": "64", "On-line CPU(s) list": "0-63", "Thread(s) per core": "2", "Core(s) per socket": "16", "Socket(s)": "2", "NUMA node(s)": "2", "Vendor ID": "GenuineIntel", "CPU family": "6", "Model": "85", "Model name": "Intel(R) Xeon(R) Gold 6242 CPU @ 2.80GHz", "Stepping": "5", "CPU MHz": "1000.000", "CPU max MHz": "3900.0000", "CPU min MHz": "1000.0000", "BogoMIPS": "5600.00", "Virtualization": "VT-x", "L1d cache": "1 MiB", "L1i cache": "1 MiB", "L2 cache": "32 MiB", "L3 cache": "44 MiB", "NUMA node0 CPU(s)": "0-15,32-47", "NUMA node1 CPU(s)": "16-31,48-63", "Vulnerability Itlb multihit": "KVM", "Vulnerability L1tf": "Not affected", "Vulnerability Mds": "Mitigation; Clear CPU buffers; SMT vulnerable", "Vulnerability Meltdown": "Not affected", "Vulnerability Spec store bypass": "Mitigation; Speculative Store Bypass disabled via prctl and seccomp", "Vulnerability Spectre v1": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization", "Vulnerability Spectre v2": "Mitigation; Retpolines, IBPB conditional, IBRS_FW, STIBP conditional, RSB filling", "Vulnerability Srbds": "Not affected", "Vulnerability Tsx async abort": "Mitigation; Clear CPU buffers; SMT vulnerable", "Flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 cdp_l3 invpcid_single intel_ppin ssbd mba ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb intel_pt avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local dtherm ida arat pln pts pku ospke md_clear flush_l1d arch_capabilities"}, "NICS": {"0": {"Name": "I210 Gigabit Network Connection", "Part Number": "AOC-MHIBE-m1CGM", "PCIe Bus": "0000:02:00.0", "Firmware": "3.25", "Vendor": "Intel Corporation", "Serial": "OA187S022505", "Interface Name": "enp2s0", "MAC": "0c:c4:7a:fd:bf:d5"}, "1": {"Name": "MT27700 Family [ConnectX-4]", "Part Number": "N/A", "PCIe Bus": "0000:18:00.0", "Firmware": "N/A", "Vendor": "Mellanox Technologies", "Serial": "N/A"}, "2": {"Name": "MT27800 Family [ConnectX-5]", "Part Number": "MCX516A-CCAT", "PCIe Bus": "0000:3b:00.0", "Firmware": "16.24.1000", "Vendor": "Mellanox Technologies", "Serial": "MT1830J01006", "Interface Name": "ens1f0np0", "MAC": "98:03:9b:19:82:9a"}, "3": {"Name": "MT27800 Family [ConnectX-5]", "Part Number": "MCX516A-CCAT", "PCIe Bus": "0000:3b:00.1", "Firmware": "16.24.1000", "Vendor": "Mellanox Technologies", "Serial": "MT1830J01006", "Interface Name": "ens1f1np1", "MAC": "98:03:9b:19:82:9b"}, "4": {"Name": "I350 Gigabit Network Connection", "Part Number": "AOC-SGP-i2", "PCIe Bus": "0000:af:00.0", "Firmware": "1.63", "Vendor": "Intel Corporation", "Serial": "N/A", "Interface Name": "ens2f0", "MAC": "ac:1f:6b:99:06:a0"}, "5": {"Name": "I350 Gigabit Network Connection", "Part Number": "AOC-SGP-i2", "PCIe Bus": "0000:af:00.1", "Firmware": "1.63", "Vendor": "Intel Corporation", "Serial": "VA18BS020369", "Interface Name": "ens2f1", "MAC": "ac:1f:6b:99:06:a1"}}, "Storage": {"0": {"NameSpace": 1, "DevicePath": "/dev/nvme1n1", "Firmware": "101008S0", "Index": 1, "ModelNumber": "Micron_9200_MTFDHAL3T8TCT", "ProductName": "Unknown device", "SerialNumber": "18391EF30FB6", "UsedBytes": 3840755982336, "MaximumLBA": 7501476528, "PhysicalSize": 3840755982336, "SectorSize": 512}, "1": {"NameSpace": 1, "DevicePath": "/dev/nvme2n1", "Firmware": "101008S0", "Index": 2, "ModelNumber": "Micron_9200_MTFDHAL3T8TCT", "ProductName": "Unknown device", "SerialNumber": "18391F8EB571", "UsedBytes": 3840755982336, "MaximumLBA": 7501476528, "PhysicalSize": 3840755982336, "SectorSize": 512}, "2": {"DevicePath": "/dev/sda", "ModelNumber": "Micron_5100_MTFD", "Firmware": "U037", "SerialNumber": "17371C271E20", "PhysicalSize": 480000000000}}, "System": {"1": {"Manufacturer": "Supermicro", "Product Name": "SYS-2029BT-HNR", "Version": "0123456789", "Serial Number": "S262335X7C04616", "UUID": "00000000-0000-0000-0000-0cc47afdbfd5", "Family": "To be filled by O.E.M.", "SKU Number": "To be filled by O.E.M."}}, "Chassis": {"1": {"Manufacturer": "Supermicro", "Version": "0123456789", "Type": "Main Server Chassis", "Serial Number": "C217BAG42A30387", "Part Number": "N/A"}}, "Base Board": {"1": {"Manufacturer": "Supermicro", "Product Name": "X11DPT-B", "Version": "1.02", "Serial Number": "HM17BS002124"}}, "BMC": {"IP Addr": "172.27.28.56", "MAC Addr": " 0c:c4:7a:29:ef:13"}, "bmc_ip": "172.27.28.56", "FANS": {"0": {"name": "FAN1", "status": "ok", "rpm": "7600 RPM"}, "1": {"name": "FAN2", "status": "ok", "rpm": "7800 RPM"}, "2": {"name": "FAN3", "status": "ns", "rpm": "no reading"}, "3": {"name": "FAN4", "status": "ns", "rpm": "no reading"}}, "PSU": {"Number of PSUs": 2, "0": {"Serial No.": "P2K22CH38HB0096", "Status": "Present, OK", "Module No.": "PWS-2K22A-1R", "Manufacturer": "SUPERMICRO"}, "1": {"Serial No.": "P2K22CH38HB0098", "Status": "Present, OK", "Module No.": "PWS-2K22A-1R", "Manufacturer": "SUPERMICRO"}}}'
+    /// Static Array used for Hiding and unhiding the elements and highlighting the tab buttons..
+    const specs = ['System','Storage','CPU','Memory','GPUs','PSUs','Fans','Summary','NICS'];
+    /// Arrays used for Closing and Opening the Accordians
+    var mem_array = new Array();
+    var storage_array = new Array();
+    var nic_array = new Array();
+    var gpu_array = new Array();
+    //// Open and Close Accordian functions for Storage, Memory, GPUs, and Network Cards.
+    function collapse_accordian(type){
+        if(type == 'memory'){
+            for(var i = 0; i < mem_array.length; i++){
+                document.getElementById(mem_array[i]).classList.value = 'collapse';
+            }
+        }
+        else if(type == 'nics'){
+            for(var i = 0; i < nic_array.length; i++){
+                document.getElementById(nic_array[i]).classList.value = 'collapse';
+            }
+        }
+        else if(type == 'gpus'){
+            for(var i = 0; i < nic_array.length; i++){
+                document.getElementById(gpu_array[i]).classList.value = 'collapse';
+            }
+        }
+        else{
+            for(var i = 0; i < storage_array.length; i++){
+                document.getElementById(storage_array[i]).classList.value = 'collapse';
+            }
+        }
+    }
+    function show_accordian(type){
+        if(type == 'memory'){
+            for(var i = 0; i < mem_array.length; i++){
+                document.getElementById(mem_array[i]).classList.value = 'collapse show';
+            }
+        }
+        else if(type == 'nics'){
+            for(var i = 0; i < nic_array.length; i++){
+                document.getElementById(nic_array[i]).classList.value = 'collapse show';
+            }
+        }
+        else if(type == 'gpus'){
+            for(var i = 0; i < nic_array.length; i++){
+                document.getElementById(gpu_array[i]).classList.value = 'collapse show';
+            }
+        }
+        else{
+            for(var i = 0; i < storage_array.length; i++){
+                document.getElementById(storage_array[i]).classList.value = 'collapse show';
+            }
+        }
+    }
+    //// Page load insert data to page
+    document.addEventListener('DOMContentLoaded', function() { //// On page load do this....
+        document.getElementById('Summary_BTN').classList.add('active');/// Highlight the Summary Button because that is the default view
+        render_data(); /// Insert data to page
+    }, false);
+    ////Function for toggling between elements
+    function open_tab(spec){
+        for(var i = 0; i < specs.length; i++){
+            if(spec != specs[i]){
+                document.getElementById(specs[i] + '_BTN').classList.remove('active')
+                document.getElementById(specs[i]).setAttribute('hidden','hidden')
+            }
+            else{
+                document.getElementById(spec + '_BTN').classList.add('active');
+                document.getElementById(spec).removeAttribute('hidden');
+            }
+        }
+    }
+    //// MAIN DRIVER function for inserting data, handle with care.////
+    function render_data(){
+        for (var iter in data){
+            if(iter == 'BMC'){
+                var name_cont = document.getElementById('sum_cont_name');
+                sum_cont_name.removeAttribute('hidden');
+                for(var addr in data[iter]){
+                    insert_row('summary_name',addr,data[iter][addr]);
+                }
+            }
+            else if(iter == "System"){
+                document.getElementById('sum_cont_system').removeAttribute('hidden');
+                insert_row_1('system','<div class="col d-flex justify-content-center menu-header">System</div><div class="w-100"></div>')
+                for(var system in data[iter]){
+                    for(var sys_detail in data[iter][system]){
+                        if(sys_detail == 'Product Name' || sys_detail == "Manufacturer"){
+                            insert_row('summary_system',sys_detail,data[iter][system][sys_detail]);
+                        }
+                        insert_row('system',sys_detail,data[iter][system][sys_detail]);
+                    }
+                }
+            }
+            else if(iter == "Chassis"){
+                document.getElementById('sum_cont_chassis').removeAttribute('hidden');
+                insert_row_1('system','<div class="col d-flex justify-content-center menu-header">Chassis</div><div class="w-100"></div>');
+                for(var chassis in data[iter]){
+                    for(var chss_detail in data[iter][chassis]){
+                        if(chss_detail == 'Type' || chss_detail == "Manufacturer"){
+                            insert_row('summary_chassis',chss_detail,data[iter][chassis][chss_detail]);
+                        }
+                        insert_row('system',chss_detail,data[iter][chassis][chss_detail]);
+                    }
+                }
+            }
+            else if(iter == "Base Board"){
+                document.getElementById('sum_cont_board').removeAttribute('hidden');
+                insert_row_1('system','<div class="col d-flex justify-content-center menu-header">Board</div><div class="w-100"></div>');
+                for(var board in data[iter]){
+                    for(var board_detail in data[iter][board]){
+                        if(board_detail == 'Product Name' || board_detail == "Manufacturer"){
+                            insert_row('summary_board',board_detail,data[iter][board][board_detail]);
+                        }
+                        insert_row('system',board_detail,data[iter][board][board_detail]);
+                    }
+                }
+            }
+            else if(iter == 'CPU'){
+                document.getElementById('sum_cont_cpu').removeAttribute('hidden');
+                for(var cpu_detail in data[iter]){
+                    if(cpu_detail == 'Socket(s)' || cpu_detail == 'CPU(s)' || cpu_detail == 'Core(s) per socket' || cpu_detail == 'Model name'){
+                        insert_row('summary_cpu',cpu_detail,data[iter][cpu_detail]);
+                    }
+                    insert_row('cpu',cpu_detail,data[iter][cpu_detail]);
+                }
+            }
+            else if(iter == 'Memory'){
+                document.getElementById('sum_cont_memory').removeAttribute('hidden');
+                var total_slots = 0;
+                var memory = document.getElementById('mem_accordian');
+                var state = "";
+                for(var slot in data[iter]['Slots']){
+                    if(data[iter]['Slots'][slot]['Manufacturer'] == 'NO DIMM' || data[iter]['Slots'][slot]['Manufacturer'] == 'No Module Installed'){
+                        state = '(No Module Installed)';
+                    }
+                    else{
+                        state = "";
+                    }
+                    memory.insertAdjacentHTML('beforeend','<div class="card" id="slot' +  slot +  '"></div');
+                    document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + slot + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="slot_btn' + slot + '"class="btn btn-link" data-toggle="collapse" data-target="#collapse' + slot  + '" aria-expanded="false" aria-controls="collapse' + slot + '">' + slot + ' ' + state + '</button></h5></div>');
+                    document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div id="collapse' + slot + '" class="collapse show" aria-labelledby="heading' + slot + '" data-parent="#mem_accordian"><div class="card-body" id="mem_data'+ slot +'"></div></div>');
+                    document.getElementById('mem_data' + slot).insertAdjacentHTML('beforeend','<div class="row text-left" id="inner' + slot + '"></div>')
+                    mem_array.push('collapse' + slot);
+                    for(var slot_detail in data[iter]['Slots'][slot]){
+                        insert_row('inner' + slot, slot_detail, data[iter]['Slots'][slot][slot_detail]);
+                    }
+                    total_slots++;
+                }
+                insert_row('summary_memory','Slots (Inserted/Total)',data[iter]['DIMMS'] + " / " + total_slots);
+                insert_row('summary_memory','Total Memory',data[iter]['Total Memory'] + ' GB')
+            }
+            else if(iter == 'Storage'){
+                document.getElementById('sum_cont_storage').removeAttribute('hidden');
+                var storage = document.getElementById('storage_accordian');
+                insert_row('summary_storage','<span style="font-weight:bold">Model</span>','<span style="font-weight:bold">Size</span>');
+                for(var disk in data[iter]){
+                    insert_row('summary_storage',data[iter][disk]['ModelNumber'],(parseInt(data[iter][disk]['PhysicalSize']) / 1099511627776).toPrecision(1)+ ' TB')
+                    storage.insertAdjacentHTML('beforeend','<div class="card" id="disk' +  disk +  '"></div');
+                    document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + disk + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="disk_btn' + disk + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse' + disk  + '" aria-expanded="false" aria-controls="collapse' + disk + '">Device ' + disk + '</button></h5></div>')
+                    document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div id="collapse' + disk + '" class="collapse show" aria-labelledby="heading' + disk + '" data-parent="#storage_accordian"><div class="card-body" id="disk_data'+ disk +'"></div></div>');
+                    document.getElementById('disk_data' + disk).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerdisk' + disk + '"></div>')
+                    storage_array.push('collapse' + disk);
+                    for(var disk_detail in data[iter][disk]){
+                        insert_row('innerdisk' + disk, disk_detail, data[iter][disk][disk_detail]);
+                    }
+                }
+            }
+            else if(iter == "NICS"){
+                document.getElementById('sum_cont_network').removeAttribute('hidden');
+                var nics = document.getElementById('network_accordian');
+                insert_row_3('summary_network','<span style="font-weight:bold">Name</span>','<span style="font-weight:bold">Vendor</span>','<span style="font-weight:bold">Part Number</span>');
+                for(var nic in data[iter]){
+                    insert_row_3('summary_network',data[iter][nic]['Name'],data[iter][nic]['Vendor'],data[iter][nic]['Part Number'])
+                    nics.insertAdjacentHTML('beforeend','<div class="card" id="nic' +  nic +  '"></div');
+                    document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + nic + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="nic_btn' + nic + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseNIC' + nic  + '" aria-expanded="false" aria-controls="collapse' + nic + '">' + data[iter][nic]['PCIe Bus'] + '</button></h5></div>')
+                    document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div id="collapseNIC' + nic + '" class="collapse show" aria-labelledby="heading' + nic + '" data-parent="#network_accordian"><div class="card-body" id="nic_data'+ nic +'"></div></div>');
+                    document.getElementById('nic_data' + nic).insertAdjacentHTML('beforeend','<div class="row text-left" id="innernic' + nic + '"></div>');
+                    nic_array.push('collapseNIC' + nic);
+                    for(var nic_detail in data[iter][nic]){
+                        insert_row('innernic' + nic, nic_detail, data[iter][nic][nic_detail]);
+                    }
+                }
+            }
+            else if(iter == 'FANS'){
+                document.getElementById('sum_cont_fans').removeAttribute('hidden');
+                insert_row('summary_fans','<span style="font-weight:bold">Name</span>','<span style="font-weight:bold">Status</span>');
+                for(var fan in data[iter]){
+                    insert_row('summary_fans',data[iter][fan]['name'],data[iter][fan]['status']);
+                    insert_row_1('fans','<div class="col header-item">FAN' + fan +'</div><div class="w-100"></div>');
+                    for(var fan_detail in data[iter][fan]){
+                        insert_row('fans',fan_detail,data[iter][fan][fan_detail]);
+                    }
+                }
+            }
+            else if(iter == 'Graphics'){
+                document.getElementById('GPUs_BTN').removeAttribute('hidden');
+                document.getElementById('sum_cont_gpus').removeAttribute('hidden');
+                var gpus = document.getElementById('gpu_accordian');
+                insert_row_3('summary_gpus','<span style="font-weight:bold">Vendor</span>','<span style="font-weight:bold">Model</span>','<span style="font-weight:bold">Quantity</span>');
+                if(data[iter]['Manufacturer'] == 'Nvidia'){
+                    insert_row_3('summary_gpus',data[iter]['Manufacturer'],data[iter]['GPU']['0']['Model'],data[iter]['Number of GPUs'])
+                    document.getElementById('gpu_manufacturer').innerHTML = 'NVIDIA';
+                    document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
+                    for(var gpu in data[iter]['GPU']){
+                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
+                        document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
+                        gpu_array.push('collapseGPU' + gpu);
+                        for(var gpu_detail in data[iter]['GPU'][gpu]){
+                            insert_row('innerGPU' + gpu, gpu_detail, data[iter]['GPU'][gpu][gpu_detail]);
+                        }
+                    }
+                }
+                else if(data[iter]['Manufacturer'] == 'AMD'){
+                    insert_row_3('summary_gpus',data[iter]['Manufacturer'],data[iter]['GPU']['0']['Series'],data[iter]['Number of GPUs']);
+                    document.getElementById('gpu_manufacturer').innerHTML = 'AMD';
+                    document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
+                    for(var gpu in data[iter]['GPU']){
+                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
+                        document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
+                        gpu_array.push('collapseGPU' + gpu);
+                        for(var gpu_detail in data[iter]['GPU'][gpu]){
+                            insert_row('innerGPU' + gpu, gpu_detail, data[iter]['GPU'][gpu][gpu_detail]);
+                        }
+                    }
+                }
+            }
+            else if(iter == 'PSU'){
+                document.getElementById('sum_cont_psus').removeAttribute('hidden');
+                insert_row('summary_psus','<span style="font-weight:bold">Module No.</span>','<span style="font-weight:bold">Serial No.</span>');
+                insert_row('psu','Installed Modules',data[iter]['Number of PSUs'])
+                for(var psu in data[iter]){
+                    if(data[iter][psu]['Module No.'] != null){
+                        insert_row_1('psu','<div class="col header-item">PSU' + psu +'</div><div class="w-100"></div>');
+                        insert_row('summary_psus',data[iter][psu]['Module No.'],data[iter][psu]['Serial No.'])
+                        for(var psu_detail in data[iter][psu]){
+                            if(psu_detail != 'Input' || psu_detail != 'Output'){
+                                insert_row('psu',psu_detail,data[iter][psu][psu_detail]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //// Helper functions for the render function. Helps inserting data into the DOM.
+    function insert_row_1(id,value){
+        document.getElementById(id).insertAdjacentHTML('beforeend',value);
+        document.getElementById(id).insertAdjacentHTML('beforeend','<div class="w-100"></div>');
+    }
+    function insert_row(id,key,value){
+        document.getElementById(id).insertAdjacentHTML('beforeend','<div class="col hw_data_row ">' + key  + '</div><div class="col hw_data_row"> '+ value  + '</div>');
+        document.getElementById(id).insertAdjacentHTML('beforeend','<div class="w-100"></div>');
+    }
+    function insert_row_3(id,key,value1,value2){
+        document.getElementById(id).insertAdjacentHTML('beforeend','<div class="col hw_data_row ">' + key  + '</div><div class="col hw_data_row"> '+ value1  + '</div><div class="col hw_data_row"> '+ value2  + '</div>');
+        document.getElementById(id).insertAdjacentHTML('beforeend','<div class="w-100"></div>');
+    }
+</script>
+</body>
+</html>
