@@ -1421,35 +1421,29 @@ def ansibleplaybookexecute():
     ansible_become_usr = str(request.args.get('become_usr'))
     ansible_become_pass = str(request.args.get('become_pwd'))
     ansible_uuid = str(request.args.get('uuid'))
+    response = {}
     if ansible_become == 1:
-        # copy the ansible cfg file
-        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"  2>&1 | tee /app/log.ansible-{}'.format(ansible_become_usr,ansible_become_pass,ansible_uuid)
-        with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
-            ansible_log.write('\n')
-            ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
-            ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
-        process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
-        output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
-        output_strip = []
-        for line in output:
-            output_strip.append(line.strip())      
-        response = {"SUCCESS": "DONE"}
+        # save a log for stream
+        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"  2>&1 | tee /app/log.ansible-{}'.\
+        format(ansible_become_usr,ansible_become_pass,ansible_uuid)
     else:
+        # save a log for stream
         cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini 2>&1 | tee /app/log.ansible-{}'.format(ansible_uuid)
-        with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_log:
-            ansible_log.write('\n')
-            ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
-            ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
-        process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        output_string = stdout.decode("utf-8") + stderr.decode("utf-8")
-        output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
+    # archived log not for stream
+    with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_log:
+        ansible_log.write('\n')
+        ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
+        ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    err_str = stderr.decode("utf-8")
+    if len(err_str) != 0:
+        output = stderr.decode("utf-8").split('\n')
         output_strip = []
         for line in output:
-            output_strip.append(line.strip())      
-        response = {"SUCCESS": "DONE"}
+            output_strip.append(line.strip())
+        response["ERROR_MSG"] =  output_strip
+    response["SUCCESS"] = "DONE"
     # Append last line to ansible single log
     with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
         ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
@@ -1478,6 +1472,7 @@ def ansiblecommandline():
 def ansiblebuiltinpackage():
     package_name = str(request.args.get('packagename'))
     ansible_uuid = str(request.args.get('uuid'))
+    response = {}
     if package_name == "udpclient":        
         with open("/app/ansiblepackages/playbook-udpclient-package.yaml", 'r') as input_f:
             yml_file = input_f.read() % (get_ip() + ':8888')
@@ -1500,12 +1495,15 @@ def ansiblebuiltinpackage():
         ansible_log.write('**********************************************Ansible Builtin Package**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
     process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    stdout,stderr = process.communicate()    
-    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
-    output_strip = []
-    for line in output:
-        output_strip.append(line.strip())  
-    response = {"SUCCESS": "Done"}
+    stdout, stderr = process.communicate()
+    err_str = stderr.decode("utf-8")
+    if len(err_str) != 0:
+        output = stderr.decode("utf-8").split('\n')
+        output_strip = []
+        for line in output:
+            output_strip.append(line.strip())
+        response["ERROR_MSG"] =  output_strip
+    response["SUCCESS"] = "DONE"
     # Append last line to ansible single log
     with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
         ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
@@ -1517,6 +1515,7 @@ def ansiblebuiltinpackage():
 def ansibleuninstall():
     package_name = str(request.args.get('packagename'))
     ansible_uuid = str(request.args.get('uuid'))
+    response = {}
     if package_name == "udpclient":        
         with open("/app/ansiblepackages/playbook-udpclient-uninstall.yaml", 'r') as input_f:
             yml_file = input_f.read()
@@ -1533,12 +1532,15 @@ def ansibleuninstall():
         ansible_log.write('**********************************************Ansible Pacakge Uninstall**********************************************\n')
         ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n')     
     process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    stdout,stderr = process.communicate()    
-    output = stdout.decode("utf-8").split('\n') + stderr.decode("utf-8").split('\n')
-    output_strip = []
-    for line in output:
-        output_strip.append(line.strip())  
-    response = {"SUCCESS": "DONE"}
+    stdout, stderr = process.communicate()
+    err_str = stderr.decode("utf-8")
+    if len(err_str) != 0:
+        output = stderr.decode("utf-8").split('\n')
+        output_strip = []
+        for line in output:
+            output_strip.append(line.strip())
+        response["ERROR_MSG"] =  output_strip
+    response["SUCCESS"] = "DONE"
     # Append last line to ansible single log
     with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
         ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
