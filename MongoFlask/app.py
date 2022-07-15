@@ -1397,14 +1397,33 @@ def ansible_controller():
             indicators.append(0)
     return render_template('ansible_controller.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
 
+@app.route('/ansible_read_log', methods=["GET"])
+def ansible_read_log():
+    ansible_uuid = str(request.args.get('uuid'))
+    file_path = '/app/log.ansible-{}'.format(ansible_uuid)
+    file_lines = []
+    counter = 0
+    while fileEmpty(file_path) and counter < 10:
+        time.sleep(0.5)
+        counter += 1
+    with open(file_path, "r") as ansible_single_log:
+        for line in ansible_single_log:
+            line = line.strip()
+            file_lines.append(line)
+    response = json.dumps({'SUCCESS': file_lines})
+    if file_lines[-1] == "----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid):
+        os.remove(file_path)
+    return response
+    
 @app.route('/ansibleplaybookexecute',methods=["GET"])
 def ansibleplaybookexecute():
     ansible_become = int(request.args.get('become'))
     ansible_become_usr = str(request.args.get('become_usr'))
-    ansible_become_pass = str(request.args.get('become_pwd'))  
+    ansible_become_pass = str(request.args.get('become_pwd'))
+    ansible_uuid = str(request.args.get('uuid'))
     if ansible_become == 1:
         # copy the ansible cfg file
-        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"'.format(ansible_become_usr,ansible_become_pass)
+        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini --become-user {} -b --extra-vars="ansible_become_pass={}"  2>&1 | tee /app/log.ansible-{}'.format(ansible_become_usr,ansible_become_pass,ansible_uuid)
         with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
             ansible_log.write('\n')
             ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
@@ -1416,10 +1435,10 @@ def ansibleplaybookexecute():
         output_strip = []
         for line in output:
             output_strip.append(line.strip())      
-        response = {"SUCCESS": output_strip}
+        response = {"SUCCESS": "DONE"}
     else:
-        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini'
-        with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:
+        cur_cmd = 'ansible-playbook /app/ansible-playbook_l12cm.yml -f 300 -i /app/inventory.ini 2>&1 | tee /app/log.ansible-{}'.format(ansible_uuid)
+        with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_log:
             ansible_log.write('\n')
             ansible_log.write('**********************************************Ansible Playbook**********************************************\n')
             ansible_log.write('[' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '] Running ansible command:' + cur_cmd + '\n') 
@@ -1430,7 +1449,10 @@ def ansibleplaybookexecute():
         output_strip = []
         for line in output:
             output_strip.append(line.strip())      
-        response = {"SUCCESS": output_strip}
+        response = {"SUCCESS": "DONE"}
+    # Append last line to ansible single log
+    with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
+        ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
     response = json.dumps(response)
     return response
 
@@ -1455,6 +1477,7 @@ def ansiblecommandline():
 @app.route('/ansiblebuiltinpackage',methods=["GET"])
 def ansiblebuiltinpackage():
     package_name = str(request.args.get('packagename'))
+    ansible_uuid = str(request.args.get('uuid'))
     if package_name == "udpclient":        
         with open("/app/ansiblepackages/playbook-udpclient-package.yaml", 'r') as input_f:
             yml_file = input_f.read() % (get_ip() + ':8888')
@@ -1471,7 +1494,7 @@ def ansiblebuiltinpackage():
         return json.dumps({"ERROR": ['Package is not supported.']})    
     with open("/app/ansible-playbook_builtin_package.yml", "w") as output_f:
         output_f.write(yml_file)
-    cur_cmd = 'ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini'
+    cur_cmd = 'ansible-playbook /app/ansible-playbook_builtin_package.yml -f 300 -i /app/inventory.ini | tee /app/log.ansible-{}'.format(ansible_uuid)
     with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Builtin Package**********************************************\n')
@@ -1482,7 +1505,10 @@ def ansiblebuiltinpackage():
     output_strip = []
     for line in output:
         output_strip.append(line.strip())  
-    response = {"SUCCESS": output_strip}
+    response = {"SUCCESS": "Done"}
+    # Append last line to ansible single log
+    with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
+        ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
     response = json.dumps(response)
     os.remove("/app/ansible-playbook_builtin_package.yml")
     return response
@@ -1490,6 +1516,7 @@ def ansiblebuiltinpackage():
 @app.route('/ansibleuninstall',methods=["GET"])
 def ansibleuninstall():
     package_name = str(request.args.get('packagename'))
+    ansible_uuid = str(request.args.get('uuid'))
     if package_name == "udpclient":        
         with open("/app/ansiblepackages/playbook-udpclient-uninstall.yaml", 'r') as input_f:
             yml_file = input_f.read()
@@ -1500,7 +1527,7 @@ def ansibleuninstall():
         return json.dumps({"ERROR": ['Package is not supported.']})    
     with open("/app/ansible-playbook_uninstall.yml", "w") as output_f:
         output_f.write(yml_file)
-    cur_cmd = 'ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini'
+    cur_cmd = 'ansible-playbook /app/ansible-playbook_uninstall.yml -f 300 -i /app/inventory.ini | tee /app/log.ansible-{}'.format(ansible_uuid)
     with open(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log','a') as ansible_log:    
         ansible_log.write('\n')
         ansible_log.write('**********************************************Ansible Pacakge Uninstall**********************************************\n')
@@ -1511,7 +1538,10 @@ def ansibleuninstall():
     output_strip = []
     for line in output:
         output_strip.append(line.strip())  
-    response = {"SUCCESS": output_strip}
+    response = {"SUCCESS": "DONE"}
+    # Append last line to ansible single log
+    with open('/app/log.ansible-{}'.format(ansible_uuid),'a') as ansible_single_log:
+        ansible_single_log.write("----------------------------------------------Last Line of UUID: {}----------------------------------------------". format(ansible_uuid))
     response = json.dumps(response)
     os.remove("/app/ansible-playbook_uninstall.yml")
     return response
@@ -1773,6 +1803,7 @@ def advanceinputgenerator_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
+                    cfg.write('ansible_python_interpreter=/usr/bin/python3\n')
                     cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             savepath = '/app/inventory.ini'
         else:
@@ -1825,6 +1856,7 @@ def advanceinputgenerator_all_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
+                    cfg.write('ansible_python_interpreter=/usr/bin/python3\n')
                     cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))

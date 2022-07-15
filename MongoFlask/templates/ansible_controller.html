@@ -448,6 +448,9 @@
         var console_history = new Array(); //// Array that contains commands executed in the console.
         console_history.push("");
         var position = 0; ///Console History iterator
+        var uuid = "";
+        var old_ansible_log_array = [];
+        var playbook_complete = false;
         function submitCommand(command){
             cursor_lock = 1; // lock the cursor when command submitted
             $.sendCommandtoServer(command); /// Pass command as argument to ajax function
@@ -487,75 +490,86 @@
             }); 
         }
         function installbuiltinpackage(packagename){
-                    cursor_lock = 1; // lock the cursor when command submitted
-            $.startinstallbuiltinpackage(packagename); /// Pass command as argument to ajax function
+            cursor_lock = 1; // lock the cursor when command submitted
+            uuid = Date.now();
+            $.startinstallbuiltinpackage(packagename,uuid); /// Pass command as argument to ajax function
+            $.stream_ansible_log(uuid);
         }
-        $.startinstallbuiltinpackage = function(packagename){
+        $.startinstallbuiltinpackage = function(packagename,uuid){
             $.ajax({
                 url: '/ansiblebuiltinpackage',
                 type: 'GET',
                 dataType: "JSON",
-                data: {packagename: packagename}, // Send Command to server to execute
+                data: {packagename: packagename, uuid: uuid}, // Send Command to server to execute
                 beforeSend: function(){ ///Write executing to console while sending and retrieving data.
                     addLine("Start installation...... please wait");
-                    loading_icons(true);
+                    // loading_icons(true);
+                    playbook_complete = false;
+                    old_ansible_log_array = [];
                     toggle_spinner(true,'run_btn');
+                    disableAllButtons(true);
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
                     console.log(data); ////FOR DEBUG PURPOSESs
                     cursor_lock = 0;
-                    loading_icons(false);
+                    // loading_icons(false);
                     toggle_spinner(false,'run_btn');
-                    addLine("Successfully got server response")
-                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
-                        for(var i = 0; i < data[key].length; i++){
-                            addLine(data[key][i]);
-                        }
-                        disableAllButtons(false);
-                        break;
-                    }
+                    disableAllButtons(false);
+                    // for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                    //     for(var i = 0; i < data[key].length; i++){
+                    //         addLine(data[key][i]);
+                    //     }
+                    //     disableAllButtons(false);
+                    //     break;
+                    // }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
-                    loading_icons(false);
                     cursor_lock = 0;
+                    toggle_spinner(false,'run_btn');
+                    disableAllButtons(false);
                     addLine("Server Error with backend");
                     console.log(xhr);
                 }        
             });         
         }
         function uninstallbuiltinpackage(packagename){
-                    cursor_lock = 1; // lock the cursor when command submitted
-            $.startuninstallbuiltinpackage(packagename); /// Pass command as argument to ajax function
+            cursor_lock = 1; // lock the cursor when command submitted
+            uuid = Date.now();
+            $.startuninstallbuiltinpackage(packagename,uuid); /// Pass command as argument to ajax function
+            $.stream_ansible_log(uuid);
         }
-        $.startuninstallbuiltinpackage = function(packagename){
+        $.startuninstallbuiltinpackage = function(packagename,uuid){
             $.ajax({
                 url: '/ansibleuninstall',
                 type: 'GET',
                 dataType: "JSON",
-                data: {packagename: packagename}, // Send Command to server to execute
+                data: {packagename: packagename, uuid: uuid}, // Send Command to server to execute
                 beforeSend: function(){ ///Write executing to console while sending and retrieving data.
                     addLine("Start uninstallation...... please wait");
-                    loading_icons(true);
                     toggle_spinner(true,'run_btn');
+                    disableAllButtons(true);
+                    playbook_complete = false;
+                    old_ansible_log_array = [];
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
-                    console.log(data); ////FOR DEBUG PURPOSESs
+                    // console.log(data); ////FOR DEBUG PURPOSESs
                     cursor_lock = 0;
-                    loading_icons(false);
                     toggle_spinner(false,'run_btn');
-                    addLine("Successfully got server response")
-                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
-                        for(var i = 0; i < data[key].length; i++){
-                            addLine(data[key][i]);
-                        }
-                        disableAllButtons(false);
-                        break;
-                    }
+                    disableAllButtons(false);
+                    // addLine("Successfully got server response")
+                    // for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                    //     for(var i = 0; i < data[key].length; i++){
+                    //         addLine(data[key][i]);
+                    //     }
+                    //     disableAllButtons(false);
+                    //     break;
+                    // }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
-                    loading_icons(false);
+                    toggle_spinner(false,'run_btn');
+                    disableAllButtons(false);
                     cursor_lock = 0;
                     addLine("Server Error with backend");
                     console.log(xhr);
@@ -1160,43 +1174,70 @@
                     return;
                 }
             }
-            toggle_spinner(true,'run_btn');
             execute_playbook_btn.disabled = false;
-            $.execute_playbook(run_as_root, root_usr, root_pwd);
+            uuid = Date.now()
+            $.execute_playbook(run_as_root, root_usr, root_pwd,uuid);
+            $.stream_ansible_log(uuid);
         }
-        $.execute_playbook = function(become, become_usr, become_pwd){//// Clear IP ajax function to send command and variables to server for processing
+        $.execute_playbook = function(become, become_usr, become_pwd,uuid){//// Clear IP ajax function to send command and variables to server for processing
             $.ajax({
-                url: '/ansibleplaybookexecute', 
+                url: '/ansibleplaybookexecute?become=' + become + '&become_usr=' + become_usr + '&become_pwd=' + become_pwd + '&uuid=' + uuid, 
                 type: 'GET',
                 dataType: "JSON",
-                data: {become: become, become_usr: become_usr, become_pwd: become_pwd},
                 beforeSend: function(){ 
                     addLine("Executing playbook please wait...");
+                    toggle_spinner(true,'run_btn');
                     disableAllButtons(true);
-                    loading_icons(true);
-                },
-                success: function(result){
-                    var data = result;
-                    loading_icons(false);
+                    playbook_complete = false;
+                    old_ansible_log_array = [];
+                },      
+                success: function (response) {
                     toggle_spinner(false,'run_btn');
                     disableAllButtons(false);
-                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
-                    if (key == "ERROR"){
-                            addLine("ERROR Occurred!");
-                            for(var i = 0; i < data[key].length; i++){
-                                addLine(data[key][i]);
+                },
+                error: function () {
+                    toggle_spinner(false,'run_btn');
+                    disableAllButtons(false);
+                    addLine("Error occurred uploading playbook... Check your connection server");
+                }
+            });
+        } 
+        $.stream_ansible_log= function(uuid){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/ansible_read_log', 
+                type: 'GET',
+                data: {uuid:uuid},
+                dataType: "JSON",
+                success: function(response){
+                    if(playbook_complete == false){
+                        var new_ansible_log_array = response['SUCCESS'];
+                        if(new_ansible_log_array.length != old_ansible_log_array.length){
+                            var diff = new_ansible_log_array.length - old_ansible_log_array.length;
+                            for (var i = old_ansible_log_array.length; i < new_ansible_log_array.length; i++){
+                                addLine(new_ansible_log_array[i]);
                             }
-                            break;
+                            if(new_ansible_log_array[new_ansible_log_array.length - 1] == "----------------------------------------------Last Line of UUID: " + uuid + "----------------------------------------------"){
+                                playbook_complete = true;
+                            }
+                            else{
+                                old_ansible_log_array = new_ansible_log_array;
+                                call_stream_function(100);
+                            }
                         }
                         else{
-                            for(var i = 0; i < data[key].length; i++){
-                                addLine(data[key][i]);
-                            }
-                        }   
+                            call_stream_function(100);
+                        }
                     }
                 }        
             }); 
         }
+        function sleep(milliseconds) {  
+            return new Promise(resolve => setTimeout(resolve, milliseconds));  
+        }
+        async function call_stream_function(time_sleep) {         
+            await sleep(time_sleep);
+            $.stream_ansible_log(uuid);
+        } 
         // Clear selected IPs function. Takes a single IP or "all" to unselect all.
         function CallIPCleaner(ip){
             var inputtype = document.getElementById('inputform')['inputtype'].value;
