@@ -508,21 +508,13 @@
                     old_ansible_log_array = [];
                     toggle_spinner(true,'run_btn');
                     disableAllButtons(true);
+                    cursor_lock = 1;
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
                     console.log(data); ////FOR DEBUG PURPOSESs
-                    cursor_lock = 0;
-                    // loading_icons(false);
                     toggle_spinner(false,'run_btn');
                     disableAllButtons(false);
-                    // for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
-                    //     for(var i = 0; i < data[key].length; i++){
-                    //         addLine(data[key][i]);
-                    //     }
-                    //     disableAllButtons(false);
-                    //     break;
-                    // }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
                     cursor_lock = 0;
@@ -551,21 +543,13 @@
                     disableAllButtons(true);
                     playbook_complete = false;
                     old_ansible_log_array = [];
+                    cursor_lock = 1;
                 },
                 success: function(result){ ///Server response and error handling
                     var data = result;
                     // console.log(data); ////FOR DEBUG PURPOSESs
-                    cursor_lock = 0;
                     toggle_spinner(false,'run_btn');
                     disableAllButtons(false);
-                    // addLine("Successfully got server response")
-                    // for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
-                    //     for(var i = 0; i < data[key].length; i++){
-                    //         addLine(data[key][i]);
-                    //     }
-                    //     disableAllButtons(false);
-                    //     break;
-                    // }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
                     toggle_spinner(false,'run_btn');
@@ -766,27 +750,52 @@
                 loading_icons(false);
             }
         }
+        ///// Function for creating multiple line to insert into console dynamically if string bigger than console width.
+        function split_line(line){
+            var allowed_chars_per_line = Math.floor(document.getElementById('console').clientWidth * 0.138);
+            line_arr = new Array();
+            while(line.length >= allowed_chars_per_line){
+                line_arr.push(line.substr(0,allowed_chars_per_line));
+                line = line.slice(allowed_chars_per_line);
+            }
+            line_arr.push(line);
+            console.log(line_arr)
+            return line_arr;
+        }
         ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
         ////Do not tamper unless you know what you are doing.
-        function addLine(line) {
-            if(!line.includes('span')){
-                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line + "</pre>" ); ///Insert string to console with a unique ID
-                var sentence = document.getElementById(output_counter); /// Acquire html element with ID
-                var text = sentence.textContent; /// Get text from html element
-                //// Format key words in the html element's text with REGEX
-                let reError = /\b(Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
-                let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
-                let reInfo = /\b(Information|information|INFO|info)\b/g;
-                let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
-                let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
-                let reWarning = /\b(WARNING|Warning|warning)\b/g;
-                var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
-                var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
-                sentence.innerHTML = replaceWord; /// Replace string in html element
-                output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
-            }
-            else{
-                document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line + "</pre>" );
+        function addLine(line){
+            line_arr = split_line(line);
+            for(var i = 0; i < line_arr.length; i++){
+                if(!line_arr[i].includes('span')){
+                    if(i > 0){
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" +  line_arr[i] + "</pre>" ); ///Insert string to console with a unique ID
+                    }
+                    else{
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line_arr[i] + "</pre>" ); ///Insert string to console with a unique ID
+                    }
+                    var sentence = document.getElementById(output_counter); /// Acquire html element with ID
+                    var text = sentence.textContent; /// Get text from html element
+                    //// Format key words in the html element's text with REGEX
+                    let reError = /\b(Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+                    let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+                    let reInfo = /\b(Information|information|INFO|info)\b/g;
+                    let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+                    let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+                    let reWarning = /\b(WARNING|Warning|warning)\b/g;
+                    var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
+                    var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
+                    sentence.innerHTML = replaceWord; /// Replace string in html element
+                    output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
+                }
+                else{
+                    if(i > 0){
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" +  line_arr[i] + "</pre>" );
+                    }
+                    else{
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line_arr[i] + "</pre>" );
+                    }
+                }
             }
             document.getElementById("textinput").value = ""; /// Set your console input to nothing
             document.getElementById("inputbar").remove(); //Remove the input bar
@@ -1190,6 +1199,7 @@
                     disableAllButtons(true);
                     playbook_complete = false;
                     old_ansible_log_array = [];
+                    cursor_lock = 1;
                 },      
                 success: function (response) {
                     toggle_spinner(false,'run_btn');
@@ -1198,6 +1208,7 @@
                 error: function () {
                     toggle_spinner(false,'run_btn');
                     disableAllButtons(false);
+                    cursor_lock = 0;
                     addLine("Error occurred uploading playbook... Check your connection server");
                 }
             });
@@ -1218,6 +1229,7 @@
                             }
                             if(new_ansible_log_array[new_ansible_log_array.length - 1] == "----------------------------------------------Last Line of UUID: " + uuid + "----------------------------------------------"){
                                 playbook_complete = true;
+                                cursor_lock = 0;
                             }
                             else{
                                 old_ansible_log_array = new_ansible_log_array;
