@@ -502,7 +502,7 @@
                 dataType: "JSON",
                 data: {packagename: packagename, uuid: uuid}, // Send Command to server to execute
                 beforeSend: function(){ ///Write executing to console while sending and retrieving data.
-                    addLine("Start installation...... please wait");
+                    addLine("Running ansible builtin package...... please wait");
                     // loading_icons(true);
                     playbook_complete = false;
                     old_ansible_log_array = [];
