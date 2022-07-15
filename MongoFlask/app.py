@@ -1803,7 +1803,7 @@ def advanceinputgenerator_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
-                    cfg.write('ansible_python_interpreter=/usr/bin/python3\n')
+                    cfg.write('interpreter_python=/usr/bin/python3\n')
                     cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             savepath = '/app/inventory.ini'
         else:
@@ -1829,7 +1829,7 @@ def advanceinputgenerator_ajaxVerison():
         with open(savepath,"w") as cleanerinput:
             for ip in iplist:
                 if 'ansible' in str(request.args.get('inputtype')):
-                    cleanerinput.write('{} ansible_host={} {} {}\n'.format(ip, ip, ansible_usr, ansible_pwd))
+                    cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(ip, ip, ansible_usr, ansible_pwd))
                 elif request.args.get('iptype') == "ipmi" and ip in ipmi_list:
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
                     if 'suminput' in savepath:
@@ -1856,7 +1856,7 @@ def advanceinputgenerator_all_ajaxVerison():
                     cfg.write('[defaults]\n')
                     cfg.write('host_key_checking=False\n')
                     cfg.write('deprecation_warnings=False\n')
-                    cfg.write('ansible_python_interpreter=/usr/bin/python3\n')
+                    cfg.write('interpreter_python=/usr/bin/python3\n')
                     cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
