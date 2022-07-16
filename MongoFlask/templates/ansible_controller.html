@@ -480,6 +480,16 @@
                         disableAllButtons(false);
                         break;
                     }
+                    if(command.includes('l12-metrics')){
+                        if(command != "-m command -a 'systemctl status l12-metrics.service'"){
+                            submitCommand("-m command -a 'systemctl status l12-metrics.service'");
+                        }
+                    }
+                    else if(command.includes('udpclient')){
+                        if(command != "-m command -a 'systemctl status udpclient.service'"){
+                            submitCommand("-m command -a 'systemctl status udpclient.service'");
+                        }
+                    }
                 }, /// Ajax error output, rare but neccessary in certain circumstances
                 error: function (xhr, textStatus) {
                     loading_icons(false);
@@ -503,7 +513,6 @@
                 data: {packagename: packagename, uuid: uuid}, // Send Command to server to execute
                 beforeSend: function(){ ///Write executing to console while sending and retrieving data.
                     addLine("Running ansible builtin package...... please wait");
-                    // loading_icons(true);
                     playbook_complete = false;
                     old_ansible_log_array = [];
                     toggle_spinner(true,'run_btn');
@@ -609,10 +618,15 @@
                     addLine("-----> Enter 'show selected' to show the selected IPs");
                     addLine("-----> Enter 'history' to display console history or history -s (phrase)");
                     addLine("-----> Enter 'clear' to clear the output");
-                    addLine("-----> Enter 'help' to display this message");
-                    addLine("-----> Enter 'install [package name]' to install builtin packages");
-                    addLine("-----> Enter 'uninstall [package name]' to uninstall builtin packages");
+                    addLine("-----> 'Builtin Package Options: --------------------------------------------------");
+                    addLine("-----------------------------------------   install     [ udpclient | l12-metrics ]");
+                    addLine("-----------------------------------------   uninstall   [ udpclient | l12-metrics ]");
+                    addLine("-----------------------------------------   check       [ udpclient | l12-metrics ]");
+                    addLine("-----------------------------------------   restart     [ udpclient | l12-metrics ]");
+                    addLine("-----------------------------------------   stop        [ udpclient | l12-metrics ]");
+                    addLine("-----------------------------------------------------------------------------------")
                     addLine("-----> Enter 'check os' to check systems' distributions");
+                    addLine("-----> Enter 'help' to display this message");
                 }
                 else if(CMD.trim() == "show selected"){
                     addLine(CMD);
@@ -714,6 +728,30 @@
                     addLine(CMD);
                     installbuiltinpackage("checkos");
                 }
+                else if(CMD == "check udpclient"){
+                    addLine("-m command -a 'systemctl status udpclient.service'");
+                    submitCommand("-m command -a 'systemctl status udpclient.service'");
+                }
+                else if(CMD == "check l12-metrics"){
+                    addLine("-m command -a 'systemctl status l12-metrics.service'");
+                    submitCommand("-m command -a 'systemctl status l12-metrics.service'");
+                }
+                else if(CMD == "restart udpclient"){
+                    addLine("-m command -a 'systemctl restart udpclient.service'");
+                    submitCommand("-m command -a 'systemctl restart udpclient.service'");
+                }
+                else if(CMD == "restart l12-metrics"){
+                    addLine("-m command -a 'systemctl restart l12-metrics.service'");
+                    submitCommand("-m command -a 'systemctl restart l12-metrics.service'");
+                }
+                else if(CMD == "stop udpclient"){
+                    addLine("-m command -a 'systemctl stop udpclient.service'");
+                    submitCommand("-m command -a 'systemctl stop udpclient.service'");
+                } 
+                else if(CMD == "stop l12-metrics"){
+                    addLine("-m command -a 'systemctl stop l12-metrics.service'");
+                    submitCommand("-m command -a 'systemctl stop l12-metrics.service'");
+                }             
                 else if(CMD.split(" ")[0] == "uninstall"){
                     addLine(CMD);
                     if(CMD.split(" ").length != 2){
