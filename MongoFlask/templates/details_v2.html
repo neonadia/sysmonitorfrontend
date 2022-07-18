@@ -83,6 +83,24 @@
             width: max-content;
             padding: 1%;
         }
+
+        .dropdown-menu li {
+            position: relative;
+        }
+        .dropdown-menu .dropdown-submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: -7px;
+        }
+        .scrollable-menu {
+              height: auto;
+              max-height: 600px;
+              overflow-y: auto;
+          }
+        .dropdown-menu > li:hover > .dropdown-submenu {
+            display: block;
+        }
     </style>  
 </head>
 <body>
@@ -110,7 +128,6 @@
         >
             Sensors
         </button>
-        </div>
         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <li>
             <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">
