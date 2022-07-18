@@ -14,7 +14,13 @@
     <style>
         .nav-btn{
             width: 120px;
+            background-color:transparent;
+            border-color: #1c1816;
+            border-radius: 5px;
+            border-width: 10%;
+            color: #3D3B4F;
             font-weight: bolder;
+            border-width: revert;
             margin-right: 2%;
         }
         .ele {
@@ -36,20 +42,20 @@
         }
         .specs{
             border-width: 5px;
-            border-color: #BCE672;
+            border-color: #77d0e0;
         }
         .header-item{
-            background-color: #BCE672; 
+            background-color: #77d0e0; 
             border-radius: 5px;
         }
         .menu-header {
-            background-color: #BCE672;
+            background-color: #77d0e0;
             border-radius: 5px;
             height: 50px;
             align-items: center;
             font-size: large;
             font-weight: 500;
-            color: blue;
+            color: whitesmoke;
         }
         .page-footer {
             position: fixed;
@@ -65,7 +71,9 @@
             padding: 0%;
         }
         .accordian_btn{
-            margin: 5%;
+            margin: 1%;
+            color: #1c1816;
+            font-weight: 900;
         }
         .title-accordian{
             align-items: center;
@@ -82,7 +90,7 @@
     <ul class="navbar-nav">
         <li class='nav-item'>
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-home"></i>
+            <img src="../static//images/details_v2/smc-removebg-preview.png" style="width: 40px; height:40px" alt="">
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <a class="dropdown-item" href="{{ url_for('index') }}" target="_blank">{{rackname}} Monitor</a>
@@ -212,82 +220,100 @@
 <main>
     <div class="container-fluid" style="padding: 1%;">
         <div class="row justify-content-center">
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Summary')" id="Summary_BTN">Summary</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('System')" id="System_BTN">System</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('CPU')" id="CPU_BTN">CPU</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Storage')" id="Storage_BTN">Storage</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Memory')" id="Memory_BTN">Memory</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('NICS')" id="NICS_BTN">Networking</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Fans')" id="Fans_BTN">Fans</button>
-            <button class="btn btn-outline-info nav-btn" onclick="open_tab('PSUs')" id="PSUs_BTN">PSUs</button>
-            <button class="btn btn-outline-info nav-btn" style="margin-right: 0%;"  onclick="open_tab('GPUs')" id="GPUs_BTN" hidden>GPUs</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Summary')" id="Summary_BTN">
+                <img src="../static//images/details_v2/Summary.png" style="width: 60px; height:60px" alt="">
+                Summary</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('System')" id="System_BTN">
+                <img src="../static//images/details_v2/sys-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                System</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('CPU')" id="CPU_BTN">
+                <img src="../static//images/details_v2/CPU-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                CPU</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Storage')" id="Storage_BTN">
+                <img src="../static//images/details_v2/storage-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                Storage</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Memory')" id="Memory_BTN">
+                <img src="../static//images/details_v2/mem-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                Memory</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('NICS')" id="NICS_BTN">
+                <img src="../static//images/details_v2/nics.png" style="width: 60px; height:60px" alt="">
+                Networking</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('Fans')" id="Fans_BTN">
+                <img src="../static//images/details_v2/fans-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                Fans</button>
+            <button class="btn btn-outline-info nav-btn" onclick="open_tab('PSUs')" id="PSUs_BTN">
+                <img src="../static//images/details_v2/psus-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                PSUs</button>            
+            <button class="btn btn-outline-info nav-btn" style="margin-right: 0%;"  onclick="open_tab('GPUs')" id="GPUs_BTN" hidden>
+                <img src="../static//images/details_v2/gpu-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                GPUs</button>
         </div>
     </div>
     <div class="container-fluid" id="main_canvas" style="width: 100%;">
         <div class="container-fluid ele" style=" width: 100%;" id="Summary" >
             <div class="container specs border" style="border-radius: 10px;" id="sum_cont_name" hidden>
                 <div class="row text-left" id="summary_name">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Host Info</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 15px;">Host Info</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_system" hidden>
                 <div class="row text-left" id="summary_system">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">System</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">System</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_chassis" hidden>
                 <div class="row text-left" id="summary_chassis">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Chassis</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Chassis</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_board" hidden>
                 <div class="row text-left" id="summary_board">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">MotherBoard</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">MotherBoard</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_cpu" hidden>    
                 <div class="row text-left" id="summary_cpu">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">CPU</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">CPU</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_memory" hidden>
                 <div class="row text-left" id="summary_memory">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Memory</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Memory</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;"id="sum_cont_gpus" hidden>
                 <div class="row text-left" id="summary_gpus">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">GPU</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">GPU</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_storage" hidden>
                 <div class="row text-left" id="summary_storage">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Storage</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Storage</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_network" hidden>
                 <div class="row text-left" id="summary_network">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Networking</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Networking</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_fans" hidden>
                 <div class="row text-left" id="summary_fans">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Fans</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Fans</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_psus" hidden>
                 <div class="row text-left" id="summary_psus">
-                    <div class="col" style="background-color: #BCE672; border-radius: 5px;">Power Supplies</div>       
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Power Supplies</div>       
                     <div class="w-100"></div>          
                 </div>
             </div>
@@ -308,7 +334,7 @@
         </div>
         <div class="container-fluid ele" style=" width: 80%;" id="Memory" hidden>
             <div class="container specs" style="border-radius: 5px;">
-                <div class="row align-items-center" style="background-color: #aed4b9; border-radius: 5px;">
+                <div class="row align-items-center" style="background-color: #3cbbd3; border-radius: 5px;">
                     <div class="col-auto mr-auto title-accordian">Memory Devices</div>
                     <div class="col-auto col-accordian-btn">
                         <button class="btn btn-info btn-block" onclick="collapse_accordian('memory')">Collapse</button>
@@ -324,7 +350,7 @@
         </div>
         <div class="container-fluid ele" style=" width: 80%;" id="Storage" hidden>
             <div class="container specs" style="border-radius: 5px;">
-                <div class="row align-items-center" style="background-color: #aed4b9; border-radius: 5px;">
+                <div class="row align-items-center" style="background-color: #3cbbd3; border-radius: 5px;">
                     <div class="col-auto mr-auto title-accordian">Storage Devices</div>
                     <div class="col-auto col-accordian-btn">
                         <button class="btn btn-info btn-block" onclick="collapse_accordian('storage')">Collapse</button>
@@ -340,7 +366,7 @@
         </div>
         <div class="container-fluid ele" style=" width: 80%;" id="NICS" hidden>
             <div class="container specs" style="border-radius: 5px;">
-                <div class="row align-items-center" style="background-color: #aed4b9; border-radius: 5px;">
+                <div class="row align-items-center" style="background-color: #3cbbd3; border-radius: 5px;">
                     <div class="col-auto mr-auto title-accordian">Network Devices</div>
                     <div class="col-auto col-accordian-btn">
                         <button class="btn btn-info btn-block" onclick="collapse_accordian('nics')">Collapse</button>
@@ -374,7 +400,7 @@
         </div>
         <div class="container-fluid ele" style=" width: 80%;" id="GPUs" hidden>
             <div class="container specs" style="border-radius: 5px;">
-                <div class="row align-items-center" style="background-color: #aed4b9; border-radius: 5px;">
+                <div class="row align-items-center" style="background-color: #3cbbd3; border-radius: 5px;">
                     <div class="col-auto mr-auto title-accordian">GPUs Devices</div>
                     <div class="col-auto col-accordian-btn">
                         <button class="btn btn-info btn-block" onclick="collapse_accordian('gpus')">Collapse</button>
@@ -540,7 +566,7 @@
                         state = "";
                     }
                     memory.insertAdjacentHTML('beforeend','<div class="card" id="slot' +  slot +  '"></div');
-                    document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + slot + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="slot_btn' + slot + '"class="btn btn-link" data-toggle="collapse" data-target="#collapse' + slot  + '" aria-expanded="false" aria-controls="collapse' + slot + '">' + slot + ' ' + state + '</button></h5></div>');
+                    document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + slot + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="slot_btn' + slot + '"class="btn btn-link" data-toggle="collapse" data-target="#collapse' + slot  + '" aria-expanded="false" aria-controls="collapse' + slot + '">' + slot + ' ' + state + '</button></h5></div>');
                     document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div id="collapse' + slot + '" class="collapse show" aria-labelledby="heading' + slot + '" data-parent="#mem_accordian"><div class="card-body" id="mem_data'+ slot +'"></div></div>');
                     document.getElementById('mem_data' + slot).insertAdjacentHTML('beforeend','<div class="row text-left" id="inner' + slot + '"></div>')
                     mem_array.push('collapse' + slot);
@@ -559,7 +585,7 @@
                 for(var disk in data[iter]){
                     insert_row('summary_storage',data[iter][disk]['ModelNumber'],(parseInt(data[iter][disk]['PhysicalSize']) / 1099511627776).toPrecision(1)+ ' TB')
                     storage.insertAdjacentHTML('beforeend','<div class="card" id="disk' +  disk +  '"></div');
-                    document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + disk + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="disk_btn' + disk + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse' + disk  + '" aria-expanded="false" aria-controls="collapse' + disk + '">Device ' + disk + '</button></h5></div>')
+                    document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + disk + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="disk_btn' + disk + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse' + disk  + '" aria-expanded="false" aria-controls="collapse' + disk + '">Device ' + disk + '</button></h5></div>')
                     document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div id="collapse' + disk + '" class="collapse show" aria-labelledby="heading' + disk + '" data-parent="#storage_accordian"><div class="card-body" id="disk_data'+ disk +'"></div></div>');
                     document.getElementById('disk_data' + disk).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerdisk' + disk + '"></div>')
                     storage_array.push('collapse' + disk);
@@ -575,7 +601,7 @@
                 for(var nic in data[iter]){
                     insert_row_3('summary_network',data[iter][nic]['Name'],data[iter][nic]['Vendor'],data[iter][nic]['Part Number'])
                     nics.insertAdjacentHTML('beforeend','<div class="card" id="nic' +  nic +  '"></div');
-                    document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + nic + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="nic_btn' + nic + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseNIC' + nic  + '" aria-expanded="false" aria-controls="collapse' + nic + '">' + data[iter][nic]['PCIe Bus'] + '</button></h5></div>')
+                    document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + nic + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="nic_btn' + nic + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseNIC' + nic  + '" aria-expanded="false" aria-controls="collapse' + nic + '">' + data[iter][nic]['PCIe Bus'] + '</button></h5></div>')
                     document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div id="collapseNIC' + nic + '" class="collapse show" aria-labelledby="heading' + nic + '" data-parent="#network_accordian"><div class="card-body" id="nic_data'+ nic +'"></div></div>');
                     document.getElementById('nic_data' + nic).insertAdjacentHTML('beforeend','<div class="row text-left" id="innernic' + nic + '"></div>');
                     nic_array.push('collapseNIC' + nic);
@@ -609,7 +635,7 @@
                     document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
                     for(var gpu in data[iter]['GPU']){
                         gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
-                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
                         document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
                         gpu_array.push('collapseGPU' + gpu);
@@ -624,7 +650,7 @@
                     document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
                     for(var gpu in data[iter]['GPU']){
                         gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
-                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #BCE672; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
+                        document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
                         document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
                         gpu_array.push('collapseGPU' + gpu);
