@@ -45,8 +45,12 @@
           <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
       </div>
     </li>
-
-    <div class="dropdown">
+    {% if switch_button == "on" %}
+        <a style="color:white;" class="btn btn-primary btn-lg mr-1" type="button" id="switchButton" aria-haspopup="true" aria-expanded="false" href="{{ url_for('details')}}?var={{ ip }}">
+            Switch to DMI API
+        </a>      
+    {% endif %}
+     <div class="dropdown">
       <button
         class="btn btn-primary dropdown-toggle btn-lg mr-1"
         type="button"
@@ -56,6 +60,7 @@
       >
         Sensors
       </button>
+      </div>
       <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
         <li>
           <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}" target="_self">
@@ -189,7 +194,7 @@
     </li>
     {% include "advancedfeatures_menu.html" %}
     {% include "documentationButton.html" %}
-  </ul> 
+  </ul>  
 </nav>
 
 <div id="accordion">

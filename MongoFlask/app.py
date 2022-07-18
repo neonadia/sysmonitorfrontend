@@ -547,10 +547,14 @@ def details():
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages,gpu_temps = get_sensor_names(ip)
     data = hardware_collection.find_one({"bmc_ip": ip},{'_id': 0,'TOPO_file': 0}) 
     NoneType = type(None)
-    if isinstance(data,NoneType) == False:
-        return render_template('details_v2.html', data=json.dumps(data), ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
+    if isinstance(data,NoneType) == False:        
+        return render_template('details_v2.html', data=json.dumps(data), ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,\
+        dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl, switch_button = "off")
     else:
-        details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1, "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1, "UpdateService.SmcFirmwareInventory.2.Version":1}  )
+        details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, \
+        "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1,\
+        "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1,\
+        "UpdateService.SmcFirmwareInventory.2.Version":1})
         details2 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.CPU":1})
         details3 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.Memory":1})
         details4 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.SimpleStorage":1})
@@ -560,8 +564,29 @@ def details():
         memory = json2html.convert(json = details3)
         storage = json2html.convert(json = details4)
         pcie = json2html.convert(json = details5)
-        return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
-                                                                                          
+        return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
+        cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
+
+@app.route('/details_redfish')
+def details_redfish():
+    ip = request.args.get('var')
+    cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages,gpu_temps = get_sensor_names(ip) 
+    details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, \
+    "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1,\
+    "Systems.1.SimpleStorage.1.Devices.Model":1,  "UpdateService.SmcFirmwareInventory.1.Name":1, "UpdateService.SmcFirmwareInventory.1.Version":1, "UpdateService.SmcFirmwareInventory.2.Name":1,\
+    "UpdateService.SmcFirmwareInventory.2.Version":1})
+    details2 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.CPU":1})
+    details3 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.Memory":1})
+    details4 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.SimpleStorage":1})
+    details5 = collection.find_one({"BMC_IP": ip}, {"_id":0,"Systems.1.PCIeDevices":1})
+    system = json2html.convert(json = details1)
+    cpu = json2html.convert(json = details2)
+    memory = json2html.convert(json = details3)
+    storage = json2html.convert(json = details4)
+    pcie = json2html.convert(json = details5)
+    return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
+    cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl, switch_button = "on") 
+ 
 @app.route('/systemresetupload',methods=["GET","POST"])
 def systemresetupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
