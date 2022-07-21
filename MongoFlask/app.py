@@ -1825,13 +1825,18 @@ def advanceinputgenerator_ajaxVerison():
         if 'ansible' in str(request.args.get('inputtype')):           
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
-            if 'ansible.cfg' not in os.listdir('/app'):
-                with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defaults]\n')
-                    cfg.write('host_key_checking=False\n')
-                    cfg.write('deprecation_warnings=False\n')
-                    cfg.write('interpreter_python=/usr/bin/python3\n')
-                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
+            ansible_python = str(request.args.get('interpreter'))
+            if 'ansible.cfg' in os.listdir('/app'):
+                os.remove('/app/ansible.cfg')
+            with open('/app/ansible.cfg','w') as cfg:
+                cfg.write('[defaults]\n')
+                cfg.write('host_key_checking=False\n')
+                cfg.write('deprecation_warnings=False\n')
+                if ansible_python == "python":
+                    cfg.write('interpreter_python=/usr/bin/python\n')
+                elif ansible_python == "python3":
+                    cfg.write('interpreter_python=/usr/bin/python3\n')                        
+                cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             savepath = '/app/inventory.ini'
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
@@ -1878,13 +1883,18 @@ def advanceinputgenerator_all_ajaxVerison():
     if request.method == "GET":
         if 'ansible' in str(request.args.get('inputtype')):
             # write a cfg config file for excution part to use
-            if 'ansible.cfg' not in os.listdir('/app'):
-                with open('/app/ansible.cfg','w') as cfg:
-                    cfg.write('[defaults]\n')
-                    cfg.write('host_key_checking=False\n')
-                    cfg.write('deprecation_warnings=False\n')
-                    cfg.write('interpreter_python=/usr/bin/python3\n')
-                    cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
+            ansible_python = str(request.args.get('interpreter'))
+            if 'ansible.cfg' in os.listdir('/app'):
+                os.remove('/app/ansible.cfg')
+            with open('/app/ansible.cfg','w') as cfg:
+                cfg.write('[defaults]\n')
+                cfg.write('host_key_checking=False\n')
+                cfg.write('deprecation_warnings=False\n')
+                if ansible_python == "python":
+                    cfg.write('interpreter_python=/usr/bin/python\n')
+                elif ansible_python == "python3":
+                    cfg.write('interpreter_python=/usr/bin/python3\n')       
+                cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
             savepath = '/app/inventory.ini'

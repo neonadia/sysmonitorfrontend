@@ -341,7 +341,7 @@
                             </form>
                             <form id = "ansible_userANDpass">
                                 <div class="container-fluid border-bottom" style="padding-bottom: 2%">
-                                    <label style="font-weight: bold; padding-top: 2%;">Client Credentials</label>
+                                    <label style="font-weight: bold; padding-top: 2%;">Client Settings</label>
                                     <div class='row justify-content-start'>
                                         <div class="col">
                                                 <label style="font-weight: bold;">User</label>
@@ -352,6 +352,10 @@
                                             <input type="form-control" name="password" autocomplete="current-password" required="" id="ansible_pwd">
                                             <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i>
                                         </div>
+                                        <div class="col">
+                                             <label style="font-weight: bold;">Interpreter</label>
+                                             <input type="form-control" name="interpreter_version" required="" id="interpreter" autocomplete="off" placeholder="python3" >
+                                        </div>                                     
                                     </div>
                                 </div>
                             </form>
@@ -599,20 +603,26 @@
                 }
                 else if(CMD.startsWith("select all") || CMD.startsWith("Select all" )){
                     addLine(document.getElementById("textinput").value);
-                    if (CMD.split(" ").length != 4){
-                      addLine("Syntax Error: usr/pwd needed to select all, correct syntax is 'select all (usr) (pwd)'");
-                    }
-                    else{
+                    if (CMD.split(" ").length == 4){
                       document.getElementById('ansible_usr').value = CMD.split(" ")[2];
                       document.getElementById('ansible_pwd').value = CMD.split(" ")[3];
-                      uploadallIPs(); /// Select all IPS function
+                      uploadallIPs(); /// Select all IPS function                    
+                    }
+                    else if (CMD.split(" ").length == 5){
+                      document.getElementById('ansible_usr').value = CMD.split(" ")[2];
+                      document.getElementById('ansible_pwd').value = CMD.split(" ")[3];
+                      document.getElementById('interpreter').value = CMD.split(" ")[4]; 
+                      uploadallIPs(); /// Select all IPS function                                               
+                    }
+                    else{
+                      addLine("Syntax Error: usr/pwd needed to select all, correct syntax is 'select all (usr) (pwd) (interpreter [OPTIONAL])'");
                     }
                 }
                 else if(CMD ==  "help" || CMD == "Help"){
                     addLine(document.getElementById("textinput").value);
                     addLine("-----> Enter '-m <module> -a <args>'       ex:   -m command -a 'whoami'");
                     addLine("-----> To BECOME run with these args: '-m module -a args -b --become_user=root --extra-vars='ansible_become_pass=XXXXXX'");
-                    addLine("-----> Enter 'select all (usr) (pwd)' to select all IPs");
+                    addLine("-----> Enter 'select all (usr) (pwd) (interpreter [OPTIONAL])' to select all IPs");
                     addLine("-----> Enter 'unselect all' to unselect all IPs");
                     addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
                     addLine("-----> Enter 'show selected' to show the selected IPs");
@@ -627,6 +637,7 @@
                     addLine("-----------------------------------------   info        [ udpclient | l12-metrics ]");
                     addLine("-----------------------------------------------------------------------------------");
                     addLine("-----> Enter 'check os' to check systems' distributions");
+                    addLine("-----> Enter 'remove known_hosts' to clear the known_hosts");
                     addLine("-----> Enter 'help' to display this message");
                 }
                 else if(CMD.trim() == "show selected"){
@@ -1063,12 +1074,14 @@
         function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var pwd = document.getElementById('ansible_pwd').value;
             var usr = document.getElementById('ansible_usr').value;
+            var interpreter = document.getElementById('interpreter').value;
             if (usr == ""){
                 addLine("ERROR: Please add a User");
                 return;
             }
             else if(pwd == ""){
-                addLine("WARNING: No user password submitted");
+                addLine("ERROR: No user password submitted");
+                return;
             }
             var ipstart = document.getElementById('inputform')['ipstart'].value;
             var ipend = document.getElementById('inputform')['ipend'].value;
@@ -1076,14 +1089,15 @@
             var iptype = document.getElementById('inputform')['iptype'].value;
             clearTerminal();
             addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
-            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype,usr,pwd);
+            addLine('User select interpreter : ' + interpreter)
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype,usr,pwd,interpreter);
         }
-        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype,usr,pwd){
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype,usr,pwd,interpreter){
             $.ajax({
                 url: '/advanceinputgenerator_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd, interpreter:interpreter}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -1110,25 +1124,28 @@
         function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
             var pwd = document.getElementById('ansible_pwd').value;
             var usr = document.getElementById('ansible_usr').value;
+            var interpreter = document.getElementById('interpreter').value;
             if (usr == ""){
                 addLine("ERROR: Please add a User");
                 return;
             }
             else if(pwd == ""){
-                addLine("WARNING: No user password submitted");
+                addLine("ERROR: No user password submitted");
+                return;
             }
             var inputtype = document.getElementById('inputform')['inputtype'].value;
             var iptype = document.getElementById('inputform')['iptype'].value;
             clearTerminal();
             addLine('Selecting all the IPs ...');
-            $.CallAdvancedAllGenerator(inputtype,iptype,usr,pwd);
+            addLine('User select interpreter: ' + interpreter)
+            $.CallAdvancedAllGenerator(inputtype,iptype,usr,pwd,interpreter);
         }
-        $.CallAdvancedAllGenerator = function(inputtype,iptype,usr,pwd){
+        $.CallAdvancedAllGenerator = function(inputtype,iptype,usr,pwd,interpreter){
             $.ajax({
                 url: '/advanceinputgenerator_all_ajaxVersion', 
                 type: 'GET',
                 dataType: "JSON",
-                data: {inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
+                data: {inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd, interpreter:interpreter}, // Send the variables to create a IP file.
                 success: function(result){
                     var data = result;
                     var complete = true;
@@ -1270,7 +1287,6 @@
                     if(playbook_complete == false){
                         var new_ansible_log_array = response['SUCCESS'];
                         if(new_ansible_log_array.length != old_ansible_log_array.length){
-                            var diff = new_ansible_log_array.length - old_ansible_log_array.length;
                             for (var i = old_ansible_log_array.length; i < new_ansible_log_array.length; i++){
                                 addLine(new_ansible_log_array[i]);
                             }
