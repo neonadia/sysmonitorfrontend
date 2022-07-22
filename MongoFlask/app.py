@@ -1572,7 +1572,29 @@ def ansibleuninstall():
     response = json.dumps(response)
     os.remove("/app/ansible-playbook_uninstall.yml")
     return response
-    
+ 
+# used to check ansible cfg and inventory file
+@app.route('/ansible_local',methods=["GET"])
+def ansible_local():
+    operation = str(request.args.get('operation'))
+    file_name = str(request.args.get('filename'))
+    if operation == 'cat':
+        file_path = '/app/' + file_name
+        if fileEmpty(file_path):
+            response = {'response': ['"' + file_path + '": file path not exists or file empty!']}
+        else:
+            with open(file_path, 'r') as file_content:
+                lines = file_content.readlines()
+            response = {'response': lines}
+    elif operation == 'rm' and file_name == 'known_hosts':
+        try:
+            os.remove('/root/.ssh/known_hosts')
+            response = {'response': ['"~/.ssh/known_hosts" has been deleted.']}
+        except Exception as e:
+            response = {'response': [str(e)]}
+    response = json.dumps(response)
+    return response
+ 
 @app.route('/bmceventcleanerstart',methods=["GET"])
 def bmceventcleanerstart():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']

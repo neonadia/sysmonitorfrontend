@@ -606,6 +606,7 @@
                     if (CMD.split(" ").length == 4){
                       document.getElementById('ansible_usr').value = CMD.split(" ")[2];
                       document.getElementById('ansible_pwd').value = CMD.split(" ")[3];
+                      document.getElementById('interpreter').value = "" 
                       uploadallIPs(); /// Select all IPS function                    
                     }
                     else if (CMD.split(" ").length == 5){
@@ -628,6 +629,11 @@
                     addLine("-----> Enter 'show selected' to show the selected IPs");
                     addLine("-----> Enter 'history' to display console history or history -s (phrase)");
                     addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter 'check os' to check systems' distributions");
+                    addLine("-----> Enter 'remove known_hosts' to clear the known_hosts");
+                    addLine("-----> Enter 'cat [FILENAME]' to check the file under /app/ dir");
+                    addLine("-----> Enter 'rm known_hosts' to delete the known_hosts file");
+                    addLine("-----> Enter 'help' to display this message");
                     addLine("-----> 'Builtin Package Options: --------------------------------------------------");
                     addLine("-----------------------------------------   install     [ udpclient | l12-metrics ]");
                     addLine("-----------------------------------------   uninstall   [ udpclient | l12-metrics ]");
@@ -636,9 +642,10 @@
                     addLine("-----------------------------------------   stop        [ udpclient | l12-metrics ]");
                     addLine("-----------------------------------------   info        [ udpclient | l12-metrics ]");
                     addLine("-----------------------------------------------------------------------------------");
-                    addLine("-----> Enter 'check os' to check systems' distributions");
-                    addLine("-----> Enter 'remove known_hosts' to clear the known_hosts");
-                    addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD.split(" ")[0] == "cat" || CMD.split(" ")[0] == "rm" ){
+                   addLine(CMD);
+                   $.ansibleCheckFile(CMD.split(" ")[0], CMD.split(" ")[1]);
                 }
                 else if(CMD.trim() == "show selected"){
                     addLine(CMD);
@@ -1068,6 +1075,20 @@
                         addLine('Current Selected IPs has been updated');
                         unselectButton.classList.remove("disabled")
                     }
+                }
+            });
+        }
+        $.ansibleCheckFile = function(operation, filename){ /// CheckIPfunction, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+            $.ajax({
+                url: '/ansible_local',
+                dataType : "JSON",
+                type : "GET",
+                data: {operation: operation, filename: filename},
+                success: function(response){
+                     var file_contents = response['response'];
+                     for (var i = 0; i < file_contents.length; i++){
+                         addLine(file_contents[i]);
+                     }
                 }
             });
         }
