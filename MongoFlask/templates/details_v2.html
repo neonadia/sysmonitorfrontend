@@ -253,7 +253,7 @@
                 <img src="../static//images/details_v2/storage-removebg-preview.png" style="width: 60px; height:60px" alt="">
                 Storage</button>
             <button class="btn btn-outline-info nav-btn" onclick="open_tab('Memory')" id="Memory_BTN">
-                <img src="../static//images/details_v2/mem-removebg-preview.png" style="width: 60px; height:60px" alt="">
+                <img src="../static//images/details_v2/mem.png" style="width: 60px; height:60px" alt="">
                 Memory</button>
             <button class="btn btn-outline-info nav-btn" onclick="open_tab('NICS')" id="NICS_BTN">
                 <img src="../static//images/details_v2/nics.png" style="width: 60px; height:60px" alt="">
@@ -551,6 +551,18 @@
                         insert_row('system',chss_detail,data[iter][chassis][chss_detail]);
                     }
                 }
+            }
+            else if(iter == "Firmware"){
+                document.getElementById('sum_cont_chassis').removeAttribute('hidden');
+                insert_row_1('system','<div class="col d-flex justify-content-center menu-header">Firmware</div><div class="w-100"></div>');
+                for(var firmware in data[iter]){
+                    for(var fw_detail in data[iter][firmware]){
+                        if(fw_detail == 'CPLD Version' || fw_detail == "BMC Version" || fw_detail == "BIOS Version"){
+                            insert_row('summary_system',fw_detail,data[iter][firmware][fw_detail]);
+                        }
+                        insert_row('system',fw_detail,data[iter][firmware][fw_detail]);
+                    }
+                }           
             }
             else if(iter == "Base Board"){
                 document.getElementById('sum_cont_board').removeAttribute('hidden');

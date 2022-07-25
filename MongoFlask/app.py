@@ -548,8 +548,20 @@ def details():
     data = hardware_collection.find_one({"bmc_ip": ip},{'_id': 0,'TOPO_file': 0}) 
     NoneType = type(None)
     if isinstance(data,NoneType) == False:        
+        cur = collection.find_one({"BMC_IP": ip},{"BMC_IP":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, \
+        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})        
+        cpld_ver = cur.get('CPLDVersion','N/A')
+        try:
+            bmc_ver = cur['UpdateService']['SmcFirmwareInventory']['1']['Version']
+        except:
+            bmc_ver = 'N/A'
+        try:
+            bios_ver = cur['UpdateService']['SmcFirmwareInventory']['2']['Version']
+        except:
+            bios_ver = 'N/A'
+        data['Firmware'] = {1: {'BIOS Version': bios_ver, 'BMC Version': bmc_ver, 'CPLD Version': cpld_ver}}
         return render_template('details_v2.html', data=json.dumps(data), ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,\
-        dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl, switch_button = "off")
+        dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
     else:
         details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, \
         "Systems.1.ProcessorSummary.Count":1, "Systems.1.ProcessorSummary.Model":1, "Systems.1.MemorySummary.TotalSystemMemoryGiB":1, "Systems.1.SimpleStorage.1.Devices.Name":1,\
