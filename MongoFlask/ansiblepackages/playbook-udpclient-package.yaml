@@ -53,6 +53,7 @@
       yum:
         name: /root/udpclient-2022.06.22.x86_64-0.x86_64.rpm
         state: present
+        disable_gpg_check: yes
       when: ansible_os_family == "RedHat"
       
     - name: Change udp server ip address

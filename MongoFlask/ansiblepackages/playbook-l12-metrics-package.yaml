@@ -58,6 +58,7 @@
             yum:
               name: /root/l12-metrics-1.0-1.el7.x86_64.rpm
               state: present
+              disable_gpg_check: yes
             when: ansible_os_family == "RedHat"
             
           - name: Change IP argument for service
