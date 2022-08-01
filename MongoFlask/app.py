@@ -98,7 +98,7 @@ def get_single_node_metrics(hostname):
         response[i['Hostname']] = {"CPU":{},"MEMORY":{},"NETWORK":{}, "DISK" : {}, "PROCESSES":{},"NICS":{}, "DMESG":[]}
         response[i['Hostname']]['CPU'] = i['CPU_Metrics']
         response[i['Hostname']]['MEMORY'] = i['Memory']
-        response[i['Hostname']]['DATETIME'] = str(i["datetime"])[:19] # '2022-07-29 18:00:00'
+        response[i['Hostname']]['DATETIME'] = str(i["datetime"])[:19].replace(' ','<br>&nbsp;&nbsp;') # '2022-07-29 \  18:00:00'
         for msg in i['dmesg']:
             for err in err_list:
                 if err in msg:
