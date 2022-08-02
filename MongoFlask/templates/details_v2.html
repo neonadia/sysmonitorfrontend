@@ -118,6 +118,20 @@
         <a style="color:white;" class="btn btn-primary btn-lg mr-1" type="button" id="switchButton" aria-haspopup="true" aria-expanded="false" href="{{ url_for('details_redfish')}}?var={{ ip }}">
             Switch to Redfish API
         </a>   
+        <li class='dropdown'>
+          <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Nodes
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              {% for one_ip in allips %}
+              {% if one_ip == ip %}
+              <a class="dropdown-item text-primary font-weight-bold" href="{{ url_for('details') }}?var={{ one_ip }}" target="_blank">{{ one_ip }} Details</a>
+              {% else %}
+              <a class="dropdown-item" href="{{ url_for('details') }}?var={{ one_ip }}" target="_blank">{{ one_ip }} Details</a>
+              {% endif %}
+              {% endfor %}
+          </div>
+        </li>
         <div class="dropdown">
         <button
             class="btn btn-primary dropdown-toggle btn-lg mr-1"

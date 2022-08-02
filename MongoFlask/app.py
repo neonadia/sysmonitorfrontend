@@ -545,6 +545,14 @@ def about():
 
 @app.route('/details')
 def details():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    try:
+        df_input = pd.read_csv(savepath+"resetip.txt",header=None,names=['ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['ip'])
     ip = request.args.get('var')
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages,gpu_temps = get_sensor_names(ip)
     data = hardware_collection.find_one({"bmc_ip": ip},{'_id': 0,'TOPO_file': 0}) 
@@ -562,7 +570,7 @@ def details():
         except:
             bios_ver = 'N/A'
         data['Firmware'] = {1: {'BIOS Version': bios_ver, 'BMC Version': bmc_ver, 'CPLD Version': cpld_ver}}
-        return render_template('details_v2.html', data=json.dumps(data), ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,\
+        return render_template('details_v2.html', data=json.dumps(data),allips=allips, ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,\
         dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
     else:
         details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, \
@@ -578,11 +586,19 @@ def details():
         memory = json2html.convert(json = details3)
         storage = json2html.convert(json = details4)
         pcie = json2html.convert(json = details5)
-        return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
+        return render_template('details.html',allips=allips, ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
         cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)
 
 @app.route('/details_redfish')
 def details_redfish():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    try:
+        df_input = pd.read_csv(savepath+"resetip.txt",header=None,names=['ip'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['ip'])
     ip = request.args.get('var')
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sensor_fans,sensor_voltages,gpu_temps = get_sensor_names(ip) 
     details1 = collection.find_one({"BMC_IP": ip}, {"_id":0,"BMC_IP":1, "Datetime":1,"UUID":1,"Systems.1.Description":1,"Systems.1.Model":1,"Systems.1.SerialNumber":1, \
@@ -598,8 +614,9 @@ def details_redfish():
     memory = json2html.convert(json = details3)
     storage = json2html.convert(json = details4)
     pcie = json2html.convert(json = details5)
-    return render_template('details.html', ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
-    cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl, switch_button = "on") 
+    return render_template('details.html',allips=allips, ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
+    cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl,\
+    switch_button = "on") 
  
 @app.route('/systemresetupload',methods=["GET","POST"])
 def systemresetupload():
