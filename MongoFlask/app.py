@@ -2608,7 +2608,8 @@ def udpserverinitialize():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '_udpserveruploadip_all.txt'
     with open(savepath,'w') as all_ip_file:
         for ip in df_pwd['os_ip']:
-            all_ip_file.write("%s\n" % ip)    
+            if ip != '0.0.0.0' and ip != 'none':
+                all_ip_file.write("%s\n" % ip)    
     if request.method == "GET":
         insertUdpevent('m',"request_h",savepath) # request_h means requst client to send h back to initilize the json file
         time.sleep(5)

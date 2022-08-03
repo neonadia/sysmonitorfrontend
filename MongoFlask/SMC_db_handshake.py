@@ -4,6 +4,24 @@ import os
 import json
 import pymongo
 import sys
+
+def create_hw_folder(hostname):   
+    # create main dirs
+    hw_dir = os.environ['UPLOADPATH'] + '/hw_data'
+    if 'hw_data' not in os.listdir(directory):
+        os.mkdir(hw_dir)
+        print("Directory '% s' created" % hw_dir, flush=True)
+    # create sub dirs
+    if 'hw_info_' + hostname  not in os.listdir(hw_dir):
+        os.mkdir(hw_dir + '/hw_info_' + hostname)
+        print("Directory '% s' created" % hw_dir + '/hw_info_' + hostname, flush=True)
+    # create an empty config file
+    if not os.path.isfile(hw_dir + '/hw.conf'):
+        with open(hw_dir + '/hw.conf', 'w') as hw_file:
+            hw_file.write('OS=N/A\n')
+            hw_file.write('GPU=N/A\n')    
+        print("File '% s' created" % hw_dir + '/hw.conf', flush=True)
+
 mongoport = int(os.environ['MONGOPORT'])
 client = pymongo.MongoClient('localhost', mongoport)
 db = client.redfish
@@ -44,11 +62,15 @@ for ip in bmc_ips:
 
 # inputdir = "/app/RACK/"  i.e example path
 directory = os.environ['UPLOADPATH'] #### Usually /app/<YOUR FOLDER FROM WHICH YOU DECLARED IN auto.env
-# inputdir = directory + "/hw_data/" Navigate to your hardware logs folder. Needs to contain "hw_data" in the name in order to be flagged
-for x in os.listdir(directory):
-    if 'hw_data' in x:
-        if os.path.isdir(directory + x):
-            inputdir = directory + x
+# inputdir = directory + "/hw_data/" Navigate to your hardware logs folder. Needs to contain "hw_data" in the name in order to be flagged           
+inputdir = directory + "/hw_data/"
+if 'hw_data' not in os.listdir(directory):
+    print('No hw_data folder found, creating the directory...', flush=True)
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])    
+    for cur_mac in list(df_pwd['mac']):            
+        cur_mac = cur_mac.lower()
+        hostname = '-'.join(a+b for a,b in zip(cur_mac[::2], cur_mac[1::2]))
+        create_hw_folder(hostname)
 
 print("Performing SMC DB check...")
 for file in os.listdir(inputdir):
