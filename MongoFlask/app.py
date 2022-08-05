@@ -106,10 +106,12 @@ def get_single_node_metrics(hostname):
                     break
         response[i['Hostname']]['NETWORK'] = {"Download Speed": i['Network']['Download Speed'],"Upload Speed": i["Network"]['Upload Speed']}
         for partition in i['Disk']:
-            if partition == '/':
-                response[i['Hostname']]['DISK']['/root'] = i['Disk'][partition]['Percent']
-            else:
+            if 'Percent' in i['Disk'][partition] and type(i['Disk'][partition]) == dict:
                 response[i['Hostname']]['DISK'][partition] = i['Disk'][partition]['Percent']
+            elif type(i['Disk'][partition]) == str:
+                response[i['Hostname']]['DISK'][partition] = i['Disk'][partition]
+            else:
+                response[i['Hostname']]['DISK'][partition] = 'N/A'
         response[i['Hostname']]['PROCESSES'] = i["Processes"]
         for nic in i["NETCARDS"]:
             for stat in i["NETCARDS"][nic]:
