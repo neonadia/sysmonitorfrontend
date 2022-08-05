@@ -3521,14 +3521,14 @@ def hardware_output():
 @app.route('/get_node_hardware_json')
 def get_node_hardware_json():
     bmc_ip = request.args.get('var')
-    cur_result = hardware_collection.find_one({'bmc_ip':bmc_ip},{'_id':0})
+    cur_result = hardware_collection.find_one({'bmc_ip':bmc_ip},{'_id':0,'TOPO_file':0})
     hostname = cur_result['Hostname']
     try:
         filename = os.environ['UPLOADPATH'] + hostname + "_hardware.json"
         with open(filename, 'w') as output:
-            json.dump(cur_result,output)
-    except:
-        print("Error on downloading json",flush=True)
+            json.dump(cur_result,output,sort_keys=True,indent=4,separators=(',', ': '))
+    except Exception as e:
+        print('Error: '+ str(e),flush=True)
     else:
         return send_file(filename,as_attachment=True,cache_timeout=0)
 
@@ -3700,7 +3700,7 @@ def benchmark_result_parser():
                     for config in config_list:
                         # Only parse the log has config files
                         if filename.lower().startswith(config['log'].lower()):
-                            print(filename)
+                            #print(filename)
                             with open(inputdir + '/' + dirname + '/' + filename, 'r') as logfile:
                                 contents = logfile.read()
                             if getsizeof(contents) > 16000000:                               
