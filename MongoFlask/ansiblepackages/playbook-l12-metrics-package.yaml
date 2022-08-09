@@ -30,6 +30,18 @@
             when: ansible_os_family == "RedHat"  and (item.type == "all" or item.type == "rpm")
             loop: "{{ packages }}"
 
+          - name: Install mesa-libGL on RedHat
+            yum:
+              name: mesa-libGL
+              state: present
+            when: ansible_os_family == "RedHat"  
+
+          - name: Updated pip setupttools and wheel
+            pip: 
+              name: ["pip","setuptools","wheel"]
+              state: latest
+              executable: pip3
+
           - name: Install "{{ item.name }}"
             pip:
               name: "{{ item.name }}"
