@@ -136,7 +136,9 @@
                 <tr>
                     <td class="align-left font-weight-bold"  style="text-align: left; vertical-align:middle;">
                         <ul>
-                            <div id="datetime_{{ hostname }}" class="text-success" >Standby ...</div>
+                            <li id="datetime_{{ hostname }}" class="text-success" >Standby ...</li>
+                            <li id="boottime_{{ hostname }}" class="text-info" >Standby ...</li>
+                            <li id="uptime_{{ hostname }}" class="text-success" >Standby ...</li>
                         </ul>
                     </td>
                     <td class="align-left font-weight-bold"  style="text-align: left; vertical-align:middle;">
@@ -262,6 +264,7 @@
     <script>
         // Variable for datetime checking
         var datetime_retry = {}
+        var uptime_retry = {}
         function parse_dmesg_string(msg){
             //// Format key words in the html element's text with REGEX
             let reError = /\b(Reset|reset|RESET|AER|Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
@@ -392,11 +395,16 @@
                 
             }
         }
-        function adjust_datetime(hostname,datetime){
+        function adjust_datetime(hostname,datetime, boottime, uptime){
             if(!(hostname in datetime_retry)){
                 datetime_retry[hostname] = 0;
             }
+            if(!(hostname in uptime_retry)){
+                uptime_retry[hostname] = 0;
+            }
             var datetime_div = document.getElementById("datetime_" + hostname);
+            var boottime_div = document.getElementById("boottime_" + hostname);
+            var uptime_div = document.getElementById("uptime_" + hostname)
             if(datetime_div && datetime.length != 0){
                 if( datetime_div.innerHTML != datetime ){
                     datetime_div.classList.remove("text-danger");
@@ -411,6 +419,24 @@
                     datetime_div.classList.remove("text-success");
                     datetime_div.classList.add("text-danger");
                 }
+            }
+            if(uptime_div && uptime.length != 0){
+                if( uptime_div.innerHTML != uptime ){
+                    uptime_div.classList.remove("text-danger");
+                    uptime_div.classList.add("text-success");
+                    uptime_div.innerHTML = uptime;
+                    uptime_retry[hostname] = 0;
+                }
+                else if( uptime_div.innerHTML == uptime && uptime_retry[hostname] < 5 ){
+                    uptime_retry[hostname] ++;
+                }
+                else{
+                    uptime_div.classList.remove("text-success");
+                    uptime_div.classList.add("text-danger");
+                }
+            }
+            if(boottime_div && boottime.length != 0){
+                boottime_div.innerHTML = boottime;
             }
         }
         function get_metrics(){
@@ -435,7 +461,7 @@
                             adjust_partitions(hostname,data[host]['DISK']);
                             adjust_processes(hostname,data[host]["PROCESSES"]);
                             adjust_dmesg(hostname,data[host]['DMESG']);
-                            adjust_datetime(hostname,data[host]['DATETIME']);
+                            adjust_datetime(hostname,data[host]['DATETIME'],data[host]['BOOTTIME'],data[host]['UPTIME']);
                         } 
                     }
                 }

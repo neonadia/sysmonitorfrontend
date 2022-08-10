@@ -50,25 +50,25 @@
 
           - name: Copy deb to Debian systems
             copy:
-              src: /app/ansiblepackages/l12-metrics_1.0-2_all.deb
-              dest: /root/l12-metrics_1.0-2_all.deb
+              src: /app/ansiblepackages/l12-metrics_1.01-2_all.deb
+              dest: /root/l12-metrics_1.01-2_all.deb
             when: ansible_os_family == "Debian"
             
           - name: Copy deb to RedHat systems
             copy:
-              src: /app/ansiblepackages/l12-metrics-1.0-1.el7.x86_64.rpm
-              dest: /root/l12-metrics-1.0-1.el7.x86_64.rpm
+              src: /app/ansiblepackages/l12-metrics-1.01-1.el7.x86_64.rpm
+              dest: /root/l12-metrics-1.01-1.el7.x86_64.rpm
             when: ansible_os_family == "RedHat"
             
           - name: Install Cluster Debian Service
             apt:
-              deb: /root/l12-metrics_1.0-2_all.deb
+              deb: /root/l12-metrics_1.01-2_all.deb
               state: present
             when: ansible_os_family == "Debian"
 
           - name: Install Cluster RedHat Service
             yum:
-              name: /root/l12-metrics-1.0-1.el7.x86_64.rpm
+              name: /root/l12-metrics-1.01-1.el7.x86_64.rpm
               state: present
               disable_gpg_check: yes
             when: ansible_os_family == "RedHat"
