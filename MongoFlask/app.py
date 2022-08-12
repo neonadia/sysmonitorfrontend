@@ -92,7 +92,7 @@ def get_single_node_metrics(hostname):
     database = mongo_client.redfish
     current_collection = database.metrics
     if current_collection.count_documents({ 'Hostname': hostname, "Memory": {"$exists": True}}, limit = 1) != 0:
-        i = current_collection.find_one({"Hostname":hostname},{"datetime":1,"boottime":1,"Hostname":1,"Disk":1,"NETCARDS":1,"Processes":1, "Network.Download Speed": 1,\
+        i = current_collection.find_one({"Hostname":hostname},{"users":1, "datetime":1,"boottime":1,"Hostname":1,"Disk":1,"NETCARDS":1,"Processes":1, "Network.Download Speed": 1,\
         "uptime":1, "Network.Upload Speed": 1,"CPU_Metrics.Usage":1, "CPU_Metrics.Frequency":1,"CPU_Metrics.Avg_load":1, "Memory":1, "dmesg":1,"_id":0})
         response = {}
         response[i['Hostname']] = {"CPU":{},"MEMORY":{},"NETWORK":{}, "DISK" : {}, "PROCESSES":{},"NICS":{}, "DMESG":[]}
@@ -100,7 +100,8 @@ def get_single_node_metrics(hostname):
         response[i['Hostname']]['MEMORY'] = i['Memory']
         response[i['Hostname']]['DATETIME'] =  str(i["datetime"]) # '2022-07-29 18:00:00'
         response[i['Hostname']]['BOOTTIME'] =  str(i["boottime"]) 
-        response[i['Hostname']]['UPTIME'] =  str(i["uptime"]) 
+        response[i['Hostname']]['UPTIME'] =  str(i["uptime"])
+        response[i['Hostname']]['USERS'] = i["users"]
         for msg in i['dmesg']:
             for err in err_list:
                 if err in msg:
@@ -108,12 +109,17 @@ def get_single_node_metrics(hostname):
                     break
         response[i['Hostname']]['NETWORK'] = {"Download Speed": i['Network']['Download Speed'],"Upload Speed": i["Network"]['Upload Speed']}
         for partition in i['Disk']:
-            if 'Percent' in i['Disk'][partition] and type(i['Disk'][partition]) == dict:
-                response[i['Hostname']]['DISK'][partition] = i['Disk'][partition]['Percent']
-            elif type(i['Disk'][partition]) == str:
-                response[i['Hostname']]['DISK'][partition] = i['Disk'][partition]
-            else:
-                response[i['Hostname']]['DISK'][partition] = 'N/A'
+            if "/snap/" in partition: # hide snap partitions
+                continue
+            cur_info = []
+            key_list = ['Total', 'Percent']
+            if type(i['Disk'][partition]) == dict:
+                for key in key_list:
+                    if key in i['Disk'][partition]:
+                        cur_info.append(i['Disk'][partition][key])
+                    else:
+                        cur_info.append('N/A')
+            response[i['Hostname']]['DISK'][partition] = cur_info
         response[i['Hostname']]['PROCESSES'] = i["Processes"]
         for nic in i["NETCARDS"]:
             for stat in i["NETCARDS"][nic]:

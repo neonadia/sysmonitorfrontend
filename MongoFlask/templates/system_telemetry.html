@@ -123,12 +123,13 @@
         <thead class="thead-dark" >
             <th class="align-middle" style="width: 100px"><i class="fas fa-clock"></i> Datetime</th>
             <th class="align-middle" style="width: 100px"><i class="fas fa-desktop"></i> NODE</th>
+            <th class="align-middle" style="width: 100px"><i class="fas fa-user"></i> USER</th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-microchip' style='font-size:24px'></i> CPU Usage (%)</th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-microchip' style='font-size:24px'></i> CPU Speed</th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-memory' style='font-size:24px'></i> MEMORY USED (MB)</th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-ethernet' style='font-size:24px'></i> NETWORK </th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-hdd' style='font-size:24px'></i> DISK USAGE</th>
-            <th class="align-middle" style="width: 100px"><i class='fas fa-stream' style='font-size:24px'></i> PROCESSES</th>
+            <th class="align-middle" style="width: 100px"><i class='fas fa-stream' style='font-size:24px'></i> PROCESS</th>
             <th class="align-middle" style="width: 100px"><i class='fas fa-stream' style='font-size:24px'></i> DMESG</th>
         </thead>
         <tbody>
@@ -150,6 +151,11 @@
                                 {{ bmc_ip }}
                             </li>
                             <div id="{{hostname}}"></div>
+                        </ul>
+                    </td>
+                    <td class="align-left font-weight-bold"  style="text-align: left; vertical-align:middle;">
+                        <ul>
+                            <div id="users_{{hostname}}">Standby ...</div>
                         </ul>
                     </td>
                     <td class="align-middle" style="align-items: center;">
@@ -221,36 +227,31 @@
                     </td>
                     <td class="align-middle">
                         <div class="font-weight-bold" style="text-align: left;">
-                            <ul>
-                                <li>
-                                    Partitions:
-                                    <ul id="{{hostname}}_partitions_menu">Standby...</ul>
-                                </li>
-                            </ul>
+                             <ul id="{{hostname}}_partitions_menu">Standby...</ul>
                         </div>
                     </td>
                     <td class="align-middle">
                         <div class="dropdown dropleft">
-                            <button class="btn btn-info btn-block font-weight-bold" style="background-color:#1a6eff; color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-primary font-weight-bold" style="color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Running...
-                            <span class="badge font-weight-bold text-white" id="{{hostname}}_proc_num" style="background-color:#1ac2ff">Standby...</span>
+                            <span class="badge font-weight-bold text-white" id="{{hostname}}_proc_num" style="background-color:#1ac2ff">N/A</span>
                             </button>
                             <div class="dropdown-menu scrollable-menu dropleft">
                                 <ul style="border-radius: 10px; width: fit-content; border: 20%; padding:15px;" id="{{hostname}}_process_list">
-                                    <li> Standby...</li> 
+                                    <li>No response</li> 
                                 </ul>
                             </div>
                         </div>
                     </td>
                     <td class="align-middle">
                         <div class="dropdown dropleft">
-                            <button class="btn btn-danger btn-block font-weight-bold" style="color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-danger font-weight-bold" style="color:white;" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Errors
-                            <span class="badge font-weight-bold text-white" id="{{hostname}}_dmesg_num" style="background-color:#fa685b">Standby...</span>
+                            <span class="badge font-weight-bold text-white" id="{{hostname}}_dmesg_num" style="background-color:#fa685b">N/A</span>
                             </button>
                             <div class="dropdown-menu scrollable-menu dropleft" id="{{hostname}}_dmesg_dropdown" style="background-color: black; color: white; font-weight: bolder;">
                                 <ul style="border-radius: 10px; width: fit-content; border: 20%; padding:15px;" id="{{hostname}}_dmesg_list">
-                                    <li> Standby...</li> 
+                                    <li>No response</li> 
                                 </ul>
                             </div>
                         </div>
@@ -358,7 +359,7 @@
             if(partitions_menu){
                 partitions_menu.innerHTML = "";
                 for(var part in partitions){
-                    partitions_menu.insertAdjacentHTML('beforeend',"<li>" + part + ": " + partitions[part] + "</li>");
+                    partitions_menu.insertAdjacentHTML('beforeend',"<li>" + part + " <span class='text-primary'>" + partitions[part][0] + "</span> <span class='text-success'>" + partitions[part][1] + "</span></li>");
                 }
             }
         }
@@ -395,7 +396,21 @@
                 
             }
         }
-        function adjust_datetime(hostname,datetime, boottime, uptime){
+        function adjust_users(hostname, users){
+            var user_list = document.getElementById("users_" + hostname);
+            if(users.length != 0 && user_list){
+                user_list.innerHTML = "";
+                for(var i in users){
+                    if(users[i].includes("No user")){
+                    user_list.insertAdjacentHTML('beforeend', '<li class="text-secondary">'  + users[i] + "</li>" )
+                    }
+                    else{
+                    user_list.insertAdjacentHTML('beforeend', '<li class="text-success">'   + users[i] + "</li>" )
+                    }
+                }                
+            }
+        }
+        function adjust_datetime(hostname, datetime, boottime, uptime){
             if(!(hostname in datetime_retry)){
                 datetime_retry[hostname] = 0;
             }
@@ -462,6 +477,7 @@
                             adjust_processes(hostname,data[host]["PROCESSES"]);
                             adjust_dmesg(hostname,data[host]['DMESG']);
                             adjust_datetime(hostname,data[host]['DATETIME'],data[host]['BOOTTIME'],data[host]['UPTIME']);
+                            adjust_users(hostname,data[host]['USERS']);
                         } 
                     }
                 }
