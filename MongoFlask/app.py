@@ -267,11 +267,7 @@ def uid_onoff():# Returns BLINKING, OFF, N/A
 
 def get_temp_names(bmc_ip):
     dataset_Temps = get_data.find_temperatures_names(bmc_ip)
-    cpu_temps = []
-    vrm_temps = []
-    dimm_temps = []
-    gpu_temps = []
-    sys_temps = []
+    cpu_temps, vrm_temps, dimm_temps, gpu_temps, sys_temps = ([] for i in range(5))
     for x in range(len(dataset_Temps["Temperatures"])):
         if 'CPU' in dataset_Temps["Temperatures"][x]["Name"]:
             cpu_temps.append(dataset_Temps["Temperatures"][x]["Name"])
@@ -355,30 +351,8 @@ def indexHelper(bmc_ip_auth):
 
 @app.route('/')
 def index():
-    bmc_ip = []
-    timestamp = []
-    serialNumber = []
-    modelNumber = []
-    bmcVersion = []
-    biosVersion = []
-    bmc_event = []
-    bmc_details = []
-    bmcMacAddress = []
-    ikvm = []
-    monitorStatus = []
-    uidStatus = []
-    pwd =[]
-    mac_list = []
-    os_ip = []
-    cpld_version = []
-    cpu_temps = []
-    vrm_temps = []
-    dimm_temps = []
-    sys_temps = []
-    sys_fans = []
-    sys_voltages = []
-    gpu_temps = []
-    bmc_ip_auth = []
+    bmc_ip, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
+    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth = ([] for i in range(24))
     current_flag = read_flag()
     if current_flag == 0:
         monitor = "IDLE "
@@ -469,11 +443,7 @@ def index():
 
 @app.route('/update_index_page')
 def update_index_page():
-    bmc_ip = []
-    pwd =[]
-    mac_list = []
-    os_ip = []
-    bmc_ip_auth = []  
+    bmc_ip, pwd, mac_list, os_ip, bmc_ip_auth = ([] for i in range(4))
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
@@ -802,14 +772,7 @@ def runipmisingle(input_list):
 def checkipmisensor():
     #ip_list = getIPlist()
     ips_names = get_node_names()
-    ip_list = []
-    name_list = []
-    sn_list = []
-    pwd_list = []
-    bios_version = []
-    bmc_version = []
-    cpld_version = []
-    input_lists = []
+    ip_list, name_list, sn_list, pwd_list, bios_version, bmc_version, cpld_version, input_lists= ([] for i in range(8))
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])    
     if isinstance(ips_names,bool) != True:
         for ip, name in ips_names:
@@ -843,11 +806,7 @@ def checkipmisensor():
     # Check how many working sensors
     with Pool() as p:
         output = p.map(runipmisingle, input_lists) # output = [[bmc1 output],[bmc2 output],....]
-    num_all = []
-    num_workable = []
-    num_nonworkable = []
-    num_unknown = []
-    prob_flags = []
+    num_all, num_workable, num_nonworkable, num_unknown, prob_flags = ([] for i in range(5))
     for sensors in output: # sensors are all sensors of one bmc ["CPU1 Temp        | 59 degrees C      | ok","CPU2 Temp        | 62 degrees C      | ok",.....]
         cur_num_workable = 0
         cur_num_nonworkable = 0
@@ -875,14 +834,7 @@ def checkipmisensor():
 @app.route('/showipmisensor')
 def showipmisensor():
     bmc_ip = request.args.get('var')
-    name_list = []
-    reading_list = []
-    unit_list = []
-    severity_list = []
-    lownr_list = []
-    lowct_list = []
-    highct_list = []
-    highnr_list = []
+    name_list, reading_list, unit_list, severity_list, lownr_list, lowct_list, highct_list, highnr_list = ([] for i in range(8))
     ips_names = get_node_names()
     if isinstance(ips_names,bool) == True:
         show_names = 'false'
@@ -2337,14 +2289,8 @@ def event():
         for key in IPMIdict.keys():
             if key in events[i]:
                 events[i] = events[i].replace(key,IPMIdict[key]) + " | Note the error number '" + key + "' has been replaced by '" + IPMIdict[key] + "'!"
-    sel_id = []
-    dates = []
-    severity = []
-    action = []
-    sensor = []
-    redfish_msg = []
-    ipmitool_msg = []
-
+    sel_id, dates, severity, action, sensor, redfish_msg, ipmitool_msg  = ([] for i in range(7))
+    
     if  events[0] != "Error: the number of events are not the same between Redfish and IPMITOOL." :
         if "|||" in events[0]:
             for event_index, i in enumerate(events):
