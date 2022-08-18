@@ -443,7 +443,7 @@ def index():
 
 @app.route('/update_index_page')
 def update_index_page():
-    bmc_ip, pwd, mac_list, os_ip, bmc_ip_auth = ([] for i in range(4))
+    bmc_ip, pwd, mac_list, os_ip, bmc_ip_auth = ([] for i in range(5))
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
