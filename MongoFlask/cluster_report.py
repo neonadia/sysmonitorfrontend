@@ -792,7 +792,7 @@ class Test(object):
         self.c.drawCentredString(self.width/2, self.height-560, "Supermicro Solution and Integration Center")
         self.c.drawCentredString(self.width/2, self.height-595, "HPC & AI Benchmarks")
         self.c.linkURL('http://solution.supermicro.com/', (165,225,445,245),relative=0)
-        self.c.linkURL('http://172.31.32.198:8080/', (225,190,385,210),relative=0)
+        self.c.linkURL('http://aihpc.supermicro.com/', (225,190,385,210),relative=0)
         """
         Add the page number
         """
