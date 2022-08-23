@@ -69,6 +69,45 @@
         body {
             padding-bottom: 300px;
         }
+
+        /* The Modal (background) */
+        .modal {
+          display: none; /* Hidden by default */
+          position: fixed; /* Stay in place */
+          z-index: 1; /* Sit on top */
+          padding-top: 100px; /* Location of the box */
+          left: 0;
+          top: 0;
+          width: 100%; /* Full width */
+          height: 100%; /* Full height */
+          overflow: auto; /* Enable scroll if needed */
+          background-color: rgb(0,0,0); /* Fallback color */
+          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content */
+        .modal-content {
+          background-color: #fefefe;
+          margin: auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 40%;
+        }
+
+        /* The Close Button */
+        .close {
+          color: #aaaaaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -385,8 +424,39 @@
     </tbody>
 </table>
 </div>
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p class="font-weight-bold text-center"><span class="text-danger">ERROR:</span> UNABLE to retrive IKVM link. <br>Please check if the server's <u>LICENSE</u> has been <u>ACTIVATED</u>!</p>
+  </div>
+
+</div>
+
 {% include "footer.html" %}
 <script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+
     var frontend_url = "{{ frontend_url}}";
     function get_ikvm(val1){
         $.ikvm(val1);
@@ -401,9 +471,17 @@
                 var data = result;
                 var ikvm_id = "ikvm_url:" + val1
                 for(var key in data){
-                    ikvm_url = "https://" + data[key]; ///Replace text in button with return value from python script
+                    if (data[key] != "unknown") {
+                        ikvm_url = "https://" + data[key]; ///Replace text in button with return value from python script
+                        window.open(ikvm_url, '_blank');
+                        break; 
+                    }
+                    else {
+                        modal.style.display = "block";
+                        break; 
+                    }
+                    
                 }
-                window.open(ikvm_url, '_blank');
             }
         });
     }
