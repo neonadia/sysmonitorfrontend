@@ -97,6 +97,16 @@ def sumChangeBiosSettings(inputpath,filepath):
     process.communicate()
     insert_flag(0)
     return(0)
+
+def sumCheckOOB(inputpath):
+    # flag = read_flag()
+    # while(flag == 1):
+    #     flag = read_flag()
+    # insert_flag(5)
+    process = Popen('./sum -l ' + inputpath + ' -c CheckOOBSupport', shell=True, stdout=PIPE, stderr=PIPE)
+    process.communicate()
+    insert_flag(0)
+    return(0)
     
 '''
 def sumGetDmiInfo(inputpath):

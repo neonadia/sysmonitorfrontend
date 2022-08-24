@@ -21,7 +21,7 @@ from bioscomparison import compareBiosSettings, bootOrderOutput
 import pandas as pd
 import socket
 from ipaddress import ip_address
-from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess, sumRedfishAPI
+from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess, sumRedfishAPI, sumCheckOOB
 import tarfile
 from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, generateCommandInput
 from glob import iglob
@@ -2051,6 +2051,17 @@ def sumbioscompoutput():
     sum_bioscomp = sumCompBiosSettings()['compResult']
     #sumRemoveFiles('htmlBios')
     return render_template('sumbioscompoutput.html', sum_bioscomp = sum_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
+
+@app.route('/sumcheckactivation',methods=['GET', 'POST'])
+def sumcheckactivation():
+    data = {}
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+        data["response"] = "ERROR: Input file must have a filename."
+        return json.dumps(data)
+    makeSumExcutable()
+    sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
+    data["response"] = "SUCCESS: Activation check done."    
+    return json.dumps(data)
 
 @app.route('/sumbootorderdownload',methods=['GET', 'POST'])
 def sumbootorderdownload():

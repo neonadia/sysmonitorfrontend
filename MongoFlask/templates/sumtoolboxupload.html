@@ -316,6 +316,20 @@
                     <button id="sumbutton7" class="btn btn-success mr-1" disabled >DOWNLOAD</button>
                 </form>
             </div>
+
+            <div class="col">
+                <form id = "checkActivation">
+                    <h4>Option 8: Check Activation</h4>
+                          <div class="form-group row">                         
+                            <label class="col-auto col-form-label text-left font-weight-bold text-primary">
+                            ./sum &nbsp -l &nbsp <a class="text-success">InputFile</a> &nbsp --c &nbsp CheckOOBSupport
+                            </label>
+                          </div>
+                          <small id="help1" class="form-text text-muted">Used to check if OOB/DCMS license</small>
+                          <br>
+                    <a id="sumbutton8" class="btn btn-success text-white disabled" name="sumbutton8" onclick="checkOOB()" >CHECK ACTIVATION</a>
+                </form>
+            </div>
         </div>
         
         
@@ -561,7 +575,22 @@
                     }
                 }        
             }); 
-        }        
+        }
+        $.CallCheckOOB = function(){
+            $.ajax({
+                url: '/sumcheckactivation', 
+                type: 'GET',
+                dataType: "JSON",
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        addLineSum(data[key]);
+                    }
+                    document.getElementById('sumbutton8').innerHTML = "CHECK ACTIVATION";
+                    document.getElementById('sumbutton8').classList.remove('disabled');
+                }        
+            });         
+        }
         function toggleButtonLocker(){
             if (locker_flag === 1){
             document.getElementById('buttonlocker').classList.remove('btn-danger');
@@ -592,6 +621,7 @@
             document.getElementById('sumbutton2').disabled = false;
             document.getElementById('sumbutton5').classList.remove('disabled');
             document.getElementById('sumbutton7').disabled = false;
+            document.getElementById('sumbutton8').classList.remove('disabled');
             document.getElementById('unselectall').classList.remove('disabled');
         }
 
@@ -603,6 +633,7 @@
             document.getElementById('sumbutton5').classList.add('disabled');
             document.getElementById('sumbutton6').classList.add('disabled');
             document.getElementById('sumbutton7').disabled = true;
+            document.getElementById('sumbutton8').classList.add('disabled');
             document.getElementById('unselectall').classList.add('disabled');
         }      
         function uploadFile(){
@@ -668,6 +699,11 @@
             terminal.innerHTML = ""
             addLine('Info: Selecting all the IPs ...');
             $.CallAdvancedAllGenerator(inputtype,iptype);
+        }
+        function checkOOB(){
+            document.getElementById('sumbutton8').innerHTML = "RUNNING...";
+            document.getElementById('sumbutton8').classList.add('disabled');
+            $.CallCheckOOB();        
         }
         function handleFileSelect(evt) {
             var file = document.getElementById("file").files[0];
