@@ -425,12 +425,12 @@
 </table>
 </div>
 <!-- The Modal -->
-<div id="myModal" class="modal">
+<div id="index-modal" class="modal">
 
   <!-- Modal content -->
   <div class="modal-content">
     <span class="close">&times;</span>
-    <p class="font-weight-bold text-center"><span class="text-danger">ERROR:</span> UNABLE to retrive IKVM link. <br>Please check if the server's <u>LICENSE</u> has been <u>ACTIVATED</u>!</p>
+    <p class="font-weight-bold text-center" id="index-modal-content" >Opps, something went wrong!</p>
   </div>
 
 </div>
@@ -438,7 +438,7 @@
 {% include "footer.html" %}
 <script>
     // Get the modal
-    var modal = document.getElementById("myModal");
+    var modal = document.getElementById("index-modal");
 
 
     // Get the <span> element that closes the modal
@@ -478,6 +478,8 @@
                     }
                     else {
                         modal.style.display = "block";
+                        document.getElementById("index-modal-content").innerHTML = "";
+                        document.getElementById("index-modal-content").insertAdjacentHTML('beforeend','<span class="text-danger">WARNING:</span> UNABLE to retrive IKVM link. <br>Please check if the <u>DCMS</u> has been <u>ACTIVATED</u>!');                    
                         break; 
                     }
                     

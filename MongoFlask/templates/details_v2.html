@@ -611,7 +611,7 @@
                     else{
                         state = "";
                     }
-                    memory.insertAdjacentHTML('beforeend','<div class="card" id="slot' +  slot +  '"></div');
+                    memory.insertAdjacentHTML('beforeend','<div class="card" id="slot' +  slot +  '"></div>');
                     document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + slot + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="slot_btn' + slot + '"class="btn btn-link" data-toggle="collapse" data-target="#collapse' + slot  + '" aria-expanded="false" aria-controls="collapse' + slot + '">' + slot + ' ' + state + '</button></h5></div>');
                     document.getElementById('slot' + slot).insertAdjacentHTML('beforeend','<div id="collapse' + slot + '" class="collapse show" aria-labelledby="heading' + slot + '" data-parent="#mem_accordian"><div class="card-body" id="mem_data'+ slot +'"></div></div>');
                     document.getElementById('mem_data' + slot).insertAdjacentHTML('beforeend','<div class="row text-left" id="inner' + slot + '"></div>')
@@ -630,7 +630,7 @@
                 insert_row('summary_storage','<span style="font-weight:bold">Model</span>','<span style="font-weight:bold">Size</span>');
                 for(var disk in data[iter]){
                     insert_row('summary_storage',data[iter][disk]['ModelNumber'],(parseInt(data[iter][disk]['PhysicalSize']) / 1099511627776).toPrecision(1)+ ' TB')
-                    storage.insertAdjacentHTML('beforeend','<div class="card" id="disk' +  disk +  '"></div');
+                    storage.insertAdjacentHTML('beforeend','<div class="card" id="disk' +  disk +  '"></div>');
                     document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + disk + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="disk_btn' + disk + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse' + disk  + '" aria-expanded="false" aria-controls="collapse' + disk + '">Device ' + disk + '</button></h5></div>')
                     document.getElementById('disk' + disk).insertAdjacentHTML('beforeend','<div id="collapse' + disk + '" class="collapse show" aria-labelledby="heading' + disk + '" data-parent="#storage_accordian"><div class="card-body" id="disk_data'+ disk +'"></div></div>');
                     document.getElementById('disk_data' + disk).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerdisk' + disk + '"></div>')
@@ -646,7 +646,7 @@
                 insert_row_3('summary_network','<span style="font-weight:bold">Name</span>','<span style="font-weight:bold">Vendor</span>','<span style="font-weight:bold">Part Number</span>');
                 for(var nic in data[iter]){
                     insert_row_3('summary_network',data[iter][nic]['Name'],data[iter][nic]['Vendor'],data[iter][nic]['Part Number'])
-                    nics.insertAdjacentHTML('beforeend','<div class="card" id="nic' +  nic +  '"></div');
+                    nics.insertAdjacentHTML('beforeend','<div class="card" id="nic' +  nic +  '"></div>');
                     document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + nic + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="nic_btn' + nic + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseNIC' + nic  + '" aria-expanded="false" aria-controls="collapse' + nic + '">' + data[iter][nic]['PCIe Bus'] + '</button></h5></div>')
                     document.getElementById('nic' + nic).insertAdjacentHTML('beforeend','<div id="collapseNIC' + nic + '" class="collapse show" aria-labelledby="heading' + nic + '" data-parent="#network_accordian"><div class="card-body" id="nic_data'+ nic +'"></div></div>');
                     document.getElementById('nic_data' + nic).insertAdjacentHTML('beforeend','<div class="row text-left" id="innernic' + nic + '"></div>');
@@ -680,7 +680,7 @@
                     document.getElementById('gpu_manufacturer').innerHTML = 'NVIDIA';
                     document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
                     for(var gpu in data[iter]['GPU']){
-                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
+                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div>');
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
                         document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
@@ -695,7 +695,7 @@
                     document.getElementById('gpu_manufacturer').innerHTML = 'AMD';
                     document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
                     for(var gpu in data[iter]['GPU']){
-                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div');
+                        gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div>');
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div class="class-header" id="heading' + gpu + '" style="background-color: #77d0e0; border-radius: 5px;"><h5 class="mb-0"><button id="gpu_btn' + gpu + '"class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGPU' + gpu  + '" aria-expanded="false" aria-controls="collapse' + gpu + '">GPU' + gpu + '</button></h5></div>')
                         document.getElementById('gpu' + gpu).insertAdjacentHTML('beforeend','<div id="collapseGPU' + gpu + '" class="collapse show" aria-labelledby="heading' + gpu + '" data-parent="#gpu_accordian"><div class="card-body" id="gpu_data'+ gpu +'"></div></div>');
                         document.getElementById('gpu_data' + gpu).insertAdjacentHTML('beforeend','<div class="row text-left" id="innerGPU' + gpu + '"></div>');
