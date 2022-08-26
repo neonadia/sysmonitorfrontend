@@ -2059,8 +2059,8 @@ def sumcheckactivation():
         data["response"] = "ERROR: Input file must have a filename."
         return json.dumps(data)
     makeSumExcutable()
-    sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
-    data["response"] = "SUCCESS: Activation check done."    
+    data["response"] = sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
+    data["response"].append("SUCCESS: Activation check done.")   
     return json.dumps(data)
 
 @app.route('/sumbootorderdownload',methods=['GET', 'POST'])

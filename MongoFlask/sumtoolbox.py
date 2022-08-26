@@ -104,9 +104,44 @@ def sumCheckOOB(inputpath):
     #     flag = read_flag()
     # insert_flag(5)
     process = Popen('./sum -l ' + inputpath + ' -c CheckOOBSupport', shell=True, stdout=PIPE, stderr=PIPE)
-    process.communicate()
+    stdout, stderr = process.communicate()
+    all_lines = stdout.decode('utf-8').split('\n')
+    # get 2nd last line which is the log file name
+    for i in range(1, len(all_lines)+1):
+        if len(all_lines[-i].replace(' ','')) != 0:
+            log_path = all_lines[-i].strip()
+            break
+    # read log file contents
+    with open(log_path, 'r') as log:
+        log_lines = log.readlines()
+    # parse log file contents to a dict
+    result = {'Number of Nodes': 0, 'Node Product Key Activated':{}, 'SFT-DCMS-SVC-KEY Activated':{}, 'Node Product Key Format': {}, 'Feature Toggled On': {}, \
+    'BMC FW Version': {}, 'BMC Supports OOB BIOS Config': {}, 'BMC Supports OOB DMI Edit': {}, 'BIOS Build Date': {}, 'BIOS Supports OOB BIOS Config': {}, \
+    'BIOS Supports OOB DMI Edit': {}, 'System Supports RoT Feature': {}}
+    for line in log_lines:
+        line = line.replace('\n','')
+        line = line.replace('.','').strip()
+        if 'Execution Message' in line:
+            result['Number of Nodes'] += 1
+        for pre_key in result.keys():
+            if pre_key in line and pre_key != 'Number of Nodes':
+                cur_key = line.replace(pre_key,'')
+                if cur_key in result[pre_key]:
+                    result[pre_key][cur_key] += 1
+                else:
+                    result[pre_key][cur_key] = 1
+    # parse dict to a list
+    output_lines = ['-------------------------OOB CHECKING SUMMARY-------------------------']
+    for key in result.keys():
+        if key == 'Number of Nodes':
+            output_lines.append('[Number of Nodes]')
+            output_lines.append('- ' + str(result[key]))
+            continue
+        output_lines.append('[' + key + ']')
+        for sub_key in result[key]:
+            output_lines.append("- '" + sub_key + "': " + str(result[key][sub_key]))
     insert_flag(0)
-    return(0)
+    return(output_lines)
     
 '''
 def sumGetDmiInfo(inputpath):

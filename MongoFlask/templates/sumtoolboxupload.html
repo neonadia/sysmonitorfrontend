@@ -584,7 +584,9 @@
                 success: function(result){
                     var data = result;
                     for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
-                        addLineSum(data[key]);
+                        for(i = 0; i < data[key].length; i++ ){
+                            addLineSum(data[key][i]);
+                        }
                     }
                     document.getElementById('sumbutton8').innerHTML = "CHECK ACTIVATION";
                     document.getElementById('sumbutton8').classList.remove('disabled');
