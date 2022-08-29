@@ -170,6 +170,7 @@
         window.onload = function() {
             var ctx_power = document.getElementById('canvas_all_power_comsumption').getContext('2d');
             window.myLine = new Chart(ctx_power, config_power);
+            document.getElementById('defaulttime').click();
         };
 
         
@@ -280,7 +281,7 @@
             for (j=0; j <= dataset['PowerControl'].length-1; j++) {
                  n_data = [];
                  for (i=range[0]; i <= range[1]; i=i+step) {
-                    n_data.push(dataset['PowerControl'][j]['Reading'][i])
+                    n_data.push(dataset['PowerControl'][j]['Reading'][i]);
                 }
                 config_power.data.datasets[j].data = n_data;
             }
@@ -330,7 +331,6 @@
             settimerange(24)
         });
         
-        document.getElementById('defaulttime').click();
 
         document.getElementById('history').addEventListener('click',function(){
             

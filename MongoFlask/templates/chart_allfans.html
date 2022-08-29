@@ -169,6 +169,7 @@
         window.onload = function() {
             var ctx_fan = document.getElementById('canvas_all_fans').getContext('2d');
             window.myLine = new Chart(ctx_fan, config_fan);
+            document.getElementById('defaulttime').click();
         };
 
         
@@ -262,7 +263,7 @@
             for (j=0; j <= dataset[sensorname].length-1; j++) {
                  n_data = [];
                  for (i=range[0]; i <= range[1]; i=i+step) {
-                    n_data.push(dataset[sensorname][j]['Reading'][i])
+                    n_data.push(dataset[sensorname][j]['Reading'][i]);
                 }
                 config_fan.data.datasets[j].data = n_data;
             }
@@ -331,7 +332,6 @@
             settimerange(24)
         });
         
-        document.getElementById('defaulttime').click();
 
         document.getElementById('history').addEventListener('click',function(){
             

@@ -168,9 +168,9 @@
         window.onload = function() {
             var ctx_temp = document.getElementById('canvas_all_temperature').getContext('2d');
             window.myLine = new Chart(ctx_temp, config_temp);
+            document.getElementById('defaulttime').click();
         };
 
-        
         var start = dataset.datetime[0];
         var end = dataset.datetime[dataset.datetime.length - 1];
         document.getElementById("start").value = start;
@@ -201,8 +201,7 @@
         
         document.getElementById('submit').addEventListener('click', function() {
             start = document.getElementById("start").value;
-            end = document.getElementById("end").value;
-
+            end = document.getElementById("end").value;            
             const regex = /[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01][0-9]|2[0-3]):[0-5]\d:[0-5]\d$/;
             
             // If incorrect format
@@ -260,7 +259,7 @@
             for (j=0; j <= dataset[sensorname].length-1; j++) {
                  n_data = [];
                  for (i=range[0]; i <= range[1]; i=i+step) {
-                    n_data.push(dataset[sensorname][j]['Reading'][i])
+                    n_data.push(dataset[sensorname][j]['Reading'][i]);
                 }
                 config_temp.data.datasets[j].data = n_data;
             }
@@ -328,7 +327,6 @@
             settimerange(24)
         });
         
-        document.getElementById('defaulttime').click();
         
 
 
