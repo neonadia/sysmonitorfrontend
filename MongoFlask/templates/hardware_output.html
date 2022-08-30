@@ -554,9 +554,16 @@
                 var data = result;
                 var ikvm_id = "ikvm_url:" + val1
                 for(var key in data){
-                    ikvm_url = "https://" + data[key]; 
+                    if (data[key] != "unknown") {
+                        ikvm_url = "https://" + data[key]; ///Replace text in button with return value from python script
+                        window.open(ikvm_url, '_blank');
+                        break; 
+                    }
+                    else {                       
+                        alert('UNABLE to retrive IKVM link. Please check if the OOB/DCMS has been ACTIVATED!');                    
+                        break; 
+                    }                   
                 }
-                window.open(ikvm_url, '_blank');
             }
         });
     }

@@ -113,8 +113,10 @@ for file in os.listdir(inputdir):
 print("'found' is :" + str(found), file=sys.stdout, flush=True)
 print(OS + " " + GPU, file=sys.stdout, flush=True) #For debug
 ##### GET HOST NAMES FROM DIRECTORIES and Parse through data
+
+supported_os = ["ubuntu", "centos", "fedora", "rocky", "rocky linux"]
 if found:
-    if OS == "ubuntu" or OS == "centos" or OS == "fedora" or OS == "rocky linux": #### Supported distribution in this case 
+    if OS.lower() in supported_os: #### Supported distribution in this case 
         print("Parsing hw info for..." + OS,flush = True)
         x = collection.delete_many({})
         print("Cleaning collection for new data.......",flush=True)

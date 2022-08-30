@@ -37,7 +37,7 @@ for i in hostname_list: ### Convert MAC address to xx-xx-xx-xx-xx format
     elif ":" not in i and "-" not in i: 
         new = ""
         for x in range(len(i)):
-            if x == 2 or x == 4 or x == 6 or x == 8 or x == 10:
+            if x%2 == 0 and x in range(2,11):
                 new += "-"
                 new += i[x]
             else:
