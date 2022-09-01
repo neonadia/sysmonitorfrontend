@@ -24,6 +24,7 @@ import string
 import gridfs
 import cv2
 import numpy as np
+from subprocess import Popen, PIPE
 
 class ConditionalSpacer(Spacer):
 
@@ -96,6 +97,25 @@ def get_image(path, height=1*cm, width=1*cm): # maximize the size of photo
         new_height = width*aspect        
     return Image(path, width=new_width, height=new_height)
 
+def is_bmc_static(bmc_ip, password):
+    process = Popen(f"ipmitool -H {bmc_ip} -U ADMIN -P {password} lan print | grep 'IP Address Source'", shell=True, stdout=PIPE, stderr=PIPE)
+    try:
+        stdout, stderr = process.communicate(timeout=5)
+    except Exception as e:
+        printf(e)
+        return 3
+    output_string = stdout.decode("utf-8").lower()
+    if 'static' in output_string:
+        return 0
+    elif 'dhcp' in output_string:
+        return 1
+    printf('----------------is_bmc_static stdout--------------------')
+    printf(stdout.decode("utf-8"))
+    printf('----------------is_bmc_static stderr--------------------')
+    printf(stderr.decode("utf-8"))
+    printf('----------------is_bmc_static end--------------------')
+    return 2
+
 mongoport = int(os.environ['MONGOPORT']) # using in jupyter: 8888
 rackname = os.environ['RACKNAME'].upper() 
 client = MongoClient('localhost', mongoport) # using in jupyter: change localhost to 172.27.28.15
@@ -119,6 +139,7 @@ benchmark_data = []
 benchmark_unit = []
 result_name = []
 benchmark_name = {}
+sum_info = []
 
 for data in list(collection2.find({})):
     if data['star'] != 1:
@@ -207,6 +228,10 @@ for i in collection.find({}):
         biosVersion.append(i['UpdateService']['SmcFirmwareInventory']['2']['Version'])
     except:
         biosVersion.append('N/A')
+    try:
+        sum_info.append(i['SUM'])
+    except:
+        sum_info.append('N/A')
         
 serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount = ([] for i in range(8))
 
@@ -253,16 +278,26 @@ for j in collection.find({}):
     except:
         driveCount.append('N/A')
 
-
-res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, bmc_ip, biosVersion, bmcVersion, timestamp)]
-res2 = [list(j) for j in zip(serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount)]
-
+df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+bmc_ip_table = []
 for ip in bmc_ip:
     if 'N/A' not in bmc_ip:
-        df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         MacAddress.append(df_pwd[df_pwd['ip'] == ip]['mac'].values[0])
     else:
         MacAddress.append('N/A')
+    bmc_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+    if is_bmc_static(ip, bmc_pwd) == 0:
+        bmc_ip_table.append(ip)
+    elif is_bmc_static(ip, bmc_pwd) == 1:
+        bmc_ip_table.append('DHCP')
+    elif is_bmc_static(ip, bmc_pwd) == 2:
+        bmc_ip_table.append(ip + '*')
+    else:
+        bmc_ip_table.append(ip + '**')    
+
+res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, bmc_ip_table, biosVersion, bmcVersion, timestamp)]
+res2 = [list(j) for j in zip(serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount)]
+
 try:
     max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name  =\
     find_min_max_rack("1", "PowerControl", "PowerConsumedWatts", 9999, bmc_ip)
@@ -826,7 +861,7 @@ class Test(object):
         #Summary and Hardware Tables
         ## column names
         text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
-        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "DIMM Count", "Drive Model", "Drive Count"]
+        text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "#", "Ext-Drive", "#"]
 
         d = []
         d2 = []
@@ -867,20 +902,21 @@ class Test(object):
             formatted_line_data = []
             line_num2 += 1
 
-        table = Table(data, colWidths=[95, 90, 60, 75, 80, 80, 50])
+        table = Table(data, colWidths=[92, 90, 60, 75, 80, 80, 53])
         table.setStyle(TableStyle([
             ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
             ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
         ]))
-        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Cluster Summary</link> 
+        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Summary</link> 
 / <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">HW Counts</link> 
 / <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">HW Per Node</link> 
 / <link href="#TOPO_TITLE"color="blue" fontName="Helvetica-Bold">PCI TOPO</link>
 / <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
 / <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark</link>
-/ <link href="#Archive"color="blue" fontName="Helvetica-Bold">Archive</link>"""
+/ <link href="#PN&SN"color="blue" fontName="Helvetica-Bold">PN & SN</link>
+/ <link href="#License"color="blue" fontName="Helvetica-Bold">License</link>"""
         
         ptext2 = """<a name="TABLE2"/><font color="black" size="12"><b>Hardware Counts and Models """ + rackname + """</b></font>"""
         ptext1 = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Summary for """ + rackname + """</b></font>"""
@@ -909,7 +945,7 @@ class Test(object):
         ptext_schema_intro = """
         SMC HPC cluster aims to provide high-performance, high-efficiency server, storage technology and Green Computing.<br />
         The image below is a showcase of cluster during L12 testing. Followed by the hardware information and benchmark results.<br />
-        For more information about this product, please visit our offical website: <link href="#Archive"color="blue">https://www.supermicro.com/</link>         
+        For more information about this product, please visit our offical website: <link href="https://www.supermicro.com/"color="blue">https://www.supermicro.com/</link>         
         """.format(rackname)
         cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
         self.story.append(cluster_schema_intro)
@@ -1459,7 +1495,7 @@ class Test(object):
 
         ########################################All Parts' Serial Number summary##################################################
         self.story.append(PageBreak())
-        ptext_hn = """<a name="Archive"/><font color="black" size="12"><b>Archive: all parts' Part Number (PN), Serial Number (SN) and Firmware (FW)</b></font>"""
+        ptext_hn = """<a name="PN&SN"/><font color="black" size="12"><b>Archive: all parts' Part Number (PN), Serial Number (SN) and Firmware (FW)</b></font>"""
         hn_title = Paragraph(ptext_hn, centered)
         hn_title.keepWithNext = True
         self.story.append(hn_title) 
@@ -1528,6 +1564,51 @@ class Test(object):
             """
             hardware_node_nodata = Paragraph(ptext_sn_nodata, warning)
             self.story.append(hardware_node_nodata)
+            
+        ########################################Activation summary##################################################
+        self.story.append(PageBreak())
+        ptext_oob = """<a name="License"/><font color="black" size="12"><b>Archive: System Activation Status</b></font>"""
+        oob_title = Paragraph(ptext_oob, centered)
+        oob_title.keepWithNext = True
+        self.story.append(oob_title) 
+        self.story.append(p)
+
+        if 'N/A' not in sum_info and len(sum_info) == len(MacAddress) and len(serialNumber) == len(sum_info):
+            ## Create header with column names
+            d5 = []
+            oob_columns = ["Serial Number", "MAC"]
+            oob_columns += list(sum_info[0].keys())
+            for text in oob_columns:
+                ptext = f"<font size={font_size-3}><b>{text}</b></font>"
+                p5 = Paragraph(ptext, centered)
+                d5.append(p5)
+            data5 = [d5]
+            for cur_sum, mac, sn in zip(sum_info, MacAddress, serialNumber):
+                print(cur_sum)
+                p5_cur = []
+                p5_cur.append(Paragraph(f"<font size={font_size-2}>{sn}</font>", centered))
+                p5_cur.append(Paragraph(f"<font size={font_size-2}>{mac}</font>", centered))
+                for k, v in cur_sum.items():
+                    ptext_cur = f"<font size={font_size-2}>{v}</font>"
+                    p5_cur.append(Paragraph(ptext_cur, centered))
+                data5.append(p5_cur)
+            table5 = Table(data5, colWidths=[87, 87, 87, 87, 87])
+            table5.setStyle(TableStyle([
+                    ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+                    ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                    ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data5),colors.lightgrey,colors.lightblue))
+                ]))  
+            self.story.append(KeepTogether([spacer_tiny,table5]))
+        else:
+            ptext_OOB_nodata = """
+            Warning: No SUM info can be found in Database:<br />
+            1. Please verify if SUM info has been inserted to the Database.<br />
+            2. Try rerun the L12-CM to see if it is working.<br />
+            """
+            OOB_nodata = Paragraph(ptext_OOB_nodata, warning)
+            self.story.append(OOB_nodata)
+
 #----------------------------------------------------------------------
 if __name__ == "__main__":
     t = Test()
