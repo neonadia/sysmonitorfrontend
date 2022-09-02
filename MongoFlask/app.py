@@ -539,7 +539,7 @@ def details():
     NoneType = type(None)
     if isinstance(data,NoneType) == False:        
         cur = collection.find_one({"BMC_IP": ip},{"BMC_IP":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, \
-        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})        
+        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SUM":1, "_id":0})        
         cpld_ver = cur.get('CPLDVersion','N/A')
         try:
             bmc_ver = cur['UpdateService']['SmcFirmwareInventory']['1']['Version']
@@ -549,6 +549,12 @@ def details():
             bios_ver = cur['UpdateService']['SmcFirmwareInventory']['2']['Version']
         except:
             bios_ver = 'N/A'
+        data['License'] = {1: {}}
+        try:
+            for sum_key, sum_val in cur['SUM'].items():
+                data['License'][1][sum_key] = sum_val
+        except:
+            data.pop('License', None)
         data['Firmware'] = {1: {'BIOS Version': bios_ver, 'BMC Version': bmc_ver, 'CPLD Version': cpld_ver}}
         return render_template('details_v2.html', data=json.dumps(data),allips=allips, ip=ip,rackname=rackname,bmc_ip = ip,gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,\
         dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl)

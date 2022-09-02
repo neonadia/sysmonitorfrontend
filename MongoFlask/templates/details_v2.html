@@ -297,6 +297,18 @@
                     <div class="w-100"></div>          
                 </div>
             </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_license" hidden>
+                <div class="row text-left" id="summary_license">
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">License</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
+            <div class="container specs border" style="border-radius: 5px;" id="sum_cont_firmware" hidden>
+                <div class="row text-left" id="summary_firmware">
+                    <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Firmware</div>       
+                    <div class="w-100"></div>          
+                </div>
+            </div>
             <div class="container specs border" style="border-radius: 5px;" id="sum_cont_chassis" hidden>
                 <div class="row text-left" id="summary_chassis">
                     <div class="col" style="background-color: #77d0e0; border-radius: 5px;">Chassis</div>       
@@ -567,14 +579,24 @@
                 }
             }
             else if(iter == "Firmware"){
-                document.getElementById('sum_cont_chassis').removeAttribute('hidden');
+                document.getElementById('sum_cont_firmware').removeAttribute('hidden');
                 insert_row_1('system','<div class="col d-flex justify-content-center menu-header">Firmware</div><div class="w-100"></div>');
                 for(var firmware in data[iter]){
                     for(var fw_detail in data[iter][firmware]){
                         if(fw_detail == 'CPLD Version' || fw_detail == "BMC Version" || fw_detail == "BIOS Version"){
-                            insert_row('summary_system',fw_detail,data[iter][firmware][fw_detail]);
+                            insert_row('summary_firmware',fw_detail,data[iter][firmware][fw_detail]);
                         }
                         insert_row('system',fw_detail,data[iter][firmware][fw_detail]);
+                    }
+                }           
+            }
+            else if(iter == "License"){
+                document.getElementById('sum_cont_license').removeAttribute('hidden');
+                insert_row_1('system','<div class="col d-flex justify-content-center menu-header">License</div><div class="w-100"></div>');
+                for(var lic in data[iter]){
+                    for(var lic_detail in data[iter][lic]){
+                        insert_row('summary_license',lic_detail,data[iter][lic][lic_detail]);
+                        insert_row('system',lic_detail,data[iter][lic][lic_detail]);
                     }
                 }           
             }
