@@ -3792,6 +3792,7 @@ def developmentnote06022022():
 ### Report Generation ###
 @app.route('/downloadClusterReport')
 def downloadClusterReport():
+    pdf_start = time.perf_counter()
     os.system("chmod +wx cluster_report.py")
     try:
         os.remove("cluster_report.pdf")
@@ -3803,6 +3804,8 @@ def downloadClusterReport():
         return render_template('error.html',error=e)
     while not os.path.isfile("cluster_report.pdf"):
         time.sleep(1)
+    pdf_end = time.perf_counter()
+    printf("Info: PDF report generation took " + str(pdf_end - pdf_start) + " secs")
     return send_file("cluster_report.pdf",cache_timeout=0)
 
 ### Report Generation ###

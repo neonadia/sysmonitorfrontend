@@ -98,6 +98,8 @@ def get_image(path, height=1*cm, width=1*cm): # maximize the size of photo
     return Image(path, width=new_width, height=new_height)
 
 def is_bmc_static(bmc_ip, password):
+    if os.environ['POWERDISP'] != 'ON' and os.environ['UIDDISP'] != 'ON':
+        return 3
     process = Popen(f"ipmitool -H {bmc_ip} -U ADMIN -P {password} lan print | grep 'IP Address Source'", shell=True, stdout=PIPE, stderr=PIPE)
     try:
         stdout, stderr = process.communicate(timeout=5)
