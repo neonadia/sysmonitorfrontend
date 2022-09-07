@@ -32,13 +32,13 @@ import matplotlib.pyplot as plt
 from flask_debugtoolbar import DebugToolbarExtension
 import concurrent.futures
 from benchmark_parser import parseInput, resultParser, clean_mac, mac_with_seperator
-import secrets
 import flask_monitoringdashboard as dashboard
 from io import StringIO
 import gridfs
 import cv2
 import numpy as np
 import shutil
+from session_checker import udp_session_checker, sum_session_checker, telemetry_session_checker, redfish_session_checker
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -55,6 +55,7 @@ hardware_collection = db.hw_data
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 redfish_session_info = {'state': 'inactive', 'guid' : 'n/a'}
+telemetry_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 err_list = ['Critical','critical','AER','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Failure','failure','Failed','failed','Processor','processor','Security','security','thermal','Thermal','throttle','Throttle','Limited','limited'] # need more key words
 IPMIdict = {"#0x09": " Inlet Temperature"} # add "|" if neccessary
 
@@ -149,6 +150,9 @@ def cluster_metrics():
 
 @app.route('/system_telemetry')
 def system_telemetry():
+    if not telemetry_session_checker(telemetry_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the System Telemetry has been detected.", "Someone might be using this page.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+        return render_template('simpleresult.html',messages = error)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     bmc_ip = []
     mac_list = []
@@ -158,7 +162,17 @@ def system_telemetry():
         bmc_ip.append(i['BMC_IP'])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
     data = zip(mac_list,bmc_ip)
-    return render_template('system_telemetry.html',rackobserverurl = rackobserverurl, rackname = rackname, data = data, frontend_urls = get_frontend_urls())
+    return render_template('system_telemetry.html',rackobserverurl = rackobserverurl, rackname = rackname, data = data, frontend_urls = get_frontend_urls(), session_auth = telemetry_session_info['guid'])
+
+@app.route('/telemetry_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
+def telemetry_session_handler():
+    if request.method == 'POST':
+        telemetry_session_info['state'] = request.form['session_state']
+        telemetry_session_info['guid'] = request.form['session_guid']
+        printf('Updating telemetry Session info to...')
+        printf("state: " + telemetry_session_info['state'])
+        printf("guid: " + telemetry_session_info['guid'])
+    return 'updated session info'
 
 @app.route('/udp_session_handler',methods = ['POST']) ##### Get UDP Session information on page close
 def udp_sesssion_handler():
@@ -957,23 +971,6 @@ def systemresetone(data_list):
         with open(rstatuspath, 'a') as rprint:
             rprint.write(time.asctime() + ": " + data_list[0] + " period count down finished...\n")
 
-def redfish_session_creator():
-    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
-    if redfish_session_info['state'] == 'active':
-        printf("Failed to create new sum_server session")
-        printf("Current RedFish Session info is:")
-        printf("state: " + redfish_session_info['state'])
-        printf("guid: " + redfish_session_info['guid'])
-        return False
-    else:
-        url_saf = secrets.token_urlsafe(8)
-        redfish_session_info['state'] = 'active'
-        redfish_session_info['guid'] = url_saf
-        printf("Creating new RedFish session")
-        printf("state: " + redfish_session_info['state'])
-        printf("guid: " + redfish_session_info['guid'])
-        return True
-
 @app.route('/biosupload',methods=["GET","POST"])
 def biosupload():
     savepath = os.environ['UPLOADPATH']
@@ -990,16 +987,16 @@ def biosupload():
 
 @app.route('/biosupdate',methods=["GET","POST"])
 def biosupdate():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not redfish_session_checker(redfish_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller has been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     ip = request.args.get('var')
     return render_template('biosupdate.html',ip=ip,rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
 @app.route('/biosupdaterack',methods=["GET","POST"])
 def biosupdaterack():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not redfish_session_checker(redfish_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller has been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     return render_template('biosupdaterack.html',numOfNodes=len(getIPlist()),rackname=rackname,rackobserverurl = rackobserverurl, session_auth = redfish_session_info['guid'])
 
@@ -1113,8 +1110,8 @@ def bmcupload():
 
 @app.route('/bmcupdaterack',methods=["GET","POST"])
 def bmcupdaterack():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not redfish_session_checker(redfish_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller has been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     ip = str(request.args.get('var'))
     if ip == "ALL":
@@ -1979,27 +1976,10 @@ def sumlogtermial():
             response['log_lines'].append(line)
     return json.dumps(response)
 
-def sum_session_creator():
-    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
-    if sum_session_info['state'] == 'active':
-        printf("Failed to create new sum_server session")
-        printf("Current SUM Session info is:")
-        printf("state: " + sum_session_info['state'])
-        printf("guid: " + sum_session_info['guid'])
-        return False
-    else:
-        url_saf = secrets.token_urlsafe(8)
-        sum_session_info['state'] = 'active'
-        sum_session_info['guid'] = url_saf
-        printf("Creating new sum_server session")
-        printf("state: " + sum_session_info['state'])
-        printf("guid: " + sum_session_info['guid'])
-        return True
-
 @app.route('/sumtoolboxupload',methods=['GET', 'POST'])
 def sumtoolboxupload():
-    if not sum_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the SUM server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not sum_session_checker(sum_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the SUM server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -2019,8 +1999,8 @@ def sumtoolboxupload():
 
 @app.route('/sumtoolboxterminal')
 def sumtoolboxterminal():
-    if not sum_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the SUM server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not sum_session_checker(sum_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the SUM server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -2228,8 +2208,8 @@ def sumbiossettingschangeoutput():
      
 @app.route('/bioscomparisonoutput')
 def bioscomparisonoutput():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not redfish_session_checker(redfish_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
@@ -2240,8 +2220,8 @@ def bioscomparisonoutput():
 
 @app.route('/bootorderoutput')
 def bootorderoutput():
-    if not redfish_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the RedFish API server controller have been detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+    if not redfish_session_checker(redfish_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the RedFish API server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     df_path = os.environ['OUTPUTPATH']
     while not os.path.exists(df_path):
@@ -2401,8 +2381,8 @@ def udp_command_testor():
 
 @app.route('/UDP_commandline')
 def UDP_commandline():
-    if not udp_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the UDP server controller have been detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
+    if not udp_session_checker(udp_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the UDP server controller has detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
@@ -2463,27 +2443,10 @@ def udp_command_start():
                     output[cur_ip + " - " + cur_msg['MAC']]['output'][i] = msg
     return json.dumps(output)
 
-def udp_session_creator():
-    time.sleep(0.100) ##### Fixes timing issue between page close and page reload
-    if udp_session_info['state'] == 'active':
-        printf("Failed to create new udp_server session")
-        printf("Current UDP Session info is:")
-        printf("state: " + udp_session_info['state'])
-        printf("guid: " + udp_session_info['guid'])
-        return False
-    else:
-        url_saf = secrets.token_urlsafe(8)
-        udp_session_info['state'] = 'active'
-        udp_session_info['guid'] = url_saf
-        printf("Creating new udp_server session")
-        printf("state: " + udp_session_info['state'])
-        printf("guid: " + udp_session_info['guid'])
-        return True
-
 @app.route('/udpserverupload')
 def udpserverupload():
-    if not udp_session_creator(): #### Check if a session is active...
-        error = ["ERROR: An instance of the UDP server controller have been detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
+    if not udp_session_checker(udp_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the UDP server controller has detected", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open"]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
