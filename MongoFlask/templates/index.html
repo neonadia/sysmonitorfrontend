@@ -282,16 +282,16 @@
             {% endif %}
             <td class="align-middle font-weight-bold text-success" id= "{{row[0]}}udp" >{{ row[11] }}</td> 
             {% if "OFF" in row[14]%}
-                <td class="col col-auto">
-                    <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" style="width: 120px"  id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
+                <td width="5%">
+                    <button type="button" class="btn btn-info btn-small btn-block font-weight-bold" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>  
             {% elif "BLINKING" in row[14]%}    
-                <td class="col col-auto">
-                    <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" style="width: 120px" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
+                <td width="5%">
+                    <button type="button" class="btn btn-success btn-small btn-block font-weight-bold" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>      
             {% else %}
-                <td class="col col-auto">
-                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold " style="width: 120px " id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
+                <td width="5%">
+                    <button type="button" class="btn btn-danger btn-small btn-block font-weight-bold" id="{{row[0]}}" onclick=" writeValue(document.getElementById('{{row[0]}}').innerHTML,'{{row[0]}}');" >{{row[14]}}</button>
                 </td>  
             {% endif %}
             <td class="align-middle font-weight-bold" ><a class="fas fa-server" href="{{ url_for('details') }}?var={{row[0]}}" style="font-size: 30px" target="_blank"></a></td>
