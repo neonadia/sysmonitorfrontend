@@ -206,7 +206,7 @@
                     <a href="javascript:void(0)" onclick="get_ikvm('{{row[0]}}')">{{ row[0] }}</a>
                 </td> -->
             {%else%}
-                <td class="align-middle font-weight-bold" >{{ row[16] }}</td>
+                <td class="align-middle font-weight-bold" >{{ row[17] }}</td>
                 <td class="align-middle">
                     <div class="dropdown dropright">  
                         <a class="font-weight-bold"  href="" id="dropdownMenuButton3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
@@ -309,10 +309,10 @@
                         href= ""
                     ></a>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        {% if 'false' in show_names or 'No Value' in row[16] %}
+                        {% if 'false' in show_names or 'No Value' in row[17] %}
                             <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[0]}} Sensors</a>
                         {%else%}
-                            <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[16]}} - {{row[0]}} Sensors</a>
+                            <a class="dropdown-item align-items-center" href="{{ url_for('showipmisensor') }}?var={{row[0]}}">{{row[17]}} - {{row[0]}} Sensors</a>
                         {%endif%}
                         <div class="dropdown-divider"></div>
                         <li>
@@ -546,9 +546,6 @@
             dom: "<Bfr<t><'row'<'col-md-6'l><'col-md-6'p>>>", 
             stateSave: true,
             stateDuration: 600,
-            columnDefs: [
-              {targets: [3,4,6], visible: false}
-            ],
             buttons: [
                        'colvis','excel','copy'
             ],
