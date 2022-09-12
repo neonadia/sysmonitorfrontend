@@ -98,7 +98,7 @@ def sumChangeBiosSettings(inputpath,filepath):
     insert_flag(0)
     return(0)
 
-def sumCheckOOB(inputpath):
+def sumCheckOOB(inputpath): # License Key checking
     # flag = read_flag()
     # while(flag == 1):
     #     flag = read_flag()
@@ -130,7 +130,7 @@ def sumCheckOOB(inputpath):
                     result[pre_key][cur_key] += 1
                 else:
                     result[pre_key][cur_key] = 1
-    # parse dict to a list
+    # parse dict to a list for print out
     output_lines = ['-------------------------OOB CHECKING SUMMARY-------------------------']
     for key in result.keys():
         if key == 'Number of Nodes':
@@ -141,7 +141,38 @@ def sumCheckOOB(inputpath):
         for sub_key in result[key]:
             output_lines.append("- '" + sub_key + "': " + str(result[key][sub_key]))
     insert_flag(0)
-    return(output_lines)
+    
+    # parse log file contents for mongodb inserting
+    ## trim the unnecessary information
+    log_lines_trim = []
+    sep_nums = []
+    for i, line in enumerate(log_lines):
+        log_lines_trim.append(line.replace('\n','').strip())
+        if 'Execution Message' in line:
+            sep_nums.append(i)
+    sep_nums.append(len(log_lines)-1)            
+    ## sep_num to sep_range
+    sep_range = [] # [(1,10),(10,15)....]
+    for i, j in enumerate(sep_nums):
+        if i < len(sep_nums)-1:
+            sep_range.append((j,sep_nums[i+1]))
+    ## seperate the lines into parts
+    log_lines_trim_parts = [] # [[ info of BMC1 ],[ info of BMC2 ],....]
+    for t in sep_range:
+        log_lines_trim_parts.append(log_lines_trim[t[0]:t[1]])
+    result_sum = {}
+    sample_dict = {'Node Product Key Activated':'N/A', 'Node Product Key Format':'N/A', 'Feature Toggled On': 'N/A'}
+    for p in log_lines_trim_parts:
+        for i, l in enumerate(p):
+            if 'System Name' in l:
+                cur_bmc_ip = p[i+1]
+                result_sum[cur_bmc_ip] = sample_dict
+                print(f'({cur_bmc_ip}) Fetching Activation Info using SUM ...')
+        for l in p:
+            for key in sample_dict:
+                if key in l and len(l) > 33:
+                    result_sum[cur_bmc_ip][key] = l[33::]
+    return(output_lines, result_sum)
     
 '''
 def sumGetDmiInfo(inputpath):

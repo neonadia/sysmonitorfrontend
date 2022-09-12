@@ -366,7 +366,7 @@ def indexHelper(bmc_ip_auth):
 @app.route('/')
 def index():
     bmc_ip, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
-    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth = ([] for i in range(24))
+    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey = ([] for i in range(25))
     current_flag = read_flag()
     if current_flag == 0:
         monitor = "IDLE "
@@ -382,7 +382,8 @@ def index():
         monitor = "SUM in use "
     else:
         monitor = "UNKOWN "                   
-    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "_id":0})#.limit(50)
+    cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, \
+    "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SUM": 1, "_id":0})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
@@ -405,6 +406,10 @@ def index():
             biosVersion.append(i['UpdateService']['SmcFirmwareInventory']['2']['Version'])
         except:
             biosVersion.append("Not Avaliable")
+        try:
+            licenseKey.append(i['SUM']['Node Product Key Activated'])
+        except:
+            licenseKey.append("N/A") # Archive MongoDB might not contain SUM
         current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == i['BMC_IP']]['pwd'].values[0])
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
@@ -438,7 +443,7 @@ def index():
     except Exception as e:
         printf(e)
         show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey)
     else:
         no_name_count = 0
         for i in bmc_ip:
@@ -447,7 +452,7 @@ def index():
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,node_names)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names)
 
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
@@ -2045,8 +2050,11 @@ def sumcheckactivation():
         data["response"] = "ERROR: Input file must have a filename."
         return json.dumps(data)
     makeSumExcutable()
-    data["response"] = sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
-    data["response"].append("SUCCESS: Activation check done.")   
+    data["response"], sum_license_dict = sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
+    data["response"].append("SUCCESS: Activation check done.")
+    # insert latest results to the database
+    for k, v in sum_license_dict.items():
+        collection.update_one({"BMC_IP" :k },{"$set": {"SUM":v}})
     return json.dumps(data)
 
 @app.route('/sumbootorderdownload',methods=['GET', 'POST'])
