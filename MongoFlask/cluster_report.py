@@ -35,7 +35,29 @@ class ConditionalSpacer(Spacer):
 def printf(data):
     print(data, flush=True)
 
-def getSerialNumberFromOsip(ip,opt):
+def getSerialNumberFromIP(ip,opt):
+    df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
+    if opt == 0:
+        bmc_ip = df_all[df_all['OS_IP'] == ip]['IPMI_IP'].values[0]
+    elif opt == 1:
+        bmc_ip =  ip
+    # first search from hw_data collection 
+    if 'hw_data' in list_of_collections:    
+        result_hw = db.hw_data.find_one({"bmc_ip": "172.27.28.51"},{"System.1.Serial Number":1,"_id":0})
+        if result_hw != None and result_hw != "N/A" and result_hw != "NA":
+            return result_hw['System']['1']['Serial Number']
+    # Then search from server collection, if not search from input csv file
+    result_server = collection.find_one({"BMC_IP": bmc_ip},{"Systems.1.SerialNumber":1,"_id":0})    
+    if result_server == None:
+        printf(f'Warning: cannot get any information for {bmc_ip} from database (redfish API), reading it from csv file')
+        return getSerialNumberFromFile(i['BMC_IP'],1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A    
+    elif result_server['Systems']['1']['SerialNumber'] == 'NA' or result_server['Systems']['1']['SerialNumber'] == 'N/A':
+        printf('Warning: cannot get serial number from database (redfish API), reading it from csv file')
+        return getSerialNumberFromFile(i['BMC_IP'],1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A
+    else:
+        return result_server['Systems']['1']['SerialNumber']
+            
+def getSerialNumberFromFile(ip,opt):
     df_all = pd.read_csv(os.environ['UPLOADPATH'] + os.environ['RACKNAME']+'.csv')
     if opt == 0:
         return(df_all[df_all['OS_IP'] == ip]['System S/N'].values[0])
@@ -179,7 +201,7 @@ for i, bm in enumerate(list(benchmark_map.keys())):
             continue
         elif data['star'] == 1 and data['benchmark'] == bm.split('|')[0] and counter < len(benchmark_map[bm]):
             try:
-                benchmark_node[i].append(getSerialNumberFromOsip(data['os_ip'],0))
+                benchmark_node[i].append(getSerialNumberFromIP(data['os_ip'],0))
             except:
                 benchmark_node[i].append('N/A')
             try:
@@ -215,7 +237,7 @@ for i in collection.find({}):
     except:
         bmcMacAddress.append('N/A')
     try:
-        serialNumber.append(getSerialNumberFromOsip(i['BMC_IP'],1))
+        serialNumber.append(getSerialNumberFromIP(i['BMC_IP'],1))
     except:
         serialNumber.append('N/A')
     try:
@@ -239,7 +261,7 @@ serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, d
 
 for j in collection.find({}):
     try:
-        serialNum.append(getSerialNumberFromOsip(j['BMC_IP'],1))
+        serialNum.append(getSerialNumberFromIP(j['BMC_IP'],1))
     except:
         serialNum.append('N/A')
     try:
