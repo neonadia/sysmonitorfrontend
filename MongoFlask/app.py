@@ -2047,7 +2047,7 @@ def sumbioscompoutput():
 def sumcheckactivation():
     data = {}
     if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
-        data["response"] = "ERROR: Input file must have a filename."
+        data["response"] = ["ERROR: Input file must have a filename."]
         return json.dumps(data)
     makeSumExcutable()
     data["response"], sum_license_dict = sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
