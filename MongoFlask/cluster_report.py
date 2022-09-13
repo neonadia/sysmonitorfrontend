@@ -40,20 +40,22 @@ def getSerialNumberFromIP(ip,opt):
     if opt == 0:
         bmc_ip = df_all[df_all['OS_IP'] == ip]['IPMI_IP'].values[0]
     elif opt == 1:
-        bmc_ip =  ip
+        bmc_ip = ip
     # first search from hw_data collection 
     if 'hw_data' in list_of_collections:    
-        result_hw = db.hw_data.find_one({"bmc_ip": "172.27.28.51"},{"System.1.Serial Number":1,"_id":0})
-        if result_hw != None and result_hw != "N/A" and result_hw != "NA":
+        result_hw = db.hw_data.find_one({"bmc_ip": bmc_ip},{"System.1.Serial Number":1,"_id":0})
+        if result_hw != None and result_hw['System']['1']['Serial Number'] != "N/A" and result_hw['System']['1']['Serial Number'] != "NA":
             return result_hw['System']['1']['Serial Number']
+        else:
+            printf(f'Cluster Rreport Warning: cannot get serial number for {bmc_ip} from database (DMIDECODE), will try redfish API')
     # Then search from server collection, if not search from input csv file
     result_server = collection.find_one({"BMC_IP": bmc_ip},{"Systems.1.SerialNumber":1,"_id":0})    
     if result_server == None:
-        printf(f'Warning: cannot get any information for {bmc_ip} from database (redfish API), reading it from csv file')
-        return getSerialNumberFromFile(i['BMC_IP'],1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A    
+        printf(f'Cluster Rreport Warning: cannot get any information for {bmc_ip} from database (redfish API), reading it from csv file')
+        return getSerialNumberFromFile(bmc_ip,1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A    
     elif result_server['Systems']['1']['SerialNumber'] == 'NA' or result_server['Systems']['1']['SerialNumber'] == 'N/A':
-        printf('Warning: cannot get serial number from database (redfish API), reading it from csv file')
-        return getSerialNumberFromFile(i['BMC_IP'],1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A
+        printf(f'Cluster Rreport Warning: cannot get serial number for {bmc_ip} from database (redfish API), reading it from csv file')
+        return getSerialNumberFromFile(bmc_ip,1) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A
     else:
         return result_server['Systems']['1']['SerialNumber']
             
