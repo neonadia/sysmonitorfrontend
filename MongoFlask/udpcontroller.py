@@ -30,9 +30,6 @@ def getMessage_dictResponse(json_path,mac_os,state):
     response = {}
     found = False
     latest_state = state
-    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])       
-    ip_list = list(df_pwd['os_ip'])
-    mac_list = list(df_pwd['mac'])
     for i in range(4):
         if fileEmpty(json_path) == False:
             found = True
@@ -43,8 +40,6 @@ def getMessage_dictResponse(json_path,mac_os,state):
         for i in range(len(mac_os)):
             response[mac_os[i][1]] = 'Error: Initialization needed, File not found!'
     else:
-        for ip in ip_list:
-            response[ip] = "OFFLINE"
         if latest_state == "ONLINE":
             for iterations in range(10):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
@@ -52,9 +47,9 @@ def getMessage_dictResponse(json_path,mac_os,state):
                     data = json.load(json_file)
                     for mac in data.keys():
                         mac_cut = mac.replace(':','').upper()
-                        for i,selected_mac in enumerate(mac_list):
-                            if mac_cut == selected_mac:
-                                selected_ip = ip_list[i]
+                        for selected_mac in mac_os:
+                            if mac_cut == selected_mac[0]:
+                                selected_ip = selected_mac[1]
                                 if latest_state in data[mac]['log'][-1]['data'] or "RESTART" in data[mac]['log'][-1]['data']:
                                     response[selected_ip] = data[mac]['log'][-1]['data'] + " : " +  data[mac]['log'][-1]['time']
                 for r in response:
@@ -63,7 +58,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
                 if client_state_checking_done:
                     break
                 time.sleep(2)
-        elif latest_state == "latest":
+        elif latest_state == "latest": # Reading the latest states
             printf("Reading UDP Host file, getting last log msg...")
             with open(json_path) as json_file:
                 data = json.load(json_file)
@@ -73,7 +68,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
                         if mac_cut == selected_mac[0]:
                             selected_ip = selected_mac[1]
                             response[selected_ip] = data[mac]['log'][-1]['data']
-        else:
+        else: # checking if latest state
             for iterations in range(1000):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
                 with open(json_path) as json_file:

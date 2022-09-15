@@ -2508,7 +2508,7 @@ def check_UDP_clientState():
     mac_os = []
     mac_os_all = []
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
-    df_input = pd.read_csv(savepath+"_udpserveruploadip_all.txt",header=None,names=['ip'])
+    df_input = pd.read_csv(savepath+"udpserveruploadip.txt",header=None,names=['ip'])
     inputips = list(df_input['ip'])
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     cur = collection.find({},{"BMC_IP":1,"_id":0})
@@ -2521,7 +2521,7 @@ def check_UDP_clientState():
             if temp_array[1] == sel_ip:
                 mac_os.append(temp_array)
     udp_json = savepath+"-host.json"
-    if client_state == "ONLINE":
+    if client_state == "ONLINE" or client_state == "OK":
         if os.path.exists(udp_json):
             insertUdpevent('m',"request_h",savepath + '_udpserveruploadip_all.txt') # request_h means requst client to send h back to initilize the json file
             time.sleep(1)
