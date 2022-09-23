@@ -107,11 +107,17 @@
                       CPU Temperatures &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu">
+                    {% if cpu_temps | length > 0 %}
                         {% for cpu in cpu_temps %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_cputemperatures/{{ bmc_ip }}?name={{ cpu}}" target="_self">{{cpu}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {%endif%}
                     </ul>
                   </li>
                   <li>
@@ -119,11 +125,17 @@
                       VRM Temperatures &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu">
+                    {% if vrm_temps | length > 0 %}
                         {% for vrm in vrm_temps %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_vrmtemperatures/{{ bmc_ip }}?name={{ vrm}}">{{vrm}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {%endif%}
                     </ul>
                   </li>
                   <li>
@@ -131,11 +143,17 @@
                       DIMM Temperatures &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu"> 
+                    {% if dimm_temps | length > 0 %}
                         {% for dimm in dimm_temps %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_dimmctemperatures/{{ bmc_ip }}?name={{ dimm}}">{{dimm}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {%endif%}
                     </ul>
                   </li>
                     {% if gpu_temps|length > 0 %}
@@ -157,11 +175,17 @@
                       System Temperatures &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu scrollable-menu" role="menu">
+                    {% if sys_temps | length > 0 %}
                         {% for systemps in sys_temps %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ bmc_ip }}?name={{ systemps}}">{{systemps}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {% endif %}
                     </ul>
                   </li>
                   <li>
@@ -169,11 +193,17 @@
                       Fans &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu">
+                    {% if sensor_fans|length > 0 %}
                         {% for sys_fans in sensor_fans %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ bmc_ip }}?name={{ sys_fans}}">{{sys_fans}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {%endif%}
                     </ul>
                   </li>
                   <li>
@@ -181,11 +211,17 @@
                       System Voltages &Rang;
                     </a>
                     <ul class="dropdown-menu dropdown-submenu">
+                    {% if sensor_voltages | length > 0 %}
                         {% for sys_voltages in sensor_voltages %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ bmc_ip }}?name={{ sys_voltages}}">{{sys_voltages}}</a>
                             </li>
                         {% endfor %}
+                    {% else %}
+                            <li>
+                                <span class="dropdown-item text-secondary" >no reading avaliable</span>
+                            </li> 
+                    {% endif %}
                     </ul>
                   </li>
                   <li> <a class="dropdown-item" href="{{ url_for('index') }}chart_powercontrol/{{ bmc_ip }}" target="_self">Power Consumption</a> </li>
@@ -199,8 +235,16 @@
                 </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_temperatures_chart/{{ bmc_ip }}" target="_self">Min/Max Temp</a>
+                        {% if sensor_fans|length > 0 %}
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_fans_chart/{{ bmc_ip }}" target="_self">Min/Max Fan Speed</a>
+                        {% else %}
+                        <span class="dropdown-item text-secondary" >No Fan Reading</span>
+                        {% endif %}
+                        {% if sensor_voltages |length > 0 %}
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_voltages_chart/{{ bmc_ip }}" target="_self">Min/Max Voltages</a>
+                        {% else %}
+                        <span class="dropdown-item text-secondary" >No Voltage Reading</span>
+                        {% endif %}
                         <a class="dropdown-item" href="{{ url_for('index') }}min_max_power_chart/{{ bmc_ip }}" target="_self">Min/Max Power</a>      
                     </div>
             </div>
