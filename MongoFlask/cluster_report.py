@@ -810,7 +810,7 @@ class Test(object):
         Add author
         """
         self.c.setFont('Helvetica',10)
-        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
         self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
         self.c.drawString(20,self.height-760,datetime_text)
 
@@ -836,7 +836,7 @@ class Test(object):
         Add author
         """
         self.c.setFont('Helvetica',10)
-        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
         self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
         self.c.drawString(20,self.height-760,datetime_text)
         p.drawOn(self.c, self.doc.leftMargin, self.height-75)
