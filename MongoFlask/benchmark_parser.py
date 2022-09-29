@@ -146,7 +146,7 @@ def resultParser(contents, keywords, addRow, dfs, index, unit, criteriaType, cri
                 conclusion *= 0
         else:
             rawResult.append(result)
-            resultS += result
+            resultS += result + ' ' + un + ' '
             if result == cr[0]:
                 conclusion *= 1
             elif result == cr[1]:

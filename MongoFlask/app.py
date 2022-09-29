@@ -2713,7 +2713,10 @@ def udpautostar():
         #                  bm_name_2: {os_ip_1: [resultMul, result_id], os_ip_2: [resultMul, result_id]} \
         #                }
         for oneResult in list(udp_collection.find({})):
-            if oneResult['benchmark'] in obj_autostar.keys():
+            if oneResult['conclusion'] not in ['PASS', 'FAILED']: # ignore empty (disabled) results
+                printf(f'Following result has been ignored: IP: {oneResult["os_ip"]}, Benchmark: {oneResult["benchmark"]}')
+                continue
+            elif oneResult['benchmark'] in obj_autostar.keys():
                 resultMul = 1
                 for num in oneResult['raw_result']:
                     if type(num) == float or type(num) == int:
@@ -2735,7 +2738,9 @@ def udpautostar():
         #                }
         # PASS reuslt has higher priority than failed ones.        
         for oneResult in list(udp_collection.find({})):
-            if oneResult['benchmark'] in obj_autostar.keys():
+            if oneResult['conclusion'] not in ['PASS', 'FAILED']: # ignore empty (disabled) results
+                continue            
+            elif oneResult['benchmark'] in obj_autostar.keys():
                 if oneResult['os_ip'] not in obj_autostar[oneResult['benchmark']].keys():
                     obj_autostar[oneResult['benchmark']][oneResult['os_ip']] = [oneResult['conclusion'],oneResult['_id']]
                 for ip in obj_autostar[oneResult['benchmark']].keys():
