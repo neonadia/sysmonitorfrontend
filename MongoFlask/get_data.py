@@ -815,11 +815,17 @@ def find_allfans(ip_list, sensor_id):
         dataset[sensor_name][i]['Reading'] = output[i][1]
     return dataset
 
-def find_min_max(bmc_ip, api1, api2, boundry):
+
+def find_min_max(bmc_ip, api1, api2, boundry, start_date=-1, end_date=-1):  # Added start_date=-1 and end_date=-1
     connect = pymongo.MongoClient('localhost', mongoport)
     db = connect['redfish']
     entries = db.monitor
-    data_entry = entries.find({"BMC_IP": bmc_ip})
+
+    if start_date == -1 or end_date == -1:     # If function has no start_date and/or end_date
+        data_entry = entries.find({"BMC_IP": bmc_ip})
+    else:                                       # Function specified start_date and end_date
+        data_entry = entries.find({"BMC_IP": bmc_ip, "Datetime": {"$gte": start_date, "$lte": end_date}})
+
     all_readings = list(data_entry)
     all_vals = {}
     all_dates = []
@@ -909,10 +915,9 @@ def find_min_max(bmc_ip, api1, api2, boundry):
         good_count.append(dummy)
         zero_count.append(dummy)
         sensorNames.append("N/A")
-        messages.append(f"No data found for {api1} and {api2} of {bmc_ip}")
+        messages.append(f"No data found for {api1} and {api2} of {bmc_ip}")        
     
     return messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, len(all_dates), elapsed_hour, good_count, zero_count, last_date
-
 
 
 def find_min_max_rack_helper(input_list):

@@ -2782,6 +2782,38 @@ def make_tarfile(output_filename, source_dir):
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
 
+# The function below checks if: 
+#   datetime format is correct
+#   start datetime is not greater than end datetime
+#   start datetime is not before min datetime
+#   end datetime is not after max datetime (datetime cannot be in the future)
+def validate_time_range(bmc_ip, start_date, end_date):
+    # Get default start_date and end_date from mongodb
+    default_start_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', 1)])['Datetime']
+    default_end_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', -1)])['Datetime']
+    # Check if start_date and end_date are in correct datetime format
+    date_format = '%Y-%m-%d %H:%M:%S'
+    try:
+        start_date = datetime.datetime.strptime(start_date, date_format)    # Convert to datetime
+        end_date = datetime.datetime.strptime(end_date, date_format)        # Convert to datetime
+        if isinstance(start_date, datetime.datetime) or isinstance(end_date, datetime.datetime):
+            start_date = str(start_date)    # Convert back to string
+            end_date = str(end_date)
+        if start_date > end_date:           # start_date cannot be greater than end_date
+            start_date = default_start_date
+            end_date = default_end_date
+    except (ValueError, TypeError):         # Value Error: User input invalid datetime format, TypeError: when start_date is None
+        start_date = default_start_date     # Set start and end datetime to their respective default datetimes
+        end_date = default_end_date
+
+    # Checks that start_date is not before start_date from db. Similar concept for end_date
+    if start_date < default_start_date:
+        start_date = default_start_date
+    if end_date > default_end_date:
+        end_date = default_end_date
+
+    return start_date, end_date, default_start_date, default_end_date
+
 @app.route('/min_max_temperatures/<bmc_ip>')
 def min_max_temperatures(bmc_ip):
     messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
@@ -2789,9 +2821,20 @@ def min_max_temperatures(bmc_ip):
 
 @app.route('/min_max_temperatures_chart/<bmc_ip>')
 def min_max_temperatures_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
-    messages.insert(0,'Numerical Results: (Units: Celsius)')
-    chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
+    start_date = request.args.get('start')  # "2022-09-15 21:30:17"  # sample time
+    end_date = request.args.get('end')      # "2022-09-15 21:53:03"    # sample time
+
+    start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
+
+    try:
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999, start_date, end_date)
+    except IndexError:      # except block is used when there are less than 1 data point for a given time range
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+        start_date = default_start_date     # Set start and end datetime back to default
+        end_date = default_end_date   
+ 
+    messages.insert(0,'Numerical Results: (Units: Celsius)')                                                    # Change last_date to default_end_date
+    chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + default_end_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "Sensor names": sensorNames})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "Sensor names": sensorNames})
     sns.set_theme(style="whitegrid")
@@ -2826,9 +2869,9 @@ def min_max_temperatures_chart(bmc_ip):
     if isinstance(ips_names,bool) == True:
         show_names = 'false'   
     if show_names == 'true':
-        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps,cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps,cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_temperatures", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
     else:
-        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps,cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps,cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count), imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_temperatures", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_voltages/<bmc_ip>')
 def min_max_voltages(bmc_ip):
@@ -2837,7 +2880,19 @@ def min_max_voltages(bmc_ip):
 
 @app.route('/min_max_voltages_chart/<bmc_ip>')
 def min_max_voltages_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+    # get start and end datetime
+    start_date = request.args.get('start')
+    end_date = request.args.get('end')
+
+    start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
+
+    try:
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999, start_date, end_date)
+    except IndexError:      # except block is used when there are less than 1 data point for a given time range
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+        start_date = default_start_date     # Set start and end datetime back to default
+        end_date = default_end_date
+
     messages.insert(0,'Numerical Results: (Units: Voltages)')
     chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Voltages (Volts)":max_vals, "Sensor names": sensorNames})
@@ -2874,9 +2929,9 @@ def min_max_voltages_chart(bmc_ip):
         show_names = 'false'
     plt.close()
     if show_names == 'true':
-        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages",rackobserverurl = rackobserverurl)    
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_voltages", start=start_date, end=end_date, rackobserverurl = rackobserverurl)    
     else:
-        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,chart_headers = chart_headers, show_names = show_names,sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_voltages", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_fans/<bmc_ip>')
 def min_max_fans(bmc_ip):
@@ -2885,7 +2940,18 @@ def min_max_fans(bmc_ip):
 
 @app.route('/min_max_fans_chart/<bmc_ip>')
 def min_max_fans_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Fans", "Reading", 999999)
+    start_date = request.args.get('start')
+    end_date = request.args.get('end')
+
+    start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
+
+    try:
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000, start_date, end_date)
+    except IndexError:      # except block is used when there are less than 1 data point for a given time range
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+        start_date = default_start_date     # Set start and end datetime back to default
+        end_date = default_end_date
+
     messages.insert(0,'Numerical Results: (Units: rd/min)')
     chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Fan Speed(rd/min)":max_vals, "Sensor names": sensorNames})
@@ -2927,14 +2993,25 @@ def min_max_fans_chart(bmc_ip):
         show_names = 'false'    
     plt.close()
     if show_names == 'true':
-        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_fans", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
     else:
-        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_fans", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
 
 
 @app.route('/min_max_power_chart/<bmc_ip>')
 def min_max_power_chart(bmc_ip):
-    messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"PowerControl", "PowerConsumedWatts", 9999)
+    start_date = request.args.get('start')
+    end_date = request.args.get('end')
+
+    start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
+
+    try:
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000, start_date, end_date)
+    except IndexError:      # except block is used when there are less than 1 data point for a given time range
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+        start_date = default_start_date     # Set start and end datetime back to default
+        end_date = default_end_date
+
     messages.insert(0,'Numerical Results: (Units: W)')    
     chart_headers = ['Rack Name: ' + rackname, 'BMC IP: ' + bmc_ip,  'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(count_vals), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "Sensor Names": sensorNames})
@@ -2972,9 +3049,9 @@ def min_max_power_chart(bmc_ip):
         show_names = 'false'
     plt.close()
     if show_names == 'true':
-        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power",rackobserverurl = rackobserverurl)   
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "min_max_power", start=start_date, end=end_date, rackobserverurl = rackobserverurl)   
     else:
-        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power",rackobserverurl = rackobserverurl)
+        return render_template('imageOutput.html',rackname=rackname,show_names = show_names, chart_headers = chart_headers, sensor_voltages = sensor_voltages,gpu_temps=gpu_temps, cpu_temps = cpu_temps, sys_temps=sys_temps, vrm_temps = vrm_temps, dimm_temps = dimm_temps, sensor_fans = sensor_fans, data = zip(sensorNames, min_vals,min_dates,max_vals,max_dates,avg_vals,good_count,zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "min_max_power", start=start_date, end=end_date, rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_alltemperatures_chart')
 def min_max_alltemperatures_chart():
@@ -3897,3 +3974,4 @@ if __name__ == '__main__':
     else:
         printf('Debug Mode is False')
         app.run(host='0.0.0.0',port=frontport)
+

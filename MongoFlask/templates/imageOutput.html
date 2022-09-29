@@ -82,6 +82,21 @@
                 </div>
             </li>
 
+            <form class="form-inline">		<!-- Make all components inside this form in one line -->
+            <div style="margin-left:25px;">
+                <input type="text" id="start" class="form-control" style="font-size:18px;" value="{{start}}" name="start">	<!-- value="{{start}}" a good idea? -->
+            </div>
+            <div class="col col-auto">
+                <i class="fas fa-angle-double-right text-white"></i>
+            </div>
+            <div>
+                <input type="text" id="end" class="form-control" style="font-size:18px;" value="{{end}}" name="end">	<!-- value="{end{}} a good idea?" -->
+            </div>
+            <div class="col col-auto">
+                <button class="btn btn-primary btn-lg mr-1" id="submit">Submit</button>
+            </div>
+            </form>
+
             <div class="dropdown">
                 <button
                   class="btn btn-primary dropdown-toggle btn-lg mr-1"
@@ -272,6 +287,8 @@
     {% for header in chart_headers %}
     <h3 class ="text-black">{{ header }}</h4>
     {% endfor %}
+    <h3 class ="text-black">Requested Starting Datetime: {{ start }}</h3>
+    <h3 class ="text-black">Requested Ending Datetime: {{ end }}</h3>	<!-- Show Start and End datetime based on user input -->
     <br>
     <p><img src="{{ imagepath }}" height="{{ imageheight }}" width="1500"></p>
     <hr>
