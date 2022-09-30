@@ -7,6 +7,7 @@ from subprocess import Popen, PIPE
 import os
 from pymongo import MongoClient
 import traceback
+import re
 
 mongoport = int(os.environ['MONGOPORT'])
 client = MongoClient('localhost', mongoport)
@@ -32,6 +33,7 @@ def fetch_hardware_details(bmc_ip,hardware):
                             hw_dict[j] = {}
                             hw_dict[j]["Manufacturer"] = hardware_dict[i]["Slots"][j]["Manufacturer"]
                             hw_dict[j]["Serial No."] = hardware_dict[i]["Slots"][j]["Serial No."]
+                            hw_dict[j]["Size"] = hardware_dict[i]["Slots"][j]["Size"]
                             try:
                                 hw_dict[j]["SMC DB handshake"] = hardware_dict[i]["Slots"][j]["SMC DB handshake"]
                             except:
@@ -177,6 +179,7 @@ def get_hardwareData():
                     dimm_no = ""
                     total_mem = ""
                     SMC_handshake = "True"
+                    missing = 0
                     for j in hardware_dict[i]:
                         if 'DIMMS' in j:
                             dimm_no = hardware_dict[i][j]
@@ -189,7 +192,14 @@ def get_hardwareData():
                                         SMC_handshake = "False"
                                 except:
                                     SMC_handshake = "TBD"
-                    memory = [dimm_no + " DIMMs; Total Memory: " + total_mem + "GB",SMC_handshake]
+                                if hardware_dict[i][j][str(k)]['Size'] == "No Module Installed" or re.search(r"^\d+ GB", hardware_dict[i][j][str(k)]['Size']):
+                                    continue
+                                else:
+                                    missing += 1                               
+                    if missing == 0: 
+                        memory = [dimm_no + " DIMMs; Total Memory: " + total_mem + "GB",SMC_handshake]
+                    else: # if per slot not int, maybe memory missing
+                        memory = [dimm_no + " DIMMs; Total Memory: " + total_mem + "GB (ERR)",SMC_handshake]
                     MEMORY.append(memory)
                     equalizer["MEMORY"] += 1
                 elif "PSU" in i:

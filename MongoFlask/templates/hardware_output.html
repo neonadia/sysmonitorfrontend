@@ -178,8 +178,9 @@
 					</div>
                 </td>
                 <td class="align-middle">
-                    {%if "False" in memory[1]%}
+                    {%if "False" in memory[1] or "ERR" in memory[0]%}
 					    <a class="font-weight-bold text-danger" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory[0]}} </a>
+                    {%elif "ERR" in memory[0]%}
                     {%elif "True" in memory[1]%}
                         <a class="font-weight-bold text-success" href="javascript:void(0)"  aria-haspopup="true" onclick="show_details('{{bmc_ip}}_memory')"> {{memory[0]}} </a>
                     {%else%}
@@ -203,7 +204,7 @@
                 </td>
                 <td class="align-middle">
                     {%if "False" in nics[1]%}
-                        <a class="font-weight-bold text-danger" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>
+                        <a class="font-weight-bold text-danger" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>                        
                     {%elif "True" in nics[1]%}
                         <a class="font-weight-bold text-success" href="javascript:void(0)"aria-haspopup="true" onclick="show_details('{{bmc_ip}}_nics')"> {{nics[0]}} </a>
                     {%else%}
@@ -364,7 +365,11 @@
                                             document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
                                         }
                                     }
-                                    else{
+                                    // Check if the memory slow not seated by size
+                                    else if (subkey == "Size" & !data[key][subkey].includes("GB")) {
+                                        document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li class=text-danger>" + subkey + " : " + data[key][subkey] +"</li>");
+                                    }
+                                    else {
                                         document.getElementById(newkey).insertAdjacentHTML('beforeend',"<li>" + subkey + " : " + data[key][subkey] +"</li>");
                                     }
                                 }
