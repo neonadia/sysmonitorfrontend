@@ -111,7 +111,7 @@
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+<nav class="navbar navbar-expand-xl navbar-primary bg-primary">
 <ul class="navbar-nav">
 
     <li class='nav-item'>
@@ -124,6 +124,8 @@
         L12 Cluster Monitor
         </a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item">Time Zone: {{ time_zone }}</a>
+            <a class="dropdown-item" id="clockstopper" >L12CM Time: {{ cur_time }}</a>
             <a class="dropdown-item">Beta Version: 1.1</a>
             <a class="dropdown-item">Supported BMC Versions: 01.71, 1.76.10, 3.72.02</a>
         </div>
@@ -142,6 +144,7 @@
             </div>
     </li>
 -->
+<!--
     <li class='dropdown'>
         <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="clockstopper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{ cur_time }}
@@ -150,7 +153,7 @@
              <a class="dropdown-item">Container TimeZone: {{time_zone}}</a>
         </div>
     </li>
-
+-->
 </ul>
 </nav>
 <div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 60px; padding-right: 5px; padding-left: 5px; padding-bottom: 60px; overflow-x:auto; overflow-y:hidden" >
@@ -612,7 +615,7 @@
                 var lcm_ip;
                 for (var bmc_ip in data){ /// Function return a data in JSON
                     if(bmc_ip == "time"){
-                        document.getElementById('clockstopper').innerHTML = data[bmc_ip];
+                        document.getElementById('clockstopper').innerHTML = "L12CM Time: " + data[bmc_ip];
                     }
                     else{
                         for (var i in data[bmc_ip]){
