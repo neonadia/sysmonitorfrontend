@@ -2887,9 +2887,9 @@ def min_max_voltages_chart(bmc_ip):
     start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
 
     try:
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999, start_date, end_date)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000, start_date, end_date)
     except IndexError:      # except block is used when there are less than 1 data point for a given time range
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Temperatures", "ReadingCelsius", 9999)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
         start_date = default_start_date     # Set start and end datetime back to default
         end_date = default_end_date
 
@@ -2946,9 +2946,9 @@ def min_max_fans_chart(bmc_ip):
     start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
 
     try:
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000, start_date, end_date)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Fans", "Reading", 999999, start_date, end_date)
     except IndexError:      # except block is used when there are less than 1 data point for a given time range
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Fans", "Reading", 999999)
         start_date = default_start_date     # Set start and end datetime back to default
         end_date = default_end_date
 
@@ -3006,9 +3006,9 @@ def min_max_power_chart(bmc_ip):
     start_date, end_date, default_start_date, default_end_date = validate_time_range(bmc_ip, start_date, end_date)
 
     try:
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000, start_date, end_date)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"PowerControl", "PowerConsumedWatts", 99999, start_date, end_date)
     except IndexError:      # except block is used when there are less than 1 data point for a given time range
-        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"Voltages", "ReadingVolts", 1000)
+        messages, max_vals, min_vals, max_dates, min_dates, sensorNames, avg_vals, count_vals, elapsed_hour, good_count, zero_count, last_date = get_data.find_min_max(bmc_ip,"PowerControl", "PowerConsumedWatts", 99999)
         start_date = default_start_date     # Set start and end datetime back to default
         end_date = default_end_date
 
