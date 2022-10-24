@@ -992,7 +992,7 @@ class Test(object):
         """
         cluster_summary_intro = Paragraph(ptext_cs_intro, other_intro)
         cluster_summary_intro.keepWithNext = True
-        self.story.append(cluster_summary_intro)       
+        #self.story.append(cluster_summary_intro)       
         #table1
         self.story.append(table)
         self.story.append(PageBreak())
@@ -1011,7 +1011,7 @@ class Test(object):
         """
         hardware_counts_intro = Paragraph(ptext_hc_intro, other_intro)
         hardware_counts_intro.keepWithNext = True
-        self.story.append(hardware_counts_intro)          
+        #self.story.append(hardware_counts_intro)          
         #table2
         self.story.append(table2)     
         
@@ -1618,7 +1618,7 @@ class Test(object):
                     ptext_cur = f"<font size={font_size-2}>{v}</font>"
                     p5_cur.append(Paragraph(ptext_cur, centered))
                 data5.append(p5_cur)
-            table5 = Table(data5, colWidths=[87, 87, 87, 87, 87])
+            table5 = Table(data5, colWidths=[87, 100, 87, 87, 87])
             table5.setStyle(TableStyle([
                     ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
