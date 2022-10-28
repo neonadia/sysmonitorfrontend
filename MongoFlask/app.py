@@ -777,7 +777,7 @@ def runipmisingle(input_list):
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
         response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' ' + ipmi_cmd, shell = 1, stdout  = PIPE, stderr = PIPE)
-        stdout , stderr = response.communicate(timeout=2)
+        stdout , stderr = response.communicate(timeout=10)
     except:
         printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
         return []
@@ -869,9 +869,11 @@ def showipmisensor():
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
         current_pwd = df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0]
         response = Popen('ipmitool -H ' + bmc_ip + ' -U ADMIN -P ' + current_pwd + ' sensor', shell = 1, stdout  = PIPE, stderr = PIPE)
-        stdout , stderr = response.communicate(timeout=2)
-    except:
-        printf('Cannot perform IPMI command for ' + bmc_ip + '!!!')
+        stdout , stderr = response.communicate(timeout=10)
+    except Exception as e:
+        printf('*************************Cannot perform IPMI command for ' + bmc_ip + '**********************************')
+        printf(e)
+        printf('*************************Cannot perform IPMI command for ' + bmc_ip + '**********************************')
     else:
         if stderr.decode('utf-8') == '':
             output = StringIO(stdout.decode("utf-8"))
@@ -3295,6 +3297,7 @@ def chart_powersuppliespower(bmc_ip):
             return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = ips_names, chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)        
         else:
             return render_template('chart_powersuppliespower.html', title='Power Supplies Power',rackname=rackname, show_names = show_names, gpu_temps=gpu_temps,cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages, name = name, dataset=data, bmc_ip = bmc_ip, ip_list = getIPlist(), chart_name = "chart_powersuppliespower",rackobserverurl = rackobserverurl)
+
   
 @app.route('/chart_allpowercontrols')
 def chart_allpowercontrols():

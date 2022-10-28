@@ -538,7 +538,7 @@ def find_powersupplies(bmc_ip):
 
     # power supplies
     for i in range(len(data_entry[0]['PowerSupplies'])):
-        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 'InputReading': [], 'OutputReading': [], 'InputPower': []})
+        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 'InputReading': [],  'OutputPowerReading': [], 'OutputPowerReadingSMCIPMI': [], 'InputPowerReadingSMCIPMI': []})
 
     # get dataset
     for x in data_entry:
@@ -549,16 +549,17 @@ def find_powersupplies(bmc_ip):
             except:
                 dataset['PowerSupplies'][i]['InputReading'].append(0)
             try:
-                dataset['PowerSupplies'][i]['OutputReading'].append(x['PowerSupplies'][str(i+1)]['OutputPower']) # using SMCIPMITOOL api
+                dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'].append(x['PowerSupplies'][str(i+1)]['OutputPower']) # using SMCIPMITOOL api
             except:
-                if 'PowerSupplies' in x and str(i+1) in x['PowerSupplies'] and 'LastPowerOutputWatts' in x['PowerSupplies'][str(i+1)]:
-                    dataset['PowerSupplies'][i]['OutputReading'].append(x['PowerSupplies'][str(i+1)]['LastPowerOutputWatts'])
-                else:
-                    dataset['PowerSupplies'][i]['OutputReading'].append(0)
+                dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'].append(0)
             try:
-                dataset['PowerSupplies'][i]['InputPower'].append(x['PowerSupplies'][str(i+1)]['InputPower'])
+                dataset['PowerSupplies'][i]['OutputPowerReading'].append(x['PowerSupplies'][str(i+1)]['LastPowerOutputWatts'])
             except:
-                dataset['PowerSupplies'][i]['InputPower'].append(0)
+                dataset['PowerSupplies'][i]['OutputPowerReading'].append(0)
+            try:
+                dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'].append(x['PowerSupplies'][str(i+1)]['InputPower'])
+            except:
+                dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'].append(0)
     connect.close()
 
     return dataset    
