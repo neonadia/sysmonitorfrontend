@@ -49,8 +49,12 @@ def fetch_hardware_details(bmc_ip,hardware):
                             hw_dict[temp_device_name]["Model"] = hardware_dict[i][str(j)]["ModelNumber"]
                             if "nvme" in hardware_dict[i][str(j)]["DevicePath"]:
                                 hw_dict[temp_device_name]["Type"] = "NVMe"
-                            else:
+                            elif "sd" in hardware_dict[i][str(j)]["DevicePath"]:
+                                hw_dict[temp_device_name]["Type"] = "SATA"
+                            elif "hd" in hardware_dict[i][str(j)]["DevicePath"]:
                                 hw_dict[temp_device_name]["Type"] = "HDD"
+                            else:
+                                hw_dict[temp_device_name]["Type"] = "UNKNOWN"
                             hw_dict[temp_device_name]["Serial Number"] = hardware_dict[i][str(j)]["SerialNumber"]
                             hw_dict[temp_device_name]["Physical Size"] = str(int(hardware_dict[i][str(j)].get("PhysicalSize")) / 1000000000) + " GB"
                             try:
@@ -538,7 +542,7 @@ def find_powersupplies(bmc_ip):
 
     # power supplies
     for i in range(len(data_entry[0]['PowerSupplies'])):
-        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 'InputReading': [],  'OutputPowerReading': [], 'OutputPowerReadingSMCIPMI': [], 'InputPowerReadingSMCIPMI': []})
+        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 'InputReading': [], 'InputPowerReading': [],  'OutputPowerReading': [], 'OutputPowerReadingSMCIPMI': [], 'InputPowerReadingSMCIPMI': []})
 
     # get dataset
     for x in data_entry:
@@ -553,9 +557,16 @@ def find_powersupplies(bmc_ip):
             except:
                 dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'].append(0)
             try:
-                dataset['PowerSupplies'][i]['OutputPowerReading'].append(x['PowerSupplies'][str(i+1)]['LastPowerOutputWatts'])
+                if 'LastPowerOutputWatts' in x['PowerSupplies'][str(i+1)]:
+                    dataset['PowerSupplies'][i]['OutputPowerReading'].append(x['PowerSupplies'][str(i+1)]['LastPowerOutputWatts'])
+                else:
+                    dataset['PowerSupplies'][i]['OutputPowerReading'].append(x['PowerSupplies'][str(i+1)]['PowerOutputWatts'])
             except:
                 dataset['PowerSupplies'][i]['OutputPowerReading'].append(0)
+            try:
+                dataset['PowerSupplies'][i]['InputPowerReading'].append(x['PowerSupplies'][str(i+1)]['PowerInputWatts'])
+            except:
+                dataset['PowerSupplies'][i]['InputPowerReading'].append(0)
             try:
                 dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'].append(x['PowerSupplies'][str(i+1)]['InputPower'])
             except:
