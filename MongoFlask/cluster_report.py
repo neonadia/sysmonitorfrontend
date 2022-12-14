@@ -28,8 +28,8 @@ from subprocess import Popen, PIPE
 
 # 0 : no issue/conclusion section
 # 1 : add issue/conclusion section
-has_issue = 0
-has_conclusion = 0
+has_issue = 1
+has_conclusion = 1
 
 class ConditionalSpacer(Spacer):
 
@@ -1681,28 +1681,36 @@ class Test(object):
             self.story.append(OOB_nodata)
         
         if has_issue == 1:
-            #Issue section need to adjusted
+            #Issue section
             self.story.append(PageBreak())
-            ptext_issue = f"""<a name="ISSUE_TITLE"/><font color="black" size="12"><b>L12 Validation Issue Report for {rackname}</b></font>"""
+            ptext_issue = f"""<a name="ISSUE_TITLE"/><font color="black" size="12"><b>L12 Validation Issue Report for {rackname} (Sample)</b></font>"""
             issue_title = Paragraph(ptext_issue, centered)
             
-            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 1: System (S411795X0A17867) can not boot to OS(Resolved)</b></font>"""        
+            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 1: Processor Throttling Issue</b></font>"""        
             issue_subtitle_1 = Paragraph(ptest_issue_subtitle, issue_font)             
             
+            #ptext_issue_paragraph_1 = """
+            #Whenever we try to enter BIOS in Figure 1 in order to perform IPMI IP configuration setup,
+            #after “Entering Setup”, the system restarts again. It appears this reboot keeps occurring due to
+            #mixing families of nvme drives on this server. The other server (SN: S411795X0A17866) has all 9300
+            #Micron nvme storage drives, while this server (SN: S411795X0A17867) has 17x 9300 Micron nvme 
+            #and 5x 7300 Micron nvme storage drives. So the optimal solution to such issue is use the same 
+            #family of nvme storage drives.
+            #"""
+
             ptext_issue_paragraph_1 = """
-            Whenever we try to enter BIOS in Figure 1 in order to perform IPMI IP configuration setup,
-            after “Entering Setup”, the system restarts again. It appears this reboot keeps occurring due to
-            mixing families of nvme drives on this server. The other server (SN: S411795X0A17866) has all 9300
-            Micron nvme storage drives, while this server (SN: S411795X0A17867) has 17x 9300 Micron nvme 
-            and 5x 7300 Micron nvme storage drives. So the optimal solution to such issue is use the same 
-            family of nvme storage drives.
-            """
+            When SYS-221H-TNR is on, the system log keeps reporting “Processor automatically throttled” as shown in Figure 1 below. 
+        The CPU temperature does not look like it is in critical condition. In idle state, CPU temperature is about 40 degrees, 
+        while during load, CPU temperature is less than 70 degrees during the time the issue happened as shown in Figure 2 below.
+        """
             issue_report_1 = Paragraph(ptext_issue_paragraph_1, issue_font)               
             
             self.story.append(spacer_conclusion)      
-            ptext_figure1_caption = "Figure 1. ACPI Error Message from dmesg"
+            ptext_figure1_caption = "Figure 1. Event logs showing \"Processor automatically throttled\""
             figure1_caption = Paragraph(ptext_figure1_caption, issue_caption_font)        
 
+            ptext_figure2_caption = "Figure 2. CPU temperature chart display when CPU throttling issue kept appearing in event logs"
+            figure2_caption = Paragraph(ptext_figure2_caption, issue_caption_font)        
 
             self.story.append(issue_title)
             self.story.append(spacer_conclusion)
@@ -1712,10 +1720,95 @@ class Test(object):
             self.story.append(spacer_conclusion)
             self.story.append(issue_report_1)
             self.story.append(spacer_conclusion)        
-            # need to change based on your filename
-            self.story.append(get_image("sample.png", height=15*cm, width=15*cm))
-            #self.story.append(get_image(f"{os.environ['UPLOADPATH']}/your_image_file.png", height=15*cm, width=15*cm))
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+            self.story.append(get_image(f"sample_report_img/CPU_throttle.png", height=15*cm, width=15*cm))
             self.story.append(figure1_caption)
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+            self.story.append(get_image(f"sample_report_img/CPU_temp_chart.png", height=15*cm, width=15*cm))
+            self.story.append(figure2_caption)
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+
+            # Paragraph Issue 2
+           
+            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 2: PCI-E bandwidth limitation for M.2</b></font>"""        
+            issue_subtitle_2 = Paragraph(ptest_issue_subtitle, issue_font)             
+     
+            ptext_issue_paragraph_2 = """
+            As shown in Figure 3, nvme0n1 and nvme1n1 has been capped at 2.0 GB/s, whereas other partitions’ bandwidths are capped at 3.9 GB/s. 
+        This limitation can significantly impact the reading and writing performance of those nvme drives. 
+        Despite this limitation, the performance of nvme0n1 and nvme1n1 is not a concern.
+        """
+            issue_report_2 = Paragraph(ptext_issue_paragraph_2, issue_font)               
+            
+            self.story.append(spacer_conclusion)      
+            ptext_figure3_caption = "Figure 3. PCI-E Topo diagram"
+            figure3_caption = Paragraph(ptext_figure3_caption, issue_caption_font)        
+
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_subtitle_2)
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_report_2)
+            self.story.append(spacer_conclusion)        
+            self.story.append(get_image(f"sample_report_img/PCIE_topo.png", height=15*cm, width=15*cm))
+            self.story.append(figure3_caption)
+
+        # Paragraph Issue 3
+
+            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 3: Failed to Assign IO</b></font>"""        
+            issue_subtitle_3 = Paragraph(ptest_issue_subtitle, issue_font)             
+     
+            ptext_issue_paragraph_3 = """
+            We also found an assignment failure about IO as shown in Figure 4. This message consistently appears 
+            when using dmesg command and rebooting the X13 system for 10 cycles during the DC Cycle Test. It 
+            indicates Linux cannot assign an IO resource on this PCI device; however, if the PCIe root port does 
+            not connect a device, the assigning of the IO resource is not used/needed. User can ignore this 
+            message, since it does not affect the operation or functionality of the server or PCI device.
+        """
+            issue_report_3 = Paragraph(ptext_issue_paragraph_3, issue_font)               
+            
+            self.story.append(spacer_conclusion)      
+            ptext_figure4_caption = "Figure 4. The OS dmesg shows failed to assign IO everytime boot up."
+            figure4_caption = Paragraph(ptext_figure4_caption, issue_caption_font)        
+
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_subtitle_3)
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_report_3)
+            self.story.append(spacer_conclusion)        
+            self.story.append(get_image(f"sample_report_img/Fail_to_assign_IO.png", height=15*cm, width=15*cm))
+            self.story.append(figure4_caption)
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+
+        # Paragraph Issue 4
+
+            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 4: Direct firmware load for qat_4xxx_mmp.bin failed</b></font>"""        
+            issue_subtitle_4 = Paragraph(ptest_issue_subtitle, issue_font)             
+     
+            ptext_issue_paragraph_4 = """
+            This error occurred on this system because Intel Quick Assist Technology firmware is not 
+            installed as shown in Figure 5 below. Since this system’s Intel CPU has not been formally released yet, 
+            the Intel QAT feature may not be supported on this CPU. <br />
+            User can ignore this message, since it does not affect the operation or functionality of the server or PCI device.
+        """
+            issue_report_4 = Paragraph(ptext_issue_paragraph_4, issue_font)               
+            
+            self.story.append(spacer_conclusion)      
+            ptext_figure5_caption = "Figure 5. Failed to load Intel QAT firmware message"
+            figure5_caption = Paragraph(ptext_figure5_caption, issue_caption_font)        
+
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_subtitle_4)
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_report_4)
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+            self.story.append(spacer_conclusion)        
+            self.story.append(get_image(f"sample_report_img/Fail_Intel_QAT.png", height=15*cm, width=15*cm))
+            self.story.append(figure5_caption)
 
         if has_conclusion == 1:
             #conclusion_section
@@ -1723,36 +1816,51 @@ class Test(object):
             ptext_conclusion = f"""<a name="CONCLUSION_TITLE"/><font color="black" size="12"><b>L12 Validation Conclusion for {rackname}</b></font>"""       
             conclusion_title = Paragraph(ptext_conclusion, centered)
 
-
             ptext_conclusion_performance = """
             <font color="black" size="11"><b>Performance Highlights</b></font><br />
             <br />
-              &#x2022; <b>High Performance Linpack</b> performance is <b>3827.24 GFlops</b>, as a reference, dual EPYC 7742 about 3800 GFlops.<br />
-              &#x2022; <b>LAMMPS</b> 20k Atoms Performance is <b>34.398 ns/day</b>, as a reference, dual EPYC 7742 about 32.1 ns/day.<br />
-              &#x2022; <b>GROMACS</b> water_GMX50_bare Performance is <b>9.521 ns/day</b>, as a reference, dual EPYC 7763 about 10.05 ns/day.<br />
-              &#x2022; <b>MLC</b> sequential read/write bandwidth is <b>551031.7 MB/s</b>, random read/write bandwidth is 419898.1 MB/s. (Read:Write = 2:1).<br />
-              &#x2022; <b>FIO</b> sequential and random read write performance can match advertisement.</li>
-            <br />
+              &#x2022; <b>High Performance Linpack</b> performance is <b>5250.6 GFlops</b>, as a reference, dual EPYC 7742 about 3800 GFlops.<br />
+              &#x2022; <b>LAMMPS</b> 20k Atoms Performance is <b>40.504 ns/day</b>, as a reference, dual EPYC 7742 about 32.1 ns/day.<br/>
+              &#x2022; <b>GROMACS</b> water_GMX50_bare Performance is <b>11.755 ns/day</b>, as a reference, dual EPYC 7763 about 10.05 ns/day.  <br />
+              &#x2022; <b>MLC</b> sequential read/write bandwidth is <b>574344.3 MB/s</b>, random read/write bandwidth is 391603.5 MB/s. (Read:Write = 2:1).<br />
+              &#x2022; <b>FIO</b> sequential and random read write performance can match advertisement. <br />
             <br />
             """
-
+            
             performance_highlight = Paragraph(ptext_conclusion_performance, issue_font)
 
             ptext_conclusion_issue = """
-            <font color="black" size="11"><b>Major Issues</b></font><br />
+            <font color="black" size="11"><b>Major Issues (Sample)</b></font><br />
             <br />
-              &#x2022; Event log keeps reporting “Processor Throttled” despite CPU being in idle state. (Resolved)<br />
-              &#x2022; System freeze during idle. (Resolved)<br />
+              &#x2022; Event log keeps reporting “Processor Throttled” despite CPU being in idle state. <br />
+            <br />
             """
             conclusion_issue = Paragraph(ptext_conclusion_issue, issue_font)
+            
+            ptext_conclusion_issue2 = """
+            <font color="black" size="11"><b>Minor Issues (Sample)</b></font><br />
+            <br />
+              &#x2022; Failed to assigned IO also appeared from dmesg. This error can be ignored, since it does not affect the operation or functionality of the server or PCI device. <br />
+              &#x2022; Due to speed limitation on NVMe cables for nvme0n1 and nvme1n1, their performance is not considered a major issue. <br />
+              &#x2022; Intel QAT firmware not installed is not a major concern as well. It does not affect operations or performance of this system. <br />
+            <br />
+            """
+            #conclusion_issue = Paragraph(ptext_conclusion_issue, issue_font)
+            conclusion_issue2 = Paragraph(ptext_conclusion_issue2, issue_font)
+        
 
             self.story.append(conclusion_title)
             self.story.append(spacer_conclusion)
             self.story.append(p)
-            self.story.append(spacer_median)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
             self.story.append(performance_highlight)
             self.story.append(spacer_conclusion)
             self.story.append(conclusion_issue)
+            self.story.append(spacer_conclusion)
+            self.story.append(conclusion_issue2)
 
         
 
