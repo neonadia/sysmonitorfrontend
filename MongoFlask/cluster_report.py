@@ -26,6 +26,11 @@ import cv2
 import numpy as np
 from subprocess import Popen, PIPE
 
+# 0 : no issue/conclusion section
+# 1 : add issue/conclusion section
+has_issue = 0
+has_conclusion = 0
+
 class ConditionalSpacer(Spacer):
 
     def wrap(self, availWidth, availHeight):
@@ -107,7 +112,7 @@ def auto_font_size(input_string,seperator_html, seperator_real):
         font_size = 50/get_string_width(input_string) * 7
     if font_size < 5:
         font_size = 5
-    return font_size
+    return font_size*0.8
 
 def get_image(path, height=1*cm, width=1*cm): # maximize the size of photo
     img = utils.ImageReader(path)
@@ -156,6 +161,7 @@ timestamp = []
 serialNumber = []
 modelNumber = []
 bmcVersion = []
+CPLDVersion = []
 biosVersion = []
 bmc_event = []
 MacAddress = []
@@ -258,6 +264,10 @@ for i in collection.find({}):
         sum_info.append(i['SUM'])
     except:
         sum_info.append('N/A')
+    try:
+        CPLDVersion.append(i['CPLDVersion'])
+    except:
+        CPLDVersion.append('N/A')
         
 serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount = ([] for i in range(8))
 
@@ -321,7 +331,7 @@ for ip in bmc_ip:
     else:
         bmc_ip_table.append(ip + '**')    
 
-res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, bmc_ip_table, biosVersion, bmcVersion, timestamp)]
+res = [list(i) for i in zip(serialNumber, bmcMacAddress, modelNumber, CPLDVersion, biosVersion, bmcVersion, timestamp)]
 res2 = [list(j) for j in zip(serialNum, processorModel, processorCount, totalMemory, memoryPN, memoryCount, driveModel, driveCount)]
 
 try:
@@ -385,6 +395,7 @@ if 'hw_data' in list_of_collections:
 
 parsed_data = []
 template_data = {'bmc_ip':'N/A','mac':'N/A',\
+                 'system_model':'N/A','motherboard_model':'N/A',\
                  'cpu_model':'N/A','cpu_num':'0','cpu_note':'N/A',\
                  'mem_model':'N/A','mem_num':'0','mem_note':'N/A',\
                  'gpu_model':'N/A','gpu_num':'0','gpu_note':'N/A',\
@@ -402,6 +413,16 @@ for item in all_hw_data:
         parsed_data[-1]['mac'] = item['Hostname'].replace('-','').replace(':','')
     if 'bmc_ip' in item:
         parsed_data[-1]['bmc_ip'] = item['bmc_ip']
+    if 'System' in item:
+        for system_index in item['System']:
+            if 'Product Name' in item['System'][system_index]:
+                parsed_data[-1]['system_model'] = item['System'][system_index]['Product Name']
+                break    
+    if 'Base Board' in item:
+        for board_index in item['Base Board']:
+            if 'Product Name' in item['Base Board'][board_index]:
+                parsed_data[-1]['motherboard_model'] = item['Base Board'][board_index]['Product Name']
+                break    
     if 'CPU' in item:
         if 'Model name' in item['CPU']:
             parsed_data[-1]['cpu_model'] = item['CPU']['Model name']
@@ -872,6 +893,7 @@ class Test(object):
         #General settings
         spacer = ConditionalSpacer(width=0, height=35)
         spacer_median = ConditionalSpacer(width=0, height=10)
+        spacer_conclusion = ConditionalSpacer(width=0, height=5)
         spacer_tiny = ConditionalSpacer(width=0, height=2.5)
         font_size = 10
         centered = ParagraphStyle(name="centered", alignment=TA_CENTER)
@@ -879,6 +901,8 @@ class Test(object):
         warning = ParagraphStyle(name="normal",fontSize=12, textColor="red",leftIndent=40)
         bm_title = ParagraphStyle(name="normal",fontSize=12,textColor="black",leftIndent=0)
         bm_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        issue_font = ParagraphStyle(name="normal",fontSize=10,leftIndent=0)
+        issue_caption_font = ParagraphStyle(name="normal", fontSize=8, alignment=TA_CENTER)
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
         hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         # Looking for cluster photo
@@ -886,7 +910,7 @@ class Test(object):
         #self.story.append(PageBreak())
         #Summary and Hardware Tables
         ## column names
-        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "BMC IP", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
+        text_data = ["Serial Number", "BMC MAC Address", "Model Number", "CPLD Version", "BIOS Version", "BMC Version", "Date"] # Date is timstamp
         text_data2 = ["Serial Number", "CPU Model", "CPU Count", "MEM (GB)", "DIMM PN", "#", "Ext-Drive", "#"]
 
         d = []
@@ -935,14 +959,21 @@ class Test(object):
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
         ]))
-        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold">Summary</link> 
-/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold">HW Counts</link> 
-/ <link href="#TABLE3"color="blue" fontName="Helvetica-Bold">HW Per Node</link> 
-/ <link href="#TOPO_TITLE"color="blue" fontName="Helvetica-Bold">PCI TOPO</link>
-/ <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold">Sensors</link> 
-/ <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold">Benchmark</link>
-/ <link href="#PN&SN"color="blue" fontName="Helvetica-Bold">PN & SN</link>
-/ <link href="#License"color="blue" fontName="Helvetica-Bold">License</link>"""
+
+         
+        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold" fontSize=8>Summary</link> 
+/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold" fontSize=8>HW Counts</link> 
+/ <link href="#TABLE3"color="blue" fontName="Helvetica-Bold" fontSize=8>HW Per Node</link> 
+/ <link href="#TOPO_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>PCI TOPO</link>
+/ <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Sensors</link> 
+/ <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Benchmark</link>
+/ <link href="#PN&SN"color="blue" fontName="Helvetica-Bold" fontSize=8>PN & SN</link>
+/ <link href="#License"color="blue" fontName="Helvetica-Bold" fontSize=8>License</link>"""
+
+        if has_issue == 1:
+            ptext += '/ <link href="#ISSUE_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Issue</link>'
+        if has_conclusion == 1:
+            ptext += '/ <link href="#CONCLUSION_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Remarks</link>'
         
         ptext2 = """<a name="TABLE2"/><font color="black" size="12"><b>Hardware Counts and Models """ + rackname + """</b></font>"""
         ptext1 = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Summary for """ + rackname + """</b></font>"""
@@ -1048,7 +1079,7 @@ class Test(object):
 
                 data3 = [d3]
 
-                hn_rows_basic =  ['Processor','Memory','GPU','Disk','NIC cards','Power Supply','Fans']
+                hn_rows_basic =  ['System','Motherboard','Processor','Memory','GPU','Disk','NIC cards','Power Supply','Fans']
                 hn_rows = hn_rows_basic
                 hn_counts = len(hn_rows)
                 hw_details = [[0 for i in range(len(hn_columns))] for j in range(hn_counts) ]
@@ -1063,6 +1094,20 @@ class Test(object):
                     for j in range(len(hn_columns)): # columns
                         if j == 0:
                             hw_details[i][j] = hn_rows[i]
+                        elif 'System' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['system_model']
+                            elif j == 2:
+                                hw_details[i][j] = 1
+                            else:
+                                hw_details[i][j] = 'N/A'
+                        elif 'Motherboard' in hn_rows[i]:
+                            if j == 1: 
+                                hw_details[i][j] = cur_hw['motherboard_model']
+                            elif j == 2:
+                                hw_details[i][j] = 1
+                            else:
+                                hw_details[i][j] = 'N/A'                                 
                         elif 'Processor' in hn_rows[i]:
                             if j == 1: 
                                 hw_details[i][j] = cur_hw['cpu_model']
@@ -1634,6 +1679,82 @@ class Test(object):
             """
             OOB_nodata = Paragraph(ptext_OOB_nodata, warning)
             self.story.append(OOB_nodata)
+        
+        if has_issue == 1:
+            #Issue section need to adjusted
+            self.story.append(PageBreak())
+            ptext_issue = f"""<a name="ISSUE_TITLE"/><font color="black" size="12"><b>L12 Validation Issue Report for {rackname}</b></font>"""
+            issue_title = Paragraph(ptext_issue, centered)
+            
+            ptest_issue_subtitle = """<font color="black" size="10"><b>Issue 1: System (S411795X0A17867) can not boot to OS(Resolved)</b></font>"""        
+            issue_subtitle_1 = Paragraph(ptest_issue_subtitle, issue_font)             
+            
+            ptext_issue_paragraph_1 = """
+            Whenever we try to enter BIOS in Figure 1 in order to perform IPMI IP configuration setup,
+            after “Entering Setup”, the system restarts again. It appears this reboot keeps occurring due to
+            mixing families of nvme drives on this server. The other server (SN: S411795X0A17866) has all 9300
+            Micron nvme storage drives, while this server (SN: S411795X0A17867) has 17x 9300 Micron nvme 
+            and 5x 7300 Micron nvme storage drives. So the optimal solution to such issue is use the same 
+            family of nvme storage drives.
+            """
+            issue_report_1 = Paragraph(ptext_issue_paragraph_1, issue_font)               
+            
+            self.story.append(spacer_conclusion)      
+            ptext_figure1_caption = "Figure 1. ACPI Error Message from dmesg"
+            figure1_caption = Paragraph(ptext_figure1_caption, issue_caption_font)        
+
+
+            self.story.append(issue_title)
+            self.story.append(spacer_conclusion)
+            self.story.append(p)
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_subtitle_1)
+            self.story.append(spacer_conclusion)
+            self.story.append(issue_report_1)
+            self.story.append(spacer_conclusion)        
+            # need to change based on your filename
+            self.story.append(get_image("sample.png", height=15*cm, width=15*cm))
+            #self.story.append(get_image(f"{os.environ['UPLOADPATH']}/your_image_file.png", height=15*cm, width=15*cm))
+            self.story.append(figure1_caption)
+
+        if has_conclusion == 1:
+            #conclusion_section
+            self.story.append(PageBreak())
+            ptext_conclusion = f"""<a name="CONCLUSION_TITLE"/><font color="black" size="12"><b>L12 Validation Conclusion for {rackname}</b></font>"""       
+            conclusion_title = Paragraph(ptext_conclusion, centered)
+
+
+            ptext_conclusion_performance = """
+            <font color="black" size="11"><b>Performance Highlights</b></font><br />
+            <br />
+              &#x2022; <b>High Performance Linpack</b> performance is <b>3827.24 GFlops</b>, as a reference, dual EPYC 7742 about 3800 GFlops.<br />
+              &#x2022; <b>LAMMPS</b> 20k Atoms Performance is <b>34.398 ns/day</b>, as a reference, dual EPYC 7742 about 32.1 ns/day.<br />
+              &#x2022; <b>GROMACS</b> water_GMX50_bare Performance is <b>9.521 ns/day</b>, as a reference, dual EPYC 7763 about 10.05 ns/day.<br />
+              &#x2022; <b>MLC</b> sequential read/write bandwidth is <b>551031.7 MB/s</b>, random read/write bandwidth is 419898.1 MB/s. (Read:Write = 2:1).<br />
+              &#x2022; <b>FIO</b> sequential and random read write performance can match advertisement.</li>
+            <br />
+            <br />
+            """
+
+            performance_highlight = Paragraph(ptext_conclusion_performance, issue_font)
+
+            ptext_conclusion_issue = """
+            <font color="black" size="11"><b>Major Issues</b></font><br />
+            <br />
+              &#x2022; Event log keeps reporting “Processor Throttled” despite CPU being in idle state. (Resolved)<br />
+              &#x2022; System freeze during idle. (Resolved)<br />
+            """
+            conclusion_issue = Paragraph(ptext_conclusion_issue, issue_font)
+
+            self.story.append(conclusion_title)
+            self.story.append(spacer_conclusion)
+            self.story.append(p)
+            self.story.append(spacer_median)
+            self.story.append(performance_highlight)
+            self.story.append(spacer_conclusion)
+            self.story.append(conclusion_issue)
+
+        
 
 #----------------------------------------------------------------------
 if __name__ == "__main__":
