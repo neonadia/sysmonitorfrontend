@@ -3652,6 +3652,8 @@ def get_hardware_details():
 
 @app.route('/SMC_db_handshake')
 def SMC_db_handshake():
+    # clean up all comparison
+    get_data.clean_SMC_DB_handshake()
     os.system("chmod +wx SMC_db_handshake.py")
     compare = Popen("python3 SMC_db_handshake.py",shell=True,stdout=PIPE,stderr=PIPE)
     stdout,stderr = compare.communicate()
@@ -3663,6 +3665,24 @@ def SMC_db_handshake():
         feedback = {"response":"Completed"}
         data = json.dumps(feedback)
         return data                                               
+
+@app.route('/hardware_comparison')
+def hardware_comparison():
+    # clean up all comparison
+    get_data.clean_SMC_DB_handshake()
+    get_data.hardware_comparison()
+    feedback = {"response":"Completed"}
+    data = json.dumps(feedback)
+    return data                                               
+
+@app.route('/clean_up_handshake')
+def clean_up_handshake():
+    # clean up all comparison
+    get_data.clean_SMC_DB_handshake()
+    feedback = {"response":"Completed"}
+    data = json.dumps(feedback)
+    return data  
+
 
 @app.route('/hardware_parser')
 def hardware_parser():

@@ -96,14 +96,26 @@
                 <a class="dropdown-item">This is the local time of docker container.</a> 
             </div>
     </li>
+    <!--
     <li class='nav-item'>
         <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="parse_hardware" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_hw()">
             Load hardware data
         </button>
     </li>
+-->
     <li class='nav-item'>
         <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="handshake" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_handshake()">
             SMC Database Handshake
+        </button>
+    </li>
+    <li class='nav-item'>
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="hw_comparison" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_comparison()">
+            Hardware Comparison
+        </button>
+    </li>
+    <li class='nav-item'>
+        <button class="btn pull-right btn-primary btn-lg mr-1 text-white" type="button" id="cleanup" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" onclick="trigger_cleanup()">
+            Comparison Reset
         </button>
     </li>
 </ul>
@@ -172,8 +184,14 @@
 					</div>
                 </td>
                 <td class="align-middle">
-					<a class="font-weight-bold"  href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu}} </a>
-					<div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_cpu_menu" style="width: max-content;"> 
+					{%if "False" in cpu[1]%}
+                    <a class="font-weight-bold text-danger"  href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu[0]}} </a>
+					{%elif "True" in cpu[1]%}
+                    <a class="font-weight-bold text-success"  href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu[0]}} </a>
+                    {%else%}
+                    <a class="font-weight-bold"  href="javascript:void(0)"aria-haspopup="true" aria-haspopup="true" onclick="show_details('{{bmc_ip}}_cpu')"> {{cpu[0]}} </a>
+                    {%endif%}
+                    <div class="font-weight-bold" aria-haspopup="true" aria-haspopup="true" id= "{{bmc_ip}}_cpu_menu" style="width: max-content;"> 
 						<ul id= "{{bmc_ip}}_cpu_submenu" style="text-align: left; display: none"> </ul> 
 					</div>
                 </td>
@@ -341,7 +359,9 @@
                     menu.innerHTML = "";
                     if(hardware === "cpu"){
                         for(var key in data){
-                            menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
+                            if (subkey != "SMC DB handshake" && subkey != "MAC in DB?"){
+                                menu.insertAdjacentHTML('beforeend',"<li style=bold>" + key + " : " + data[key]  +"</li>");
+                            }
                         }
                     }
                     else if(hardware == "memory"){
@@ -646,6 +666,83 @@
             }
         });
     }
+
+    function trigger_comparison(){
+        $.call_comparison_script();
+    }
+    $.call_comparison_script = function(){
+        $.ajax({
+            url: '/hardware_comparison',
+            dataType : "JSON",
+            type : "GET",
+            beforeSend: function(){ 
+                console.log("Executing...");
+                var button = document.getElementById("hw_comparison");
+                document.getElementById("hw_comparison").innerHTML = "Loading";
+                if(!button.classList.replace("btn-primary","btn-info")) {
+                    if(!button.classList.replace("btn-danger", "btn-info")){
+                        button.classList.replace("btn-success", "btn-info")
+                    }
+                }
+            },
+            success: function(result){
+                var data = result;
+                var button = document.getElementById("hw_comparison");
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "Completed"){
+                        button.classList.replace("btn-info","btn-success")
+                        document.getElementById("hw_comparison").innerHTML = "Completed";
+                        window.location.reload();
+                    }
+                    else{
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("btn-info","btn-danger")
+                        document.getElementById("hw_comparison").innerHTML = "ERROR";
+                    } 
+                }
+            }
+        });
+    }
+
+    function trigger_cleanup(){
+        $.call_cleanup_script();
+    }
+    $.call_cleanup_script = function(){
+        $.ajax({
+            url: '/clean_up_handshake',
+            dataType : "JSON",
+            type : "GET",
+            beforeSend: function(){ 
+                console.log("Executing...");
+                var button = document.getElementById("cleanup");
+                document.getElementById("cleanup").innerHTML = "Loading";
+                if(!button.classList.replace("btn-primary","btn-info")) {
+                    if(!button.classList.replace("btn-danger", "btn-info")){
+                        button.classList.replace("btn-success", "btn-info")
+                    }
+                }
+            },
+            success: function(result){
+                var data = result;
+                var button = document.getElementById("cleanup");
+                for(var key in data){
+                    console.log(data[key]);
+                    if(data[key] == "Completed"){
+                        button.classList.replace("btn-info","btn-success")
+                        document.getElementById("cleanup").innerHTML = "Completed";
+                        window.location.reload();
+                    }
+                    else{
+                        console.log(key + ": " + data[key]);
+                        button.classList.replace("btn-info","btn-danger")
+                        document.getElementById("cleanup").innerHTML = "ERROR";
+                    } 
+                }
+            }
+        });
+    }
+
     function startTime() {
         var today = new Date()
         //today.setHours(today.getHours() + 7) // adjust time

@@ -168,6 +168,7 @@ def get_hardwareData():
                     cpu_string = ""
                     add_string = ""
                     speed_string = ""
+                    SMC_handshake = "True"
                     for j in hardware_dict[i]:
                         if j == "Socket(s)":
                             if hardware_dict[i][j] == "0":
@@ -176,8 +177,13 @@ def get_hardwareData():
                                 cpu_string = hardware_dict[i][j] + "x " + cpu_string
                         elif j == "Model name":
                             cpu_string += hardware_dict[i][j]
+                        try:
+                            if "False" in hardware_dict[i]["SMC DB handshake"]:
+                                SMC_handshake = "False"
+                        except:
+                            SMC_handshake = "TBD"
                     cpu_string += add_string + speed_string 
-                    CPU.append(cpu_string)
+                    CPU.append([cpu_string, SMC_handshake])
                     equalizer["CPU"] += 1
                 elif "Memory" in i:
                     dimm_no = ""
@@ -1136,3 +1142,227 @@ def quick_benchmark_configs(benchmark):
                     }
                 }
     return benchmark_configs[benchmark]
+
+## clean up the SMC DB handshake and hardware comparison
+def clean_SMC_DB_handshake():
+    for entry in hardware_collection.find():
+        cur_host = 'N/A'
+        for component in entry:
+            if component == "Hostname":
+                cur_host = entry[component]
+            elif component == 'CPU' and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                temp_dict[component].pop("SMC DB handshake", None)
+                temp_dict[component].pop("MAC in DB?", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})            
+            elif component == 'Memory' and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                for DIMMS in temp_dict[component]["Slots"]:
+                    temp_dict["Memory"]["Slots"][DIMMS].pop("SMC DB handshake", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "PSU" and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                for unit in temp_dict[component]:
+                    if unit != "Number of PSUs":
+                        temp_dict[component][str(unit)].pop("SMC DB handshake", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "NICS" and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                for port in temp_dict[component]:
+                    temp_dict[component][str(port)].pop("SMC DB handshake", None)
+                    temp_dict[component][str(port)].pop("MAC in DB?", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "Graphics" and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                for unit in temp_dict[component]['GPU']:
+                    temp_dict[component]['GPU'][str(unit)].pop("SMC DB handshake", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component in ["Chassis","Base Board","Storage","System"] and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                for chassis in temp_dict[component]:
+                    temp_dict[component][str(chassis)].pop("SMC DB handshake", None)
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+
+## hardware comparison
+def hardware_comparison():
+    ## scan all information
+    components_info = {}
+    for entry in hardware_collection.find():
+        cur_host = 'N/A'
+        for component in entry:
+            if component == "Hostname":
+                cur_host = entry[component]
+                components_info[cur_host] = {}
+            elif component == 'Memory' and cur_host != 'N/A':
+                components_info[cur_host]['memory_size'] = entry[component]['Total Memory']
+                components_info[cur_host]['memory_num'] = entry[component]['DIMMS']
+            elif component == "PSU" and cur_host != 'N/A':
+                components_info[cur_host]['psu'] = []
+                for unit in entry[component]:
+                    if unit != "Number of PSUs":
+                        components_info[cur_host]['psu'].append(entry[component][unit]['Module No.'])
+                components_info[cur_host]['psu'].sort()
+            elif component == "NICS" and cur_host != 'N/A':
+                components_info[cur_host]['nic'] = []
+                for unit in entry[component]:
+                    components_info[cur_host]['nic'].append(entry[component][unit]['Part Number'])
+                components_info[cur_host]['nic'].sort()
+            elif component == "Storage" and cur_host != 'N/A':
+                components_info[cur_host]['storage'] = []
+                for unit in entry[component]:
+                     components_info[cur_host]['storage'].append(entry[component][unit]['ModelNumber'])
+                components_info[cur_host]['storage'].sort()
+            elif component == "System" and cur_host != 'N/A':
+                components_info[cur_host]['system'] = []
+                for unit in entry[component]:
+                     components_info[cur_host]['system'].append(entry[component][unit]['Product Name'])
+                components_info[cur_host]['system'].sort()
+            elif component == "Chassis" and cur_host != 'N/A':
+                components_info[cur_host]['chassis'] = []
+                for unit in entry[component]:
+                     components_info[cur_host]['chassis'].append(entry[component][unit]['Part Number'])
+                components_info[cur_host]['chassis'].sort()
+            elif component == "Base Board" and cur_host != 'N/A':
+                components_info[cur_host]['motherboard'] = []
+                for unit in entry[component]:
+                     components_info[cur_host]['motherboard'].append(entry[component][unit]['Product Name'])
+                components_info[cur_host]['motherboard'].sort()
+            elif component == "Fans" and cur_host != 'N/A':
+                components_info[cur_host]['fans'] = 0
+                for unit in entry[component]:
+                     components_info[cur_host]['fans'] += 1
+                components_info[cur_host]['motherboard'].sort()
+            elif component == "CPU" and cur_host != 'N/A':
+                components_info[cur_host]['cpu_model'] = entry[component]['Model name']
+                components_info[cur_host]['cpu_sockets'] = entry[component]['Socket(s)']
+            elif component == "Graphics" and cur_host != 'N/A':
+                components_info[cur_host]['gpu'] = []
+                for unit in entry[component]['GPU']:
+                    components_info[cur_host]['gpu'].append(entry[component]['GPU'][unit]['Model'])
+                components_info[cur_host]['gpu'].sort()
+
+    ## find out the most common configuration
+    value_counter = {host: 0 for host in components_info.keys()}
+    for host_v in value_counter:
+        for host_c in components_info:
+            if components_info[host_v] == components_info[host_c]:
+                value_counter[host_v] += 1
+    golden_host = max(value_counter, key=value_counter.get)
+    golden_config = components_info[golden_host]
+
+
+    ## flag all the items
+    for entry in hardware_collection.find():
+        cur_host = 'N/A'
+        for component in entry:
+            if component == "Hostname":
+                cur_host = entry[component]
+            elif component == 'Memory' and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['memory_num'] == golden_config['memory_num'] and \
+                components_info[cur_host]['memory_size'] == golden_config['memory_size']:
+                    for DIMMS in temp_dict[component]["Slots"]:
+                        temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "True"
+                else:
+                    for DIMMS in temp_dict[component]["Slots"]:
+                        temp_dict["Memory"]["Slots"][DIMMS]["SMC DB handshake"] = "False"                
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "PSU" and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['psu'] == golden_config['psu']:
+                    for unit in temp_dict[component]:
+                        if unit != "Number of PSUs":
+                            temp_dict[component][str(unit)]["SMC DB handshake"] = "True"
+                else:
+                    for unit in temp_dict[component]:
+                        if unit != "Number of PSUs":
+                            temp_dict[component][str(unit)]["SMC DB handshake"] = "False"               
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "NICS" and cur_host != 'N/A':
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['nic'] == golden_config['nic']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "Base Board" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['motherboard'] == golden_config['motherboard']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "Storage" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['storage'] == golden_config['storage']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "System" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['system'] == golden_config['system']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})            
+            elif component == "Chassis" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['chassis'] == golden_config['chassis']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "Chassis" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['chassis'] == golden_config['chassis']:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "True"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "True"
+                else:
+                    for port in temp_dict[component]:
+                        temp_dict[component][str(port)]["SMC DB handshake"] = "False"
+                        temp_dict[component][str(port)]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict}) 
+            elif component == "CPU" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['cpu_model'] == golden_config['cpu_model'] \
+                and components_info[cur_host]['cpu_sockets'] == golden_config['cpu_sockets'] :
+                    
+                    temp_dict[component]["SMC DB handshake"] = "True"
+                    temp_dict[component]["MAC in DB?"] = "True"
+                else:
+                    temp_dict[component]["SMC DB handshake"] = "False"
+                    temp_dict[component]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})
+            elif component == "Graphics" and cur_host != "N/A":
+                temp_dict = {component:entry[component]}
+                if components_info[cur_host]['gpu'] == golden_config['gpu']:
+                    for unit in temp_dict[component]['GPU']:
+                        temp_dict[component]['GPU'][str(unit)]["SMC DB handshake"] = "True"
+                        temp_dict[component]['GPU'][str(unit)]["MAC in DB?"] = "True"
+                else:
+                    for unit in temp_dict[component]['GPU']:
+                        temp_dict[component]['GPU'][unit]["SMC DB handshake"] = "False"
+                        temp_dict[component]['GPU'][unit]["MAC in DB?"] = "False"
+                hardware_collection.update_one({"Hostname":cur_host},{"$set":temp_dict})                    
