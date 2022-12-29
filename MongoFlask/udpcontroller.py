@@ -14,9 +14,22 @@ def fileEmpty(filepath):
         return True
     return False
 
+def wait_json_ready(json_path):
+    found = False
+    while not found:
+        try:
+            with open(json_path) as json_file:
+                data = json.load(json_file)
+            found = True
+            printf("Valid JSON file found!")
+        except:
+            time.sleep(1)
+            pass
+
 def getMessage(json_path, mac_list):
     if fileEmpty(json_path) == True:
-        return(['Initialize Needed!' for i in range(len(mac_list))])
+        return(['Initialize Needed!' for i in range(len(mac_list))]) 
+    wait_json_ready(json_path)
     with open(json_path) as json_file:
         data = json.load(json_file)
         msg = ['Initialize Needed!' for i in range(len(mac_list))]
@@ -43,6 +56,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
         if latest_state == "ONLINE":
             for iterations in range(10):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
+                wait_json_ready(json_path)
                 with open(json_path) as json_file:
                     data = json.load(json_file)
                     for mac in data.keys():
@@ -60,6 +74,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
                 time.sleep(2)
         elif latest_state == "latest": # Reading the latest states
             printf("Reading UDP Host file, getting last log msg...")
+            wait_json_ready(json_path)
             with open(json_path) as json_file:
                 data = json.load(json_file)
                 for mac in data.keys():
@@ -71,6 +86,7 @@ def getMessage_dictResponse(json_path,mac_os,state):
         else: # checking if latest state
             for iterations in range(1000):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
+                wait_json_ready(json_path)
                 with open(json_path) as json_file:
                     data = json.load(json_file)
                     for mac in data.keys():
