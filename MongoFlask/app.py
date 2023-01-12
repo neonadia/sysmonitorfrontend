@@ -365,8 +365,8 @@ def indexHelper(bmc_ip_auth):
 
 @app.route('/')
 def index():
-    bmc_ip, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
-    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey = ([] for i in range(25))
+    bmc_ip, node_pos, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
+    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey = ([] for i in range(26))
     current_flag = read_flag()
     if current_flag == 0:
         monitor = "IDLE "
@@ -415,6 +415,7 @@ def index():
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
         os_ip.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['os_ip'].values[0])
         bmc_ip_auth.append((i['BMC_IP'],"ADMIN",current_auth[1]))
+        node_pos.append(chr(65 + df_pwd[df_pwd['ip'] == i['BMC_IP']]['node'].values[0]))
     
     with Pool() as p:
         output = p.map(indexHelper, bmc_ip_auth)
@@ -452,7 +453,7 @@ def index():
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names,node_pos)
 
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
