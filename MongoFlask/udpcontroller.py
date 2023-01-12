@@ -22,21 +22,20 @@ def wait_json_ready(json_path):
                 data = json.load(json_file)
             found = True
             printf("Valid JSON file found!")
+            return data
         except:
             time.sleep(1)
-            pass
+            continue
 
 def getMessage(json_path, mac_list):
     if fileEmpty(json_path) == True:
         return(['Initialize Needed!' for i in range(len(mac_list))]) 
-    wait_json_ready(json_path)
-    with open(json_path) as json_file:
-        data = json.load(json_file)
-        msg = ['Initialize Needed!' for i in range(len(mac_list))]
-        for mac in data.keys():
-            mac_cut = mac.replace(':','').upper()
-            if mac_cut in mac_list:
-                msg[mac_list.index(mac_cut)] = data[mac]['log'][-1]['data']
+    data = wait_json_ready(json_path)
+    msg = ['Initialize Needed!' for i in range(len(mac_list))]
+    for mac in data.keys():
+        mac_cut = mac.replace(':','').upper()
+        if mac_cut in mac_list:
+            msg[mac_list.index(mac_cut)] = data[mac]['log'][-1]['data']
     return msg
 
 def getMessage_dictResponse(json_path,mac_os,state):
@@ -56,16 +55,14 @@ def getMessage_dictResponse(json_path,mac_os,state):
         if latest_state == "ONLINE":
             for iterations in range(10):###Check the file for the client_state desired a total of 10 times w/ 2 second
                 client_state_checking_done = True
-                wait_json_ready(json_path)
-                with open(json_path) as json_file:
-                    data = json.load(json_file)
-                    for mac in data.keys():
-                        mac_cut = mac.replace(':','').upper()
-                        for selected_mac in mac_os:
-                            if mac_cut == selected_mac[0]:
-                                selected_ip = selected_mac[1]
-                                if latest_state in data[mac]['log'][-1]['data'] or "RESTART" in data[mac]['log'][-1]['data']:
-                                    response[selected_ip] = data[mac]['log'][-1]['data'] + " : " +  data[mac]['log'][-1]['time']
+                data = wait_json_ready(json_path)
+                for mac in data.keys():
+                    mac_cut = mac.replace(':','').upper()
+                    for selected_mac in mac_os:
+                        if mac_cut == selected_mac[0]:
+                            selected_ip = selected_mac[1]
+                            if latest_state in data[mac]['log'][-1]['data'] or "RESTART" in data[mac]['log'][-1]['data']:
+                                response[selected_ip] = data[mac]['log'][-1]['data'] + " : " +  data[mac]['log'][-1]['time']
                 for r in response:
                     if latest_state not in response[r] and "RESTART" not in response[r] and "OFFLINE" not in response[r]:
                         client_state_checking_done = False
@@ -74,27 +71,23 @@ def getMessage_dictResponse(json_path,mac_os,state):
                 time.sleep(2)
         elif latest_state == "latest": # Reading the latest states
             printf("Reading UDP Host file, getting last log msg...")
-            wait_json_ready(json_path)
-            with open(json_path) as json_file:
-                data = json.load(json_file)
+            data = wait_json_ready(json_path)
+            for mac in data.keys():
+                mac_cut = mac.replace(':','').upper()
+                for selected_mac in mac_os:
+                    if mac_cut == selected_mac[0]:
+                        selected_ip = selected_mac[1]
+                        response[selected_ip] = data[mac]['log'][-1]['data']
+        else: # checking if latest state
+            for iterations in range(1000):###Check the file for the client_state desired a total of 10 times w/ 2 second
+                client_state_checking_done = True
+                data = wait_json_ready(json_path)
                 for mac in data.keys():
                     mac_cut = mac.replace(':','').upper()
                     for selected_mac in mac_os:
                         if mac_cut == selected_mac[0]:
                             selected_ip = selected_mac[1]
                             response[selected_ip] = data[mac]['log'][-1]['data']
-        else: # checking if latest state
-            for iterations in range(1000):###Check the file for the client_state desired a total of 10 times w/ 2 second
-                client_state_checking_done = True
-                wait_json_ready(json_path)
-                with open(json_path) as json_file:
-                    data = json.load(json_file)
-                    for mac in data.keys():
-                        mac_cut = mac.replace(':','').upper()
-                        for selected_mac in mac_os:
-                            if mac_cut == selected_mac[0]:
-                                selected_ip = selected_mac[1]
-                                response[selected_ip] = data[mac]['log'][-1]['data']
                 for r in response:
                     if latest_state not in response[r]:
                         client_state_checking_done = False
