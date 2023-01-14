@@ -1207,12 +1207,10 @@ class Test(object):
             cur_img = np.frombuffer(gOut.read(), dtype=np.uint8)
             cur_img = np.reshape(cur_img, topo_files[key][1])
             save_path = os.environ['UPLOADPATH'] + '/hw_data/hw_info_'  + key
-            
-            if os.path.exists(save_path):
-                printf('--------------------------------Saving the image for: ' + key)
-                cv2.imwrite(save_path  +  '/' + topo_files[key][2], cur_img)
-            else:
-                printf('Warning: ' + save_path + ' path not exsits. Skip saving the topo.png')
+            if not os.path.exists(save_path):
+                os.makedirs(save_path, exist_ok=True )
+            printf('--------------------------------Saving the image for: ' + key)
+            cv2.imwrite(save_path  +  '/' + topo_files[key][2], cur_img)
         # initialize variables
         hw_data_path = os.environ['UPLOADPATH'] + '/hw_data'
         all_hw_info_dirs = []

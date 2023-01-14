@@ -3594,8 +3594,7 @@ def get_node_Topo():
     filepath = os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname + '/' + topo_filename
     if not os.path.exists(os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname):
         path = os.environ['UPLOADPATH'] + '/hw_data/hw_info_' + hostname
-        md = 0o666
-        os.mkdir(path, md)
+        os.makedirs(path, exist_ok=True )
     topo_image = cv2.imwrite(filepath,img)
     client.close()
     return send_file(filepath,as_attachment=True,cache_timeout=0)
