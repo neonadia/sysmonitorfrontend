@@ -397,7 +397,7 @@
                             {% if sys_temps[loop.index-1] |length > 0 %}
                                 {% for systemp in sys_temps[loop.index-1] %}
                                     <li>
-                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0]}}?name={{ systemps}}">{{systemp}}</a>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_othertemperatures/{{ row[0]}}?name={{ systemp}}">{{systemp}}</a>
                                     </li>
                                 {% endfor %}
                             {% else %}
@@ -415,7 +415,7 @@
                             {% if sys_fans[loop.index-1] |length > 0 %}
                                 {% for sys_fan in sys_fans[loop.index-1] %}
                                     <li>
-                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}?name={{ sys_fans}}">{{sys_fan}}</a>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_fans/{{ row[0] }}?name={{ sys_fan}}">{{sys_fan}}</a>
                                     </li>
                                 {% endfor %}
                             {% else %}
@@ -433,7 +433,7 @@
                             {% if sys_voltages[loop.index-1] |length > 0 %}
                                 {% for sys_voltage in sys_voltages[loop.index-1] %}
                                     <li>
-                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}?name={{ sys_voltages}}">{{sys_voltage}}</a>
+                                        <a class="dropdown-item" href="{{ url_for('index') }}chart_voltages/{{ row[0] }}?name={{ sys_voltage}}">{{sys_voltage}}</a>
                                     </li>
                                 {% endfor %}
                             {% else %}
