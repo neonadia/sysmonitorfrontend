@@ -964,19 +964,29 @@ def find_min_max_rack_helper(input_list):
     api1 = input_list[1]
     api2 = input_list[2]
     sensor_id = input_list[3]
-    data = entries.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
+    start_date = input_list[4]
+    end_date = input_list[5]
+
+    if start_date == -1 and end_date == -1: # Check if there is no given datetime range
+        data = entries.find({'BMC_IP':bmc_ip},{api1:1,'Datetime':1})
+    else:
+        data = entries.find({'BMC_IP':bmc_ip, "Datetime": {"$gte": start_date, "$lte": end_date}},{api1:1,'Datetime':1})
+
     all_vals[bmc_ip] = []
     all_dates[bmc_ip] = []
     for i in data: # data contains multiple readings, each reading has a time
         all_vals[bmc_ip].append(i[api1][sensor_id][api2])
         sensor_name = i[api1][sensor_id]['Name']
         all_dates[bmc_ip].append(i['Datetime'])
-    return all_vals, sensor_name, all_dates
+    try:
+        return all_vals, sensor_name, all_dates
+    except UnboundLocalError:       # Used when data reading is not given at all from at least one or more nodes.
+        return all_vals, "No Reading Available", all_dates
 
-def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
+def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list, start_date, end_date):
     input_list = []
     for bmc in ip_list:
-        input_list.append([bmc, api1, api2, sensor_id])
+        input_list.append([bmc, api1, api2, sensor_id, start_date, end_date])
     with Pool() as p:
         output = p.map(find_min_max_rack_helper, input_list)
     all_vals = {}
@@ -1026,7 +1036,12 @@ def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list):
     date_format = "%Y-%m-%d %H:%M:%S"
     elapsed_time = datetime.datetime.strptime(all_dates[ip_list[-1]][-1], date_format) - datetime.datetime.strptime(all_dates[ip_list[0]][0], date_format)
     elapsed_hour = str(round(elapsed_time.total_seconds()/3600,2))
-    last_date = all_dates[ip_list[-1]][-1]
+    #last_date = all_dates[ip_list[-1]][-1] # Gets last date (timestamp) based on user input time range, not from database
+
+    connect = pymongo.MongoClient('localhost', mongoport)
+    db = connect['redfish']
+    entries = db.monitor
+    last_date = entries.find_one(sort=[('Datetime', -1)])['Datetime']	# Will get latest timestamp, regardless of user input time range    
 
     good_count = []
     for i, bmc_ip in enumerate(ip_list):

@@ -2792,8 +2792,12 @@ def make_tarfile(output_filename, source_dir):
 #   end datetime is not after max datetime (datetime cannot be in the future)
 def validate_time_range(bmc_ip, start_date, end_date):
     # Get default start_date and end_date from mongodb
-    default_start_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', 1)])['Datetime']
-    default_end_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', -1)])['Datetime']
+    if(bmc_ip=='0.0.0.0'):
+        default_start_date = monitor_collection.find_one({},{"Datetime":1},sort=[('Datetime', 1)])['Datetime']
+        default_end_date = monitor_collection.find_one({},{"Datetime":1},sort=[('Datetime', -1)])['Datetime']
+    else:
+        default_start_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', 1)])['Datetime']
+        default_end_date = monitor_collection.find_one({"BMC_IP": bmc_ip},{"Datetime":1},sort=[('Datetime', -1)])['Datetime']
     # Check if start_date and end_date are in correct datetime format
     date_format = '%Y-%m-%d %H:%M:%S'
     try:
@@ -3080,7 +3084,18 @@ def min_max_alltemperatures_chart():
         sn_list.append(getSerialNumber(ip))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
-    max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
+
+    start_date = request.args.get('start')	# Get start and end datetimes from user input
+    end_date = request.args.get('end')
+    start_date, end_date, default_start_date, default_end_date = validate_time_range('0.0.0.0', start_date, end_date)
+
+    try:
+        max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list, start_date, end_date)
+    except IndexError:		# Used when there are less than one data point from given time range
+        max_vals, min_vals, max_dates, min_dates, avg_vals, all_count,  elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id, "Temperatures", "ReadingCelsius", 9999, ip_list)
+        start_date = default_start_date
+        end_date = default_end_date
+
     chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Temperature (Celsius)":max_vals, "BMC IPs": node_names})
     df_min = pd.DataFrame({"Temperature (Celsius)":min_vals, "BMC IPs": node_names})
@@ -3111,7 +3126,7 @@ def min_max_alltemperatures_chart():
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     plt.close()
-    return render_template('imageOutputRack.html',rackname=rackname, sensor = sensor,chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
+    return render_template('imageOutputRack.html',rackname=rackname, sensor = sensor, var=sensor_id, chart_headers = chart_headers ,data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,start=start_date,end=end_date,rackobserverurl = rackobserverurl)
 
 @app.route('/min_max_allpower_chart')
 def min_max_allpower_chart():
@@ -3137,7 +3152,18 @@ def min_max_allpower_chart():
         sn_list.append(getSerialNumber(ip))   
     sensor_id = request.args.get('var')
     sensor_id = str(sensor_id)
-    max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
+
+    start_date = request.args.get('start')	# Get start and end datetimes from user input
+    end_date = request.args.get('end')
+    start_date, end_date, default_start_date, default_end_date = validate_time_range('0.0.0.0',start_date, end_date)
+
+    try:
+        max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list, start_date, end_date)
+    except IndexError:		# Used when there are less than one data point from given time range
+        max_vals, min_vals, max_dates, min_dates, avg_vals, all_count, elapsed_hour, good_count, zero_count, last_date, sensor_name = get_data.find_min_max_rack(sensor_id,"PowerControl", "PowerConsumedWatts", 9999, ip_list)
+        start_date = default_start_date
+        end_date = default_end_date
+
     chart_headers = ['Rack Name: ' + rackname, 'Sensor Name: ' + sensor_name,'Elapsed Time: ' + elapsed_hour + ' hours', 'Last Timestamp: ' + last_date, 'Value Counts: ' + str(all_count), 'Extreme Sensor Readings: (Light Blue: Min, Green: Max)']
     df_max = pd.DataFrame({"Power Consumption (W)":max_vals, "BMC IPs": node_names})
     df_min = pd.DataFrame({"Power Consumption (W)":min_vals, "BMC IPs": node_names})
@@ -3167,7 +3193,7 @@ def min_max_allpower_chart():
     while not os.path.isfile("/app/static/images/" + imagepath):
         time.sleep(1)
     plt.close()
-    return render_template('imageOutputRack.html',rackname=rackname,chart_headers = chart_headers ,sensor = sensor, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,rackobserverurl = rackobserverurl)
+    return render_template('imageOutputRack.html',rackname=rackname,chart_headers = chart_headers ,sensor = sensor, var=sensor_id, data = zip(ip_list, names, sn_list, min_vals,min_dates,max_vals,max_dates, avg_vals, good_count, zero_count),imagepath="../static/images/" + imagepath,imageheight=imageheight,start=start_date,end=end_date,rackobserverurl = rackobserverurl)
 
 
 @app.route('/chart_powercontrol/<bmc_ip>')
@@ -3841,6 +3867,16 @@ def get_node_names(): #Gather node names from node_names file. Return a boolean 
             return ips_names
 
 
+@app.route('/shutdown_events')
+def shutdown_events():
+    log_path = os.environ['UPLOADPATH'] + '/' + os.environ['RACKNAME'] + '-shutdown_events.log'
+    if not fileEmpty(log_path): #### Check if log file exist
+        with open(log_path) as log_file:
+            shutdown_events = log_file.read().splitlines()
+        return render_template('simpleresult.html',messages = shutdown_events)
+    else:
+        return render_template('simpleresult.html',messages = ['No shutdown performed by L12CM so far'])
+    
 @app.errorhandler(404)
 def page_not_found(e):
     # note that we set the 404 status explicitly!!
