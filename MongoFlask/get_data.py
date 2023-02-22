@@ -983,7 +983,7 @@ def find_min_max_rack_helper(input_list):
     except UnboundLocalError:       # Used when data reading is not given at all from at least one or more nodes.
         return all_vals, "No Reading Available", all_dates
 
-def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list, start_date, end_date):
+def find_min_max_rack(sensor_id,api1,api2,boundry,ip_list, start_date=-1, end_date=-1):
     input_list = []
     for bmc in ip_list:
         input_list.append([bmc, api1, api2, sensor_id, start_date, end_date])
