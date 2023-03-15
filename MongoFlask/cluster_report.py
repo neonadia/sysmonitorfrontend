@@ -30,6 +30,7 @@ from subprocess import Popen, PIPE
 # 1 : add issue/conclusion section
 has_issue = 1
 has_conclusion = 1
+n=6 # number of bars for each plot
 
 class ConditionalSpacer(Spacer):
 
@@ -180,7 +181,7 @@ for data in list(collection2.find({})):
         benchmark_name[data['benchmark']] = 1
     else:
         benchmark_name[data['benchmark']] += 1
-n = 6
+
 benchmark_map = {}
 for key, value in benchmark_name.items():
     for i in range(math.ceil(value/n)):

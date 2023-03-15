@@ -663,20 +663,32 @@ def find_temperatures(bmc_ip):
     db = connect['redfish']
     collection = 'monitor'
     entries = db[collection]
-    data_entry = entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1})
+    data_entry = list(entries.find({"BMC_IP": bmc_ip}, {"_id": 0, "BMC_IP": 1, "Datetime": 1, "Temperatures": 1}))
+
 
     # initial dataset
     dataset = {'RACK': rackname, 'bmc_ip': bmc_ip, 'datetime': [], 'Temperatures': []}
 
     # temperatures
-    for i in range(len(data_entry[0]['Temperatures'])):
-        dataset['Temperatures'].append({'Name': data_entry[0]['Temperatures'][str(i + 1)]['Name'], 'Reading': []})
+    max_length_item = 0
+    max_length_temp = 0
+    for i in range(len(data_entry)):
+        if len(data_entry[i]['Temperatures']) > max_length_temp:
+            max_length_temp = len(data_entry[i]['Temperatures'])
+            max_length_item = i
+
+    for i in range(len(data_entry[max_length_item]['Temperatures'])):
+        dataset['Temperatures'].append({'Name': data_entry[max_length_item]['Temperatures'][str(i + 1)]['Name'], 'Reading': []})
 
     # get dataset
     for x in data_entry:
         dataset['datetime'].append(x['Datetime'])
         for i in range(len(x['Temperatures'])):
-            dataset['Temperatures'][i]['Reading'].append(x['Temperatures'][str(i+1)]['ReadingCelsius'])
+            try:
+                dataset['Temperatures'][i]['Reading'].append(x['Temperatures'][str(i+1)]['ReadingCelsius'])
+            except:
+                dataset['Temperatures'][i]['Reading'].append(0)
+                
 
     connect.close()
 
