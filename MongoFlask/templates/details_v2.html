@@ -712,9 +712,9 @@
                         }
                     }
                 }
-                else if(data[iter]['Manufacturer'] == 'AMD'){
+                else if(data[iter]['Manufacturer'] == 'AMD' || data[iter]['Manufacturer'] == 'HABANA' ){
                     insert_row_3('summary_gpus',data[iter]['Manufacturer'],data[iter]['GPU']['0']['Series'],data[iter]['Number of GPUs']);
-                    document.getElementById('gpu_manufacturer').innerHTML = 'AMD';
+                    document.getElementById('gpu_manufacturer').innerHTML = data[iter]['Manufacturer'];
                     document.getElementById('gpu_driver').innerHTML = data[iter]['Driver Version'];
                     for(var gpu in data[iter]['GPU']){
                         gpus.insertAdjacentHTML('beforeend','<div class="card" id="gpu' +  gpu +  '"></div>');
