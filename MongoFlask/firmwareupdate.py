@@ -1,4 +1,5 @@
 import requests, json, sys, re, warnings, argparse, time
+import subprocess
 import urllib3
 import os
 from subprocess import Popen, PIPE
@@ -195,29 +196,44 @@ def CancelFirmUpdate(IPMI,auth):
             rprint.write(time.asctime() + ": " + IPMI + "  'BMC update cannot canceled, error code: " + str(response.status_code) + "\n")
         return(1)
 
-def powerState(IPMI,auth):
-    #API = "/redfish/v1/Systems/1"
-    #response = requests.get(IPMI + API, verify=False, auth=auth)
-    #if response.json()['PowerState'] == 'On':
+
+# ====================================================================================================
+# Function indented to check the current power based on the IPMI command chassis status
+# It will take in the IPMI address and the password
+# It will return either on off or error
+# Note: This function could use redfish API to perform this action but ipmitool is being used because
+# in a situation where the redfish isn't activated on the system it will not work.
+# ====================================================================================================
+def power_state_command(ipmi, auth, power_command='status'):
+    # =============================================
+    # OLD Redfish API Commands
+    # API = "/redfish/v1/Systems/1"
+    # response = requests.get(IPMI + API, verify=False, auth=auth)
+    # if response.json()['PowerState'] == 'On':
     #    return True
-    #else:
+    # else:
     #    return False
-    ip = IPMI.replace("https://","")
+    # =============================================
+    ip = ipmi.replace('https://', '')
     user = auth[0]
     pwd = auth[1]
-    process = Popen('ipmitool ' +  'chassis status' + ' -H ' +  ip + ' -U ' + user + ' -P ' + pwd + ' | grep "System Power"', shell=True, stdout=PIPE, stderr=PIPE)
     try:
-        stdout, stderr = process.communicate(timeout=1)
-    except:
-        printf("No connection!!!")
-        return -1
-    if "on" in str(stdout):
-        printf(str(stdout))
-        return True
-    else:
-        printf(str(stdout))
-        return False
-    
+        command = subprocess.run(['ipmitool', '-H', ip, '-U', user, '-P', pwd, 'chassis', 'power',
+                                  power_command], check=True, capture_output=True, text=True).stdout.rstrip()
+        print('+' * 50)
+        if power_command == 'status':
+            command_response = re.search(r'Chassis Power is +(.+)', command).group(1)
+            print(f'Current State: {command_response.upper()}')
+        else:
+            command_response = re.search(r'Chassis Power Control: +(.+)', command).group(1)
+            print(f'Sent power state command: {command_response.upper()}')
+        print('+' * 50)
+    except subprocess.CalledProcessError as error:
+        print('No ipmi connection!!!')
+        print(error)
+        return 'D/C'
+    return command_response.upper()
+
 
 # Reset allow: "On","ForceOff","GracefulShutdown","GracefulRestart","ForceRestart","Nmi","ForceOn"
 def systemRebootTesting(IPMI,auth,api):

@@ -108,6 +108,10 @@
           text-decoration: none;
           cursor: pointer;
         }
+        div.dt-button-collection {
+        max-height: {{ menu_length }}px;
+        overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +125,7 @@
     </li>
     <li class='dropdown'>
         <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        L12 Cluster Monitor
+        L12 Cluster Master
         </a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <a class="dropdown-item">Time Zone: {{ time_zone }}</a>
@@ -180,6 +184,7 @@
         <th class="align-middle" >DATETIME</th>
         <th class="align-middle" >BMC Status</th>
         <th class="align-middle" >Status</th>
+        <th class="align-middle" >Power State</th>
         <th class="align-middle" >UDP Message</th>
         <th class="align-middle" >UID</th>
         <th class="align-middle" >Details</th>
@@ -286,6 +291,20 @@
                 <td class="align-middle font-weight-bold text-warning" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% else %}
                 <td class="align-middle font-weight-bold text-success" id="{{row[0]}}flag" >{{ row[9] }}</td>
+            {% endif %}
+            <!-- Power State Button Code -->
+            {% if "OFF" in row[19]%}
+                <td width="5%">
+                    <a class="btn btn-small fas fa-toggle-off fa-3x text-secondary" id="{{row[0]}}powerstate" onclick=" WritePowerVal('{{row[0]}}');" ></a>
+                </td>
+            {% elif "ON" in row[19]%}
+                <td width="5%">
+                    <a class="btn btn-small fas fa-toggle-on fa-3x text-success" id="{{row[0]}}powerstate" onclick=" WritePowerVal('{{row[0]}}');" ></a>
+                </td>
+            {% else %}
+                <td width="5%">
+                    <a class="btn btn-small fas fa-exclamation-triangle fa-3x text-danger" id="{{row[0]}}powerstate" onclick=" WritePowerVal('{{row[0]}}');" ></a>
+                </td>
             {% endif %}
             <td class="align-middle font-weight-bold text-success" id= "{{row[0]}}udp" >{{ row[11] }}</td> 
             {% if "OFF" in row[14]%}
@@ -588,6 +607,63 @@
             }
         });
     };
+    // ==================================================
+    // Start of code for power state button
+    // ==================================================
+    function WritePowerVal(val2){ //Javascript function for retrieving parameters, and passing to ajax.
+        console.log(val2);
+        $.PowerStateQuery(val2);
+    };
+    // AJAX Function for PowerState...
+    $.PowerStateQuery = function(val2){
+        let text = "Press OK to change power state.\nOr Cancel to not change power state.";
+        if (confirm(text) == true) {
+            $.ajax({
+                url: '/power_onoff',
+                data:{ ip: val2},
+                dataType: "JSON",
+                timeout: 400000,
+                type: 'GET',
+                beforeSend: function(){ ///Write executing to button while sending and retrieving data.
+                    console.log("Executing...");
+                    var text = document.getElementById(val2+'powerstate');
+                    text.classList.remove("text-primary", "text-secondary", "text-success", "text-danger");
+                    text.classList.remove("fa-toggle-off", "fa-toggle-on", "fa-spinner", "fa-spin", "fa-exclamation-triangle");
+                    text.classList.add("text-primary", "fa-spinner", "fa-spin");
+                },
+                success: function(result){
+                    var data = result;
+                    var text = document.getElementById(val2+'powerstate');
+                    for(var key in data){
+                        //Remove all the colors and icons and only add back what we need.
+                        text.classList.remove("text-primary", "text-secondary", "text-success", "text-danger");
+                        text.classList.remove("fa-toggle-off", "fa-toggle-on", "fa-spinner", "fa-spin", "fa-exclamation-triangle");
+                        if (data[key] == "ON") { ////Assign color for button accordingly
+                            text.classList.add("text-success", "fa-toggle-on");
+                        }
+                        else if (data[key] == "OFF"){
+                            text.classList.add("text-secondary", "fa-toggle-off");
+                        }
+                        else {
+                            console.log("Got N/A");
+                            text.classList.add("text-danger", "fa-exclamation-triangle");
+                        }
+                    }
+
+                },
+                error: function (xhr, textStatus) {
+                    console.log("Error on ajax function with " + val2);
+                    var text = document.getElementById(val2+'powerstate');
+                    text.classList.remove("text-primary", "text-secondary", "text-success", "text-danger");
+                    text.classList.remove("fa-toggle-off", "fa-toggle-on", "fa-spinner", "fa-exclamation-triangle");
+                    text.classList.add("text-danger", "fa-exclamation-triangle");
+                }
+            });
+        }
+    };
+    // ==================================================
+    // End power state code
+    // ==================================================
     $(document).ready(function() {
         $('#indexpage').DataTable( {
             "lengthMenu": [[10, 20, 40, -1], [10, 20, 40, "All"]],
@@ -672,6 +748,24 @@
                                         else{
                                             document.getElementById(bmc_ip+'flag').classList.add('text-success');
                                         }
+                                    }
+                                    break;
+                                case 'powerStatus':
+                                    if (document.getElementById(bmc_ip+'powerstate')) {
+                                        text = document.getElementById(bmc_ip+'powerstate')
+                                        text.classList.remove("text-primary", "text-secondary", "text-success", "text-danger");
+                                        text.classList.remove("fa-toggle-off", "fa-toggle-on", "fa-spinner", "fa-spin", "fa-exclamation-triangle");
+                                        ////Assign color for button accordingly
+                                        if (data[bmc_ip][i].includes('ON')) {
+                                            text.classList.add("text-success", "fa-toggle-on");
+                                        }
+                                        else if (data[bmc_ip][i].includes('OFF')){
+                                            text.classList.add("text-secondary", "fa-toggle-off");
+                                        }
+                                        else {
+                                            console.log("Got N/A");
+                                            text.classList.add("text-danger", "fa-exclamation-triangle");
+                                            }
                                     }
                                     break;
                                 case 'bmc_event':

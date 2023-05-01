@@ -14,7 +14,7 @@ from sys import getsizeof
 import time
 import subprocess
 from subprocess import Popen, PIPE
-from firmwareupdate import BiosUpdatingMode, BiosUploadingFile, BiosStartUpdating, powerState, systemRebootTesting, FirmUpdatingMode, FirmUploadingFile, FirmStartUpdating, redfishReadyCheck, CancelBiosUpdate, CancelFirmUpdate, checkUID
+from firmwareupdate import BiosUpdatingMode, BiosUploadingFile, BiosStartUpdating, power_state_command, systemRebootTesting, FirmUpdatingMode, FirmUploadingFile, FirmStartUpdating, redfishReadyCheck, CancelBiosUpdate, CancelFirmUpdate, checkUID
 from password import find_password
 from multiprocessing import Pool
 from bioscomparison import compareBiosSettings, bootOrderOutput
@@ -38,6 +38,7 @@ import gridfs
 import cv2
 import numpy as np
 import shutil
+import re
 from session_checker import udp_session_checker, sum_session_checker, telemetry_session_checker, redfish_session_checker
 
 app = Flask(__name__)
@@ -279,6 +280,70 @@ def uid_onoff():# Returns BLINKING, OFF, N/A
     data = json.dumps(result)
     return data
 
+
+@app.route('/power_onoff')
+# ====================================================================================================
+# Changes power state and returns state change
+# ====================================================================================================
+def power_onoff():
+    bmc_ip = request.args.get('ip')
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'], names=['ip', 'os_ip', 'mac', 'node', 'pwd'])
+    current_auth = ("ADMIN", df_pwd[df_pwd['ip'] == bmc_ip]['pwd'].values[0])
+    checked_state = power_state_command(ipmi=bmc_ip, auth=current_auth).lower()
+    if checked_state == 'd/c':
+        return json.dumps({'Status': "N/A"})
+    # If the system is on we want to perform a soft turn off.
+    # If the system is in any other state we want to attempt to turn it on.
+    if checked_state == 'on':
+        desired_state = 'soft'
+        timeout = 300
+
+    else:
+        desired_state = 'on'
+        timeout = 120
+
+    power_state_command(ipmi=bmc_ip, auth=current_auth, power_command=desired_state)
+    # Changing this because we want to use soft for the graceful shutdown, but we need to check for it in the off state
+    if desired_state == 'soft':
+        desired_state = 'off'
+    start_time = time.perf_counter()
+    current_time = time.perf_counter()
+    continue_loop = True
+    while continue_loop:
+        print('=' * 50)
+        print('Checking the early status of the IPMI')
+        print(f'Timeout timer:{str(current_time - start_time)}')
+        print(f'Current State:{checked_state}.')
+        print(f'Desired State:{desired_state}.')
+        print('=' * 50)
+        checked_state = power_state_command(ipmi=bmc_ip, auth=current_auth).lower()
+        if current_time - start_time > timeout:
+            print('Hit the timeout')
+            print(current_time - start_time)
+            continue_loop = False
+        if checked_state == desired_state:
+            print('Hit Same State.')
+            continue_loop = False
+        print('=' * 50)
+        print('Checking the late status of the IPMI')
+        print(f'Timeout timer:{str(current_time - start_time)}')
+        print(f'Current State:{checked_state}.')
+        print(f'Desired State:{desired_state}.')
+        print('=' * 50)
+        time.sleep(5)
+    if checked_state == desired_state:
+        if checked_state == 'on':
+            return json.dumps({'Status': "ON"})
+        else:
+            return json.dumps({'Status': "OFF"})
+    else:
+        print('*' * 50)
+        print(f'Checked State:{checked_state}')
+        print(f'Desired State:{desired_state}')
+        print('*' * 50)
+        return json.dumps({'Status': "N/A"})
+
+
 def get_temp_names(bmc_ip):
     dataset_Temps = get_data.find_temperatures_names(bmc_ip)
     cpu_temps, vrm_temps, dimm_temps, gpu_temps, sys_temps = ([] for i in range(5))
@@ -345,12 +410,7 @@ def indexHelper(bmc_ip_auth):
         bmc_event = "WARNING"
     current_auth = (bmc_ip_auth[1],bmc_ip_auth[2])
     if os.environ['POWERDISP'] == "ON":
-        if powerState(bmc_ip,current_auth) == -1:
-            current_state = "D/C"
-        elif powerState(bmc_ip,current_auth):
-            current_state = "ON"
-        else:
-            current_state = "OFF"
+        current_state = power_state_command(ipmi=bmc_ip, auth=current_auth)
     else:
         current_state = "PwrDisp: OFF" ### IF POWERDISP variable set to off in auto.env file
     if os.environ['UIDDISP'] == "ON":
@@ -437,6 +497,15 @@ def index():
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
     show_names = 'true' # default
+
+    # =============================================
+    # Get Server Power State
+    # =============================================
+    if os.environ['POWERDISP'] == 'ON':
+        power_state = [power_state_command(ipmi=bmc_ip[0], auth=current_auth)]
+    else:
+        power_state = ['PwrDisp: OFF']  # IF POWERDISP variable set to off in auto.env file
+
     try:
         df_names = pd.read_csv(os.environ['NODENAMES'])
         df_pwd['name'] = list(df_names['name'])
@@ -444,7 +513,7 @@ def index():
     except Exception as e:
         printf(e)
         show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey, node_pos, power_state)
     else:
         no_name_count = 0
         for i in bmc_ip:
@@ -453,12 +522,14 @@ def index():
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names,node_pos)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names,node_pos, power_state)
 
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
     frontend_url = "http://" + get_ip() + ":" + str(frontport)
-    return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl, frontend_url = frontend_url,gpu_temps=gpu_temps, cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages, cur_time=cur_time, time_zone=time_zone)
+    # colvis dropdown menu height calculator
+    menu_length = len(bmc_ip) * 100 + 80 + 50  # node_height: 100, header_height: 80, padding_bottom:5
+    return render_template('index.html', rackname = rackname,show_names = show_names, x=data, rackobserverurl = rackobserverurl, frontend_url = frontend_url,gpu_temps=gpu_temps, cpu_temps = cpu_temps,sys_temps=sys_temps,dimm_temps=dimm_temps,vrm_temps=vrm_temps,sys_fans=sys_fans,sys_voltages=sys_voltages, cur_time=cur_time, time_zone=time_zone, menu_length=menu_length)
 
 
 @app.route('/update_index_page')
@@ -519,6 +590,7 @@ def update_index_page():
         response[node]['monitorStatus'] = monitor + " " + i[2]
         response[node]['timestamp'] = i[3]
         response[node]['udp_message'] = udp_msg[node_iter]
+        response[node]['powerStatus'] = power_state_command(ipmi=node, auth=current_auth)
     response['time'] = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     return json.dumps(response)
 
@@ -946,7 +1018,7 @@ def systemresetone(data_list):
     for i in range(nreset):
         with open(rstatuspath, 'a') as rprint:
             rprint.write(time.asctime() + ": " + data_list[0] + " begins loop " + str(i+1) + ".........\n")
-        if powerState(IPMI,auth):
+        if power_state_command(ipmi=IPMI, auth=auth) == 'ON':
             systemRebootTesting(IPMI,auth,"ForceOff")
             printf("Start reboot!")
             with open(rstatuspath, 'a') as rprint:
@@ -956,7 +1028,7 @@ def systemresetone(data_list):
             with open(rstatuspath, 'a') as rprint:
                 rprint.write(time.asctime() + ": " + data_list[0] + " system is not on!\n")
             break
-        while powerState(IPMI,auth):
+        while power_state_command(ipmi=IPMI, auth=auth) == 'ON':
             printf("Waiting shutdown!")
             with open(rstatuspath, 'a') as rprint:
                 rprint.write(time.asctime() + ": " + data_list[0] + " waiting shutdown...\n")
@@ -969,7 +1041,7 @@ def systemresetone(data_list):
         with open(rstatuspath, 'a') as rprint:
             rprint.write(time.asctime() + ": " + data_list[0] + " period count down finished, begin boot up...\n")
         systemRebootTesting(IPMI,auth,"ForceOn")
-        while not powerState(IPMI,auth):
+        while not power_state_command(ipmi=IPMI, auth=auth):
             time.sleep(1)
         printf("Boot up already, begin period count down!")
         with open(rstatuspath, 'a') as rprint:
