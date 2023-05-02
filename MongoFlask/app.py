@@ -426,7 +426,7 @@ def indexHelper(bmc_ip_auth):
 @app.route('/')
 def index():
     bmc_ip, node_pos, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
-    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey = ([] for i in range(26))
+    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey, power_state = ([] for i in range(27))
     current_flag = read_flag()
     if current_flag == 0:
         monitor = "IDLE "
@@ -484,6 +484,7 @@ def index():
         bmc_event.append(i[0])
         bmc_details.append(i[1])
         monitorStatus.append(monitor + " " + i[2])
+        power_state.append(i[2]) # for power on off button
         timestamp.append(i[3])
         uidStatus.append(i[4])
         cpu_temps.append(i[5])
@@ -497,14 +498,6 @@ def index():
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
     show_names = 'true' # default
-
-    # =============================================
-    # Get Server Power State
-    # =============================================
-    if os.environ['POWERDISP'] == 'ON':
-        power_state = [power_state_command(ipmi=bmc_ip[0], auth=current_auth)]
-    else:
-        power_state = ['PwrDisp: OFF']  # IF POWERDISP variable set to off in auto.env file
 
     try:
         df_names = pd.read_csv(os.environ['NODENAMES'])
