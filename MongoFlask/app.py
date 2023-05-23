@@ -583,7 +583,7 @@ def update_index_page():
         response[node]['monitorStatus'] = monitor + " " + i[2]
         response[node]['timestamp'] = i[3]
         response[node]['udp_message'] = udp_msg[node_iter]
-        response[node]['powerStatus'] = power_state_command(ipmi=node, auth=current_auth)
+        response[node]['powerStatus'] = i[2]
     response['time'] = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     return json.dumps(response)
 

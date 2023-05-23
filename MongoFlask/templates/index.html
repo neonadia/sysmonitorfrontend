@@ -293,11 +293,11 @@
                 <td class="align-middle font-weight-bold text-success" id="{{row[0]}}flag" >{{ row[9] }}</td>
             {% endif %}
             <!-- Power State Button Code -->
-            {% if "OFF" in row[19]%}
+            {% if row[19] == "OFF" %}
                 <td width="5%">
                     <a class="btn btn-small fas fa-toggle-off fa-3x text-secondary" id="{{row[0]}}powerstate" onclick=" WritePowerVal('{{row[0]}}');" ></a>
                 </td>
-            {% elif "ON" in row[19]%}
+            {% elif row[19] == "ON" %}
                 <td width="5%">
                     <a class="btn btn-small fas fa-toggle-on fa-3x text-success" id="{{row[0]}}powerstate" onclick=" WritePowerVal('{{row[0]}}');" ></a>
                 </td>
@@ -756,16 +756,16 @@
                                         text.classList.remove("text-primary", "text-secondary", "text-success", "text-danger");
                                         text.classList.remove("fa-toggle-off", "fa-toggle-on", "fa-spinner", "fa-spin", "fa-exclamation-triangle");
                                         ////Assign color for button accordingly
-                                        if (data[bmc_ip][i].includes('ON')) {
+                                        if (data[bmc_ip][i] == 'ON') {
                                             text.classList.add("text-success", "fa-toggle-on");
                                         }
-                                        else if (data[bmc_ip][i].includes('OFF')){
+                                        else if (data[bmc_ip][i] =='OFF'){
                                             text.classList.add("text-secondary", "fa-toggle-off");
                                         }
                                         else {
                                             console.log("Got N/A");
                                             text.classList.add("text-danger", "fa-exclamation-triangle");
-                                            }
+                                        }
                                     }
                                     break;
                                 case 'bmc_event':
