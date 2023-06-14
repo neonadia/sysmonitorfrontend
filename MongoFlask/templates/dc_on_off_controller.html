@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>DC-ON-OFF-Controller</title>
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script> -->
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script> -->
+    <link href="static/icons/css/all.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+</head>
+<style>
+    .options{
+        padding: 5%;
+    }
+    ul span {
+        color: green;
+    }
+    hr.dotted {
+        border-top: 3px dotted #0275d8;
+    }
+    hr.solid {
+        border-top: 3px solid #0275d8;
+    }
+    /* Background contains everything that is the console */
+    #background {
+        position: relative;
+        background-color: black;
+        width: 800px;
+        height: 600px;
+        max-height: 600px;
+        overflow-y: auto;
+        text-align: left;
+    }
+    .terminal{
+        background-color: black;
+        color: chartreuse;
+        border: 5px solid greenyellow;
+        font-weight: normal;
+        padding-top: 1%;
+        height: 100%;
+        border-radius: 15px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        /* position: fixed; */
+    }
+    /* Console is a box in the background class */
+    #console {
+        margin: 0px;
+        padding: 0px;
+        width: 100%;
+        height: 1000px;
+        overflow-y: auto;
+        text-align: left;
+        border-radius: 15px;
+    }
+    div#console {
+        padding-left: 10;
+    }
+    /* Input font formatting for console */
+    #textinput {
+        height: max-content;
+        margin: 0px 0px 0px 0px;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        color: rgb(255, 255, 255);
+        font-family: Monospace;
+        overflow: hidden;
+        padding: 0%;
+    }
+    /* Console output formatting */
+    pre {
+        color: rgb(255, 255, 255);
+        margin: 0px 0px 0px 0px;
+        overflow-x: hidden;
+    }
+    /* More console input formatting to make input box larger */
+    input#textinput {
+        width: 950px;
+    }
+    /* CSS classes for key word highlighting in the console output */
+    .error{
+        color:red;
+    }
+    .ok{
+        color:chartreuse;
+    }
+    .info{
+        color:aqua;
+    }
+    .ip{
+        color:#FF00FF;
+        font-weight:bold;
+    }
+    .warning{
+        color: orange;
+    }
+    #myProgress {
+        width: 100%;
+        background-color: grey;
+    }
+    #myBar {
+        width: 1%;
+        height: 10px;
+        background-color: rgb(2, 163, 2);
+    }
+    #overlay {
+        position:fixed;
+        display: block;
+        top: 14%; right: 5%;
+        text-align: left;   
+    }
+    body {
+        font-family: "Lato", sans-serif;
+        transition: background-color .5s;
+    }
+    .sidenav {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        background-color: rgb(43, 109, 250);
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 60px;
+    }
+    .sidenav a {
+        padding: 8px 8px 8px 20px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #ffffff;
+        display: block;
+        transition: 0.3s;
+    }
+    .sidenav a:hover, .offcanvas a:focus{
+        color: #f1f1f1;
+    }
+    .sidenav .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+    }
+    #main {
+        transition: margin-left .5s;
+        padding: 16px;
+    }
+
+    @media screen and (max-height: 450px) {
+        .sidenav {padding-top: 15px;}
+        .sidenav a {font-size: 18px;}
+    }
+    ul li::marker {
+        color: white;
+        font-size: 1.5em;
+    }
+    body {
+    font-size: .875rem;
+    }
+
+    .feather {
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+    }
+
+    /*
+    * Sidebar
+    */
+
+    .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100; /* Behind the navbar */
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+
+    .sidebar-sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 48px; /* Height of navbar */
+    height: calc(100vh - 48px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    }
+
+    .sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+    }
+
+    .sidebar .nav-link .feather {
+    margin-right: 4px;
+    color: #999;
+    }
+
+    .sidebar .nav-link.active {
+    color: #007bff;
+    }
+
+    .sidebar .nav-link:hover .feather,
+    .sidebar .nav-link.active .feather {
+    color: inherit;
+    }
+
+    .sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+    }
+
+    /*
+    * Navbar
+    */
+
+    .navbar-brand {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    font-size: 1rem;
+    background-color: rgba(0, 0, 0, .25);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+    }
+
+    .navbar .form-control {
+    padding: .75rem 1rem;
+    border-width: 0;
+    border-radius: 0;
+    }
+
+    .form-control-dark {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .1);
+    border-color: rgba(255, 255, 255, .1);
+    }
+
+    .form-control-dark:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
+    }
+
+    /*
+    * Utilities
+    */
+
+    .border-top { border-top: 1px solid #e5e5e5; }
+    .border-bottom { border-bottom: 1px solid #e5e5e5; }
+</style>
+<body>
+    <nav class="navbar navbar-expand-md navbar-primary bg-primary sticky-top flex-md-nowrap p-1.5">
+        <div class="container-fluid">	 
+            <ul class="navbar-nav">
+                <li class='nav-item'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-home"></i>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </button>
+                    <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+                        {% for url in frontend_urls %}
+                            <a class="dropdown-item" href="{{ url[1] }}/dc_on_off_controller" target="_blank"> {{url[0]}} DC ON OFF Controller</a>
+                        {% endfor %}
+                    </div>
+                </li>
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    DC ON OFF CONTROLLER
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item">Beta Version 1.0</a> 
+                    </div>
+                </li>
+                <li class='nav-item'>
+                    <a class="btn btn-primary btn-lg text-white"  href="{{ url_for('dc_log_output') }}" role="button">
+                    Log Database
+                    </a>
+                </li>  
+                <li class='dropdown'>
+                    <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Current Selected OS IPs
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for ip, indicator in data %}
+                        {% if indicator == 1 %}
+                            <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
+                        {% else %}
+                            <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </li>
+                {% include "advancedfeatures_menu.html" %}
+                {% include "documentationButton.html" %}
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-5 d-none d-md-block bg-light sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item border-top" style="padding:2%; margin-left: 2%;">
+                            <form id = "inputform">
+                                <div class="container-fluid border-bottom" style="padding-bottom: 3%; padding-top: 3%;">
+                                    <label class="text-primary" style="font-weight: bold; font-size: 20px;">STEP 1: SELECT TESTING NODES</label>
+                                    <div class='row justify-content-start'>
+                                        <div class="col">
+                                            <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)" required>
+                                        </div>
+                                        <div class="col">
+                                            <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)" required>
+                                        </div>
+                                        <input type="hidden" id="inputtype" name="inputtype" value="dc_on_off">
+                                        <input type="hidden" id="iptype" name="iptype" value="os_and_ipmi">
+                                        <input type="hidden" id="ip" name="ip" value="all">
+                                    </div>
+                                </div>
+                            </form>
+                            <form id = "dc_on_off_userANDpass">
+                                <div class="container-fluid" style="padding-bottom: 0%">
+                                    <label class="text-primary"  style="font-weight: bold; font-size: 20px; padding-top: 3%;">STEP 2: SET UP USER/PASSWORD</label>
+                                    <div class='row justify-content-start'>
+                                        <div class="col">
+                                                <label style="font-weight: bold;">User</label>
+                                                <input type="form-control" name="user" required="" id="os_usr" autocomplete="off" placeholder="root" >
+                                        </div>
+                                        <div class="col">
+                                            <label style="font-weight: bold;">Pass</label>
+                                            <input type="form-control" name="password" autocomplete="current-password" required="" id="os_pwd" placeholder="test">
+                                            <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i>
+                                        </div>
+                                    <!--
+                                        <div class="col">
+                                             <label style="font-weight: bold;">Interpreter</label>
+                                             <input type="form-control" name="interpreter_version" required="" id="interpreter" autocomplete="off" placeholder="python3" >
+                                        </div>   
+                                    -->                                  
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="container-fluid border-bottom" style="padding-bottom: 1%">
+                                <label style="font-weight: bold; padding-bottom: 1%"></label>
+                                <div class='row justify-content-start'>
+                                    <div class="col">
+                                        <button class="btn btn-primary btn-sm" id="uploadRange" onclick="uploadIPs()" style="margin-right: 2%;">SELECT RANGE</button>                                        
+                                        <button  class="btn btn-primary btn-sm" id="uploadall" onclick="uploadallIPs()" style="margin-right: 2%;">SELECT ALL</button>  
+                                        <a id="unselectall" class="btn btn-warning text-white disabled btn-sm" name="unselectall" onclick="CallIPCleaner('all')">UNSELECT ALL</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form id = "dc_on_off_userANDpass">
+                                <div class="container-fluid" style="padding-bottom: 0%">
+                                    <label class="text-primary"  style="font-weight: bold; font-size: 20px; padding-top: 3%;">STEP 3: DC ON/OFF Test (Quick Start)</label>
+                                    <div class='row justify-content-start'>
+                                        <div class="col">
+                                                <label style="font-weight: bold;">Number of Loops</label>
+                                                <input type="form-control" name="num_of_loops" required="" id="num_of_loops" autocomplete="off" placeholder="Default value: 10 rounds" >
+                                        </div>
+                                        <div class="col">
+                                            <label style="font-weight: bold;">Boot Up Time</label>
+                                            <input type="form-control" name="boot_up_time" required="" id="boot_up_time" placeholder="Unit: minutes" >
+                                            <!-- <i class="far fa-eye" id="togglePassword" style="margin-left: -30px; cursor: pointer;"></i> -->
+                                        </div>                         
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="container-fluid border-bottom" style="padding-bottom: 1%">
+                                <label style="font-weight: bold; padding-bottom: 1%"></label>
+                                <div class='row justify-content-start'>
+                                    <div class="col">
+                                        <button class="btn btn-primary btn-sm" id="run_dc_on_off" onclick="run_dc_on_off()" style="margin-right: 2%;">START QUICK RUN</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="container-fluid">
+                                <label class="text-primary"  style="font-weight: bold; font-size: 20px; padding-top: 3%;">Command Line Examples</label>
+                                <ul class="list-group">
+                                    <li class="list-group-item">Enter 'select all (usr) (pwd)' to select all IPs</li>
+                                    <li class="list-group-item">Enter 'unselect all' to unselect all IPs</li>
+                                    <li class="list-group-item">Enter 'unselect (ip)' to unselect a IPs</li>
+                                    <li class="list-group-item">Enter 'show selected' to show the selected IPs</li>
+                                    <li class="list-group-item">Enter 'power_test --loop (num of loops) --boot (boot time in mins)'</li>
+                                    <li class="list-group-item">Enter 'power_test --help' to display help message for power_on_off test</li>
+                                    <li class="list-group-item">Enter 'help' to display help message for command line</li>
+                                </ul>
+                            <div>
+                        </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <main role="main" class="col-md-7 pt-4 px-1" style="margin-left:42%; max-width: 60%; height: 700px;">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Console</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group mr-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="clearTerminal()">Clear Output</button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="exportTerminal()">Export Output</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="col-auto scroll terminal" id = "upload_terminal" style="height: 100%; width: 100%;"></div> -->
+                <div class ="col-auto" style="height: 100%; width: 100%;" onclick="addCursor()">
+                    <div class="terminal scroll" id = "console" style="padding-top: 1%; padding-left: 1%; height: 115%;">
+                            <!-- Commandline output here -->
+                        <pre id="inputbar" >/><input id = "textinput" spellcheck="false" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>
+                    </div>
+                </div> 
+            </main>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        ///////////////////////////////////////////////  CONSOLE VARIABLES /////////////////////////////////
+        var output_counter = 0; ///Increasing counter to identify the console output lines. This counter serves as a ID to highlight the keywords.
+        var cursor_lock = 0;
+        var console_history = new Array(); //// Array that contains commands executed in the console.
+        console_history.push("");
+        var position = 0; ///Console History iterator
+        var uuid = "";
+        var old_dc_log_array = [];
+        var dc_complete = true;
+        function submitCommand(command){
+            cursor_lock = 1; // lock the cursor when command submitted  
+            uuid = Date.now();
+            dc_complete = false;
+            $.submitCommand(command,uuid); /// Pass command as argument to ajax function
+            $.stream_dc_on_off_log(uuid);
+        }
+        $.submitCommand = function(command,uuid){
+            $.ajax({
+                url: '/run_dc_on_off',
+                type: 'GET',
+                dataType: "JSON",
+                data: {command: command, uuid: uuid}, // Send Command to server to execute
+                beforeSend: function(){ ///Write executing to console while sending and retrieving data.
+                    old_dc_log_array = [];
+                    addLine("Running DC on off script with command: " + command);
+                    toggle_spinner(true,'run_dc_on_off');
+                    disableAllButtons(true);
+                    cursor_lock = 1;
+                },
+                success: function(result){ ///Server response and error handling
+                    var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
+                    toggle_spinner(false,'run_dc_on_off');
+                    cursor_lock = 0; // unlock the cursor 
+                    PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+                    disableAllButtons(false);
+                }, /// Ajax error output, rare but neccessary in certain circumstances
+                error: function (xhr, textStatus) {
+                    cursor_lock = 0;
+                    toggle_spinner(false,'run_dc_on_off');
+                    disableAllButtons(false);
+                    addLine("Server Error with backend");
+                    console.log(xhr);
+                }        
+            });         
+        }
+        function run_dc_on_off(){
+            cursor_lock = 1; // lock the cursor when command submitted
+            let num_of_loops = document.getElementById("num_of_loops").value;
+            let boot_up_time = document.getElementById("boot_up_time").value;
+            var command = "power_test --loop " +  num_of_loops + " --boot " + boot_up_time;
+            uuid = Date.now();
+            dc_complete = false;
+            $.submitCommand(command, uuid); /// Pass command as argument to ajax function
+            $.stream_dc_on_off_log(uuid);
+        }
+        ///// Add commmand to history array and update iterator.  
+        function addHistory(command){
+            console_history.pop();
+            if (console_history.length == 0){ /// If history array empty push to array
+                console_history.push(command);
+            }
+            else if(console_history[console_history.length-1] !== command){ // Check if last command in history array is the same as current command.
+                console_history.push(command);
+            }
+            console_history.push("");
+            position = console_history.length - 1; ///Position iterator and the end of list whenever a command is entered (LIFO data structure)
+        }
+        function checkInput() {
+            var event = window.event || event.which; 
+            if (event.keyCode == 13) { ///// When enter key is entered for console
+                var CMD = document.getElementById("textinput").value;
+                addHistory(CMD); /// Add command to history array.
+                //// Parse command and check for internal console command, if not send to server to process as ipmitool commmand.
+                //// INTERNAL CONSOLE COMMANDS ARE HERE!.  Modify or add commands in this area. The else statement sends command to LCM server. ///////////////////////////////
+                if (CMD.trim() === ""){ /// For no input.
+                    addLine("");
+                }                    
+                else if(CMD == "clear" ){ /// Clear function clears console output.
+                    clearTerminal();
+                    $.CheckIPs(inputtype,iptype);
+                    document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+                    PosEnd(document.getElementById('textinput'));
+                }
+                else if(CMD.startsWith("select all") || CMD.startsWith("Select all" )){
+                    addLine(document.getElementById("textinput").value);
+                    if (CMD.split(" ").length == 4){
+                      document.getElementById('os_usr').value = CMD.split(" ")[2];
+                      document.getElementById('os_pwd').value = CMD.split(" ")[3];
+                      uploadallIPs(); /// Select all IPS function                    
+                    }
+                    else{
+                      addLine("Syntax Error: usr/pwd needed to select all, correct syntax is 'select all (usr) (pwd) (interpreter [OPTIONAL])'");
+                    }
+                }
+                else if(CMD ==  "help" || CMD == "Help"){
+                    addLine(document.getElementById("textinput").value);
+                    addLine("-----> Enter 'select all (usr) (pwd) (interpreter [OPTIONAL])' to select all IPs");
+                    addLine("-----> Enter 'unselect all' to unselect all IPs");
+                    addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
+                    addLine("-----> Enter 'show selected' to show the selected IPs");
+                    addLine("-----> Enter 'history' to display console history or history -s (phrase)");
+                    addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter 'power_test -h' to show the help message of power_test");
+                    addLine("-----> Enter 'power_test -l (num of loops) -b (timeout for boot up in mins)' to run dc on off");                         
+                    addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD.trim() == "show selected"){
+                    addLine(CMD);
+                    $.CheckIPs(inputtype,iptype);
+                }
+                else if(CMD.split(" ")[0] =="unselect"){
+                    addLine(CMD);
+                    let split = CMD.split(" ").filter(element => {
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if (split[1] == "all"){
+                        CallIPCleaner("all");
+                    }
+                    else{
+                        if (split.length == 2){
+                            console.log(split[1]);
+                            if(ValidateIPaddress(split[1]) == false){
+                                addLine("Enter a valid IP address... or enter 'all' to unselect all")
+                            }
+                            else{
+                                CallIPCleaner(split[1]);
+                            }
+                        }
+                        else{
+                            addLine("Please enter unselect in the form of 'unselect <ip>' or 'unselect all'");
+                        }
+                    }
+                }
+                else if(CMD.split(" ")[0] == "history"){ /// History function
+                    addLine(CMD);
+                    let history_options = CMD.split(" ").filter(element => { ///Split history command in an array in the form of [history,-s,sel,list]
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if(history_options.length > 1){ ///If length of array is bigger than one, assume user is searching for a command. If not, display ALL history.
+                        if(history_options[1] == "-s"){ ///Check if second string in command is '-s' if not through error
+                            if (history_options.length == 2){ /// If user only input 'history -s' throw error to user
+                                addLine("Please provide search criteria to the console history command: history -s (your search term)");
+                            }
+                            else{
+                                var search_term = "";
+                                for(var i = 0; i < history_options.length; i++){ /// Concantenate all the string after '-s' from array ['sel','list'] = "sel list"
+                                    if (i > 1){
+                                        search_term += history_options[i] + " ";
+                                    }
+                                }
+                                addLine("======================= Console Histroy ============================");
+                                for (var i = 0; i < console_history.length; i++){
+                                    console.log(console_history[i] + " ===== " + search_term);
+                                    if (console_history[i].trim().includes(search_term.trim())){ /// Check if the string are equal and display. Trim() to delete the spaces from outside of the string, but not inbetween.
+                                        addLine(i +" "+console_history[i]);
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            addLine("Invalid option for history commands:");
+                            addLine("History commands:");
+                            addLine("       -s         Search for phrase in console history");
+                        }
+                    }
+                    else{
+                        addLine("======================= Console Histroy ============================");
+                        for (var i = 0; i < console_history.length; i++){
+                            if(i != console_history.length - 1){
+                                addLine(i +" "+console_history[i]);
+                            }
+                        }
+                    }
+                }
+                else if(CMD.split(" ")[0] == "power_test"){
+                    addLine(CMD);
+                    submitCommand(CMD);
+                }             
+                else{
+                    addLine(CMD);
+                    addLine("Syntax Error: " + CMD + " command not found");
+                }
+            }
+            else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
+                var CMD = document.getElementById("textinput").value;
+                if (CMD.trim() !== ""){ /// For no input.
+                    addHistory(CMD);
+                }
+                addLine(CMD);
+                loading_icons(false);
+            }
+        }
+        ///// Function for creating multiple line to insert into console dynamically if string bigger than console width.
+        function split_line(line){
+            var allowed_chars_per_line = Math.floor(document.getElementById('console').clientWidth * 0.138);
+            line_arr = new Array();
+            while(line.length >= allowed_chars_per_line){
+                line_arr.push(line.substr(0,allowed_chars_per_line));
+                line = line.slice(allowed_chars_per_line);
+            }
+            line_arr.push(line);
+            console.log(line_arr)
+            return line_arr;
+        }
+        ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
+        ////Do not tamper unless you know what you are doing.
+        function addLine(line){
+            line_arr = split_line(line);
+            for(var i = 0; i < line_arr.length; i++){
+                if(!line_arr[i].includes('span')){
+                    if(i > 0){
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" +  line_arr[i] + "</pre>" ); ///Insert string to console with a unique ID
+                    }
+                    else{
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line_arr[i] + "</pre>" ); ///Insert string to console with a unique ID
+                    }
+                    var sentence = document.getElementById(output_counter); /// Acquire html element with ID
+                    var text = sentence.textContent; /// Get text from html element
+                    //// Format key words in the html element's text with REGEX
+                    let reError = /\b(Failed|FAILED|OFFLINE|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+                    let reSuccess = /\b(Successfully|ONLINE|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+                    let reInfo = /\b(Information|information|INFO|info)\b/g;
+                    let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+                    let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+                    let reWarning = /\b(WARNING|Warning|warning)\b/g;
+                    var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>").replace(reWarning,"<span class='warning'>$&</span>");
+                    var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
+                    sentence.innerHTML = replaceWord; /// Replace string in html element
+                    output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
+                }
+                else{
+                    if(i > 0){
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" +  line_arr[i] + "</pre>" );
+                    }
+                    else{
+                        document.getElementById("console").insertAdjacentHTML('beforeend',"<pre>" + "> " +  line_arr[i] + "</pre>" );
+                    }
+                }
+            }
+            document.getElementById("textinput").value = ""; /// Set your console input to nothing
+            document.getElementById("inputbar").remove(); //Remove the input bar
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' spellcheck='false' onkeydown = 'checkInput();' style='height: width: 800px;'></pre>") ///Place at the end of html element console.
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
+            PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        function ValidateIPaddress(ipaddress) { ////Validate IP address format
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+        ///Function to move cursor to input bar in console.
+        function PosEnd(end) {
+            var len = end.value.length;
+            // Mostly for Web Browsers
+            if (document.getSelection().toString().length == 0 && cursor_lock == 0){ // if nothing selected and nothing running
+                end.focus();
+            }
+            else if (end.createTextRange) {
+                var t = end.createTextRange();
+                t.collapse(true);
+                t.moveEnd('character', len);
+                t.moveStart('character', len);
+                t.select();
+            }
+        }
+        function addCursor(){
+            PosEnd(document.getElementById('textinput'));
+        }
+        document.addEventListener('keydown', function(e) { ///// UP and DOWN arrow key listeners to scroll through command history
+            switch (e.keyCode) {/// Switch statment to process UP AND DOWN. Update iterator according and change the input bar text.
+                case 38:///key code 38 is UP arrow
+                    if (console_history.length !== 0 && position == 0){ 
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 0){
+                        console.log("No history");
+                    }
+                    else{
+                        if(position == console_history.length - 1){
+                            position--;
+                        }
+                        document.getElementById("textinput").value = console_history[position];
+                        position--;
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+                case 40:///key code 40 is DOWN arrow key
+                    console.log("Down");
+                    if (console_history.length-1 !== position && console_history.length !== 0){
+                        position++;
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 1){
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else{
+                        console.log("No history");
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+            }
+        });
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#os_pwd');
+        var run_as_root = 0;
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.classList.toggle('fa-eye-slash');
+        });
+        $(document).on('change','#become',function() {
+            a = $("input[type='checkbox']").val();
+            if(this.checked){
+                run_as_root = 1;
+                document.getElementById('become_usr_form').style.display = "block";
+            }
+            else{
+                run_as_root = 0;
+                document.getElementById('become_usr_form').style.display = "none";
+            }
+        });
+        function toggle_spinner(on_off,btn){
+            if(on_off == true){
+                if(btn == "run_dc_on_off"){
+                    document.getElementById('run_dc_on_off').innerHTML = "";
+                    document.getElementById('run_dc_on_off').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                }
+                else{
+                    document.getElementById('upload_btn').innerHTML = "";
+                    document.getElementById('upload_btn').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                }
+            }
+            else{
+                if(btn == "run_dc_on_off"){
+                    document.getElementById('run_dc_on_off').innerHTML = "";
+                    document.getElementById('run_dc_on_off').innerHTML = '<button type="submit" class="btn btn-primary btn-sm" id="run_dc_on_off"  onclick="run_dc_on_off()" target="_blank">START QUICK RUN</button>';
+                    document.getElementById('run_dc_on_off').disabled = true;
+                }
+            }
+        }
+        var global_counter = 0;
+        // var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var unselectButton = document.getElementById('unselectall');
+        var reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable)\b/g;
+        var reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|PASS|TRUE|True|Response|SUCCESS|Success|success|ONLINE|completed)\b/g;
+        var reWarning = /\b(WARNING|Warning|warning)\b/g;
+        var reInfo = /\b(Information|information|INFO|info)\b/g;
+        var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+        document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
+            $.CheckIPs();
+        }, false);
+        function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
+            if(on_off){
+                global_counter++;
+                id = "loading" + global_counter;
+                addLine("<span id='"+id+"'></span>")
+                var span = document.getElementById(id);
+                var int = setInterval(function() {
+                    if ((span.innerHTML += '.').length == 25) 
+                        span.innerHTML = '';
+                }, 100);
+            }
+            else{
+                document.getElementById(id).remove();
+            }
+        }
+        function clearTerminal(){
+            document.getElementById("console").innerHTML="";
+            document.getElementById("console").innerHTML='<pre id="inputbar">/><input id = "textinput" spellcheck="false" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>'
+        }
+        function exportTerminal() {
+            let currentDate = new Date();
+            let cDay = currentDate.getDate()
+            let cMonth = currentDate.getMonth() + 1
+            let cYear = currentDate.getFullYear()
+            let time = currentDate.getHours() + "-" + currentDate.getMinutes() + "-" + currentDate.getSeconds();
+            var data =  document.getElementById("console").innerText;
+            var c = document.createElement("a");
+            c.download = "dc_on_off_output_" + cMonth + "-" + cDay + "-" + cYear + "_" + time + ".log";
+            var t = new Blob([data],{
+                type: "text/plain"
+            });
+            c.href = window.URL.createObjectURL(t);
+            c.click();
+        }
+        function disableAllButtons(on_off){ // true: disable, false: enable
+            if(on_off){
+                document.getElementById('uploadRange').disabled = true;
+                document.getElementById('uploadall').disabled = true;
+                document.getElementById('run_dc_on_off').disabled = true;
+            }
+            else{
+                document.getElementById('uploadRange').disabled = false;
+                document.getElementById('uploadall').disabled = false;
+                document.getElementById('run_dc_on_off').disabled = false;
+            }
+        }
+        $.CheckIPs = function(){ /// CheckIPfunction, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+            $.ajax({
+                url: '/checkSelectedIPs?filetype=dc_on_off&iptype=os_and_ipmi',
+                dataType : "JSON",
+                type : "GET",
+                success: function(result){
+                    var data = result;
+                    var hasIPs = false;
+                    ips = data;
+                    addLine('Reading file with selected IPs');
+                    for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
+                        var ip = document.getElementById(key)
+                        console.log(key);
+                        if (data[key] == 'true'){
+                            hasIPs = true;
+                            ip.classList.add("text-success");
+                            ip.classList.add("font-weight-bold");
+                            addLine('Selecting ' + key + '...');
+                        }
+                        else{
+                            ip.classList.remove("text-success");
+                            ip.classList.remove("font-weight-bold");
+                        }
+                    }
+                    if (hasIPs === false){
+                        unselectButton.classList.add("disabled")
+                        addLine('No IPs selected from this Rack');
+                    }
+                    else{
+                        addLine('Current Selected IPs has been updated');
+                        unselectButton.classList.remove("disabled")
+                    }
+                }
+            });
+        }
+        function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var pwd = document.getElementById('os_pwd').value;
+            var usr = document.getElementById('os_usr').value;
+            if (usr == ""){
+                addLine("ERROR: Please add a User");
+                return;
+            }
+            else if(pwd == ""){
+                addLine("ERROR: No user password submitted");
+                return;
+            }
+            var ipstart = document.getElementById('inputform')['ipstart'].value;
+            var ipend = document.getElementById('inputform')['ipend'].value;
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            clearTerminal();
+            addLine('Getting IP Range from ' + ipstart + ' to ' + ipend);
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype,usr,pwd);
+        }
+        $.CallAdvancedInputGenerator = function(ipstart,ipend,inputtype,iptype,usr,pwd){
+            $.ajax({
+                url: '/advanceinputgenerator_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            addLine('Could not get range from server...');
+                            addLine('Server response: ' + data[key]);
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        addLine('Gettting IP range from server....');
+                        $.CheckIPs();
+                    }
+                }        
+            }); 
+        }
+        function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var pwd = document.getElementById('os_pwd').value;
+            var usr = document.getElementById('os_usr').value;
+            if (usr == ""){
+                addLine("ERROR: Please add a User");
+                return;
+            }
+            else if(pwd == ""){
+                addLine("ERROR: No user password submitted");
+                return;
+            }
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            clearTerminal();
+            addLine('Selecting all the IPs ...');
+            $.CallAdvancedAllGenerator(inputtype,iptype,usr,pwd);
+        }
+        $.CallAdvancedAllGenerator = function(inputtype,iptype,usr,pwd){
+            $.ajax({
+                url: '/advanceinputgenerator_all_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, iptype: iptype, usr: usr, pwd: pwd}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            addLine('Could not generate the file...');
+                            addLine('Server response: ' + data[key]);
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        addLine('Getting IP range from server...');
+                        $.CheckIPs();
+                    }
+                }        
+            }); 
+        }    
+        $.stream_dc_on_off_log= function(uuid){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/dc_on_off_read_log', 
+                type: 'GET',
+                data: {uuid:uuid},
+                dataType: "JSON",
+                success: function(response){
+                    if(dc_complete == false){
+                        var new_dc_log_array = response['SUCCESS'];
+                        if(new_dc_log_array.length != old_dc_log_array.length){
+                            if (new_dc_log_array.length >= 500){
+                                clearTerminal();
+                                for (var i = new_dc_log_array.length - 500; i < new_dc_log_array.length; i++){
+                                    addLine(new_dc_log_array[i]);                                
+                                }
+                            }
+                            else{
+                                for (var i = old_dc_log_array.length; i < new_dc_log_array.length; i++){
+                                    addLine(new_dc_log_array[i]);
+                                }
+                            }
+                            if(new_dc_log_array[new_dc_log_array.length - 1] == "----------------------------------------------Last Line of UUID: " + uuid + "----------------------------------------------"){
+                                dc_complete = true;
+                                cursor_lock = 0;
+                            }
+                            else{
+                                old_dc_log_array = new_dc_log_array;
+                                call_stream_function(100);
+                            }
+                        }
+                        else{
+                            call_stream_function(100);
+                        }
+                    }
+                }        
+            }); 
+        }
+        function sleep(milliseconds) {  
+            return new Promise(resolve => setTimeout(resolve, milliseconds));  
+        }
+        async function call_stream_function(time_sleep) {         
+            await sleep(time_sleep);
+            $.stream_dc_on_off_log(uuid);
+        } 
+        // Clear selected IPs function. Takes a single IP or "all" to unselect all.
+        function CallIPCleaner(ip){
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            $.clearIPs(inputtype,ip,iptype);
+        }
+        $.clearIPs = function(inputtype,ip,iptype){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/deselectIP', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, ip: ip, iptype: iptype},
+                beforeSend: function(){ 
+                    clearTerminal()
+                    addLine('Modifying Selection...');
+                },
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "SUCCESS"){
+                            addLine(data[key]);
+                            $.CheckIPs(inputtype,iptype);
+                        }
+                        else{
+                            addLine(data[key]);
+                        }
+                    }
+                }        
+            }); 
+        }    
+    </script>
+</body>
+</html>

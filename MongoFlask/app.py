@@ -53,6 +53,8 @@ udp_collection = db.udp
 cmd_collection = db.cmd
 udp_deleted_collection = db.udpdel
 hardware_collection = db.hw_data
+dc_collection = db.dc
+dc_gridfs = gridfs.GridFS(db, collection='dc_gridfs')
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 redfish_session_info = {'state': 'inactive', 'guid' : 'n/a'}
@@ -1291,6 +1293,8 @@ def checkSelectedIps():
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,sep='\s+',names=['ip','user','pwd'])
         elif request.args.get('filetype') == "ansible":
             df_input = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
+        elif request.args.get('filetype') == "dc_on_off":
+            df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip','pwd','os_ip','os_usr','os_pwd'])
         else:
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
@@ -1663,7 +1667,112 @@ def ansible_local():
             response = {'response': [str(e)]}
     response = json.dumps(response)
     return response
- 
+
+@app.route('/dc_on_off_controller')
+def dc_on_off_controller():
+    savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
+    try:
+        df_input = pd.read_csv(savepath+"dc_on_off.txt",header=None,names=['ip','pwd','os_ip','os_usr','os_pwd'])
+        inputips = list(df_input['ip'])
+    except:
+        inputips = []
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    allips = list(df_pwd['ip'])
+    indicators = []
+    for i in range(len(allips)):
+        if allips[i] in inputips:
+            indicators.append(1)
+        else:
+            indicators.append(0)
+    return render_template('dc_on_off_controller.html',data=zip(allips,indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls())
+
+@app.route('/dc_log_output')
+def dc_log_output():
+    uuid, num_loops, status, os_ip, log_date, ipmi_lan, lspci, dmidecode, ipmi_sdr, power_cycle_log, dmesg, ipmi_ip, mac = ([] for i in range(13))
+    dc_logs = list(dc_collection.find({}))
+    df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
+    for i in dc_logs:
+        uuid.append(i['uuid'])
+        num_loops.append(i['num_loops'])
+        # status 1: Before Start 
+        # status 2: Current
+        # status 3: Benchmark Done
+        if i['status'] == 'Current' and 'Nodes' in i['os_ip']: # this means the benchmark is done, and the final log is avaliable.
+            status.append('Benchmark Done')
+        else:
+            status.append(i['status'])
+        os_ip.append(i['os_ip'])
+        # convert datatime to string format
+        log_date.append(i['log_date'].strftime("%Y-%m-%d %H:%M:%S"))
+        # convert object ID to string
+        ipmi_lan.append(str(i['ipmi_lan'])) 
+        lspci.append(str(i['lspci']))
+        dmidecode.append(str(i['dmidecode']))
+        ipmi_sdr.append(str(i['ipmi_sdr']))
+        power_cycle_log.append(str(i['power_cycle_log']))
+        dmesg.append(str(i['dmesg']))
+        if 'Nodes' in i['os_ip']:
+            ipmi_ip.append('--')
+            mac.append('--')
+        else:
+            ipmi_ip.append(df_pwd[df_pwd['os_ip'] == i['os_ip']]['ip'].values[0])
+            mac.append(mac_with_seperator(df_pwd[df_pwd['os_ip'] == i['os_ip']]['mac'].values[0], ':', True))
+    return render_template('dc_log_output.html',rackname=rackname,\
+    data=zip(uuid, num_loops, ipmi_ip, os_ip, mac, status, log_date, ipmi_lan, ipmi_sdr, lspci, dmidecode, dmesg, power_cycle_log), rackobserverurl = rackobserverurl)
+
+@app.route('/send_dc_log')
+def send_dc_log():
+    data = request.args.get('objectid')
+    file_path = request.args.get('filepath')
+    content = dc_gridfs.get(ObjectId(data)).read().decode('utf-8')
+    with open(file_path, 'w') as output:
+        output.write(content)
+    return send_file(file_path,as_attachment=True,cache_timeout=0)
+
+@app.route('/run_dc_on_off',methods=["GET"])
+def run_dc_on_off():
+    dc_on_off_command = str(request.args.get('command')).replace('power_test','power_test.py')
+    dc_on_off_uuid = str(request.args.get('uuid'))
+    if dc_on_off_command == "power_test.py -h" or dc_on_off_command == "power_test.py --help" \
+        or dc_on_off_command == "power_test.py -v" or dc_on_off_command == "power_test.py --version":
+        cur_cmd = f"python3 power_test.py -d -o log.dc_on_off-{dc_on_off_uuid}"
+    else:
+        cur_cmd = f"python3 {dc_on_off_command} --uuid {dc_on_off_uuid} -i {os.environ['UPLOADPATH']}{os.environ['RACKNAME']}dc_on_off.txt -o log.dc_on_off-{dc_on_off_uuid}"
+    process = Popen(cur_cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    stdout,stderr = process.communicate()    
+    if len(stderr) != 0:
+        output = stderr.decode("utf-8").split('\n')    
+        output_strip = []
+        for line in output:
+            output_strip.append(line.strip())  
+        response = {"FAILED": output_strip}
+        with open(f'/app/power_test/log.dc_on_off-{dc_on_off_uuid}','a') as dc_on_off_log: # append error/help message to the dc_on_off_log
+            for line in output_strip:
+                dc_on_off_log.write(line + '\n')
+    else:
+        response = {"SUCCESS": f"Info: {cur_cmd} has been excuted successfully"}
+    response = json.dumps(response)
+    with open(f'/app/power_test/log.dc_on_off-{dc_on_off_uuid}','a') as dc_on_off_log:
+        dc_on_off_log.write(f"----------------------------------------------Last Line of UUID: {dc_on_off_uuid}----------------------------------------------")
+    return response
+
+@app.route('/dc_on_off_read_log', methods=["GET"])
+def dc_on_off_read_log():
+    dc_on_off_uuid = str(request.args.get('uuid'))
+    file_path = f'/app/power_test/log.dc_on_off-{dc_on_off_uuid}'
+    file_lines = []
+    counter = 0
+    while fileEmpty(file_path) and counter < 10:
+        time.sleep(0.5)
+        counter += 1
+    with open(file_path, "r") as dc_on_off_log:
+        for line in dc_on_off_log:
+            line = line.strip()
+            file_lines.append(line)
+    response = json.dumps({'SUCCESS': file_lines})
+    return response
+
+
 @app.route('/bmceventcleanerstart',methods=["GET"])
 def bmceventcleanerstart():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1929,6 +2038,10 @@ def advanceinputgenerator_ajaxVerison():
                     cfg.write('interpreter_python=/usr/bin/python3\n')                        
                 cfg.write('log_path=' + os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-ansible.log\n')
             savepath = '/app/inventory.ini'
+        elif str(request.args.get('inputtype')) == 'dc_on_off': # DC on off test require OS usr and password to check system info
+            os_usr = str(request.args.get('usr'))
+            os_pwd = str(request.args.get('pwd'))
+            savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"            
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
         ipstart = request.args.get('ipstart')
@@ -1961,6 +2074,10 @@ def advanceinputgenerator_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os" and ip in osip_list:
                     cleanerinput.write(ip + '\n')
+                elif request.args.get('iptype') == "os_and_ipmi" and ip in ipmi_list:
+                    current_ipmi_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                    current_os_ip = df_pwd[df_pwd['ip'] == ip]['os_ip'].values[0]
+                    cleanerinput.write(f'{ip},{current_ipmi_pwd},{current_os_ip},{os_usr},{os_pwd}\n')
             response = {"response" : "SUCCESS: saved file: " + savepath}
             print("Saved file...",flush=True)
         if os.path.isfile(savepath):
@@ -1989,6 +2106,10 @@ def advanceinputgenerator_all_ajaxVerison():
             ansible_usr = str(request.args.get('usr'))
             ansible_pwd = str(request.args.get('pwd'))
             savepath = '/app/inventory.ini'
+        elif str(request.args.get('inputtype')) == 'dc_on_off': # DC on off test require OS usr and password to check system info
+            savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
+            os_usr = str(request.args.get('usr'))
+            os_pwd = str(request.args.get('pwd')) 
         else:
             savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + str(request.args.get('inputtype'))  + ".txt"
         df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd']) 
@@ -2006,6 +2127,9 @@ def advanceinputgenerator_all_ajaxVerison():
                         cleanerinput.write(ip + '\n')
                 elif request.args.get('iptype') == "os":
                     cleanerinput.write(osip + '\n')
+                elif request.args.get('iptype') == "os_and_ipmi":
+                    current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
+                    cleanerinput.write(f'{ip},{current_pwd},{osip},{os_usr},{os_pwd}\n')
                 response = {"response" : "SUCCESS: saved file: " + savepath}
                 print("Saved file...",flush=True)        
         if os.path.isfile(savepath):
@@ -3954,11 +4078,11 @@ def internal_error(e):
 
 @app.route('/sum_manual')
 def sum_manual():
-    return send_file("/app/templates/SUM_UserGuide_280.pdf",cache_timeout=0)
+    return send_file("/app/templates/SUM_UserGuide_2110.pdf",cache_timeout=0)
 
 @app.route('/howToDeploy')
 def howToDeploy():
-    return send_file("/app/templates/Manual.pdf",cache_timeout=0)
+    return send_file("/app/templates/README_06_12_23.pdf",cache_timeout=0)
 
 @app.route('/developmentnote08182020')
 def developmentnote08182020():

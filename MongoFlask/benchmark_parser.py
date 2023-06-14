@@ -168,10 +168,12 @@ def clean_mac(mac):
         print('Warning! invalid MAC address: ' + mac)
     return(mac_cleaned)
 
-def mac_with_seperator(mac,sep):
+def mac_with_seperator(mac,sep,upper_case=False):
     mac = clean_mac(mac)
     mac_sep = ''
     for i, one_chr in enumerate(mac):
+        if upper_case:
+            one_chr = one_chr.upper()
         if i == len(mac)-1 or i%2 == 0:
             mac_sep += one_chr
         else:
