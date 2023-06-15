@@ -769,17 +769,17 @@
             if(on_off == true){
                 if(btn == "run_dc_on_off"){
                     document.getElementById('run_dc_on_off').innerHTML = "";
-                    document.getElementById('run_dc_on_off').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                    document.getElementById('run_dc_on_off').innerHTML = '<button class="btn btn-primary btn-sm"><span class="fas fa-spinner fa-spin" style="color:white;"></span> Running...</button>';
                 }
                 else{
                     document.getElementById('upload_btn').innerHTML = "";
-                    document.getElementById('upload_btn').innerHTML = '<button class="btn btn-primary"><span class="spinner-border spinner-border-sm" style="color:white;"></span> Running...</button>';
+                    document.getElementById('upload_btn').innerHTML = '<button class="btn btn-primary btn-sm"><span class="fas fa-spinner fa-spin" style="color:white;"></span> Running...</button>';
                 }
             }
             else{
                 if(btn == "run_dc_on_off"){
                     document.getElementById('run_dc_on_off').innerHTML = "";
-                    document.getElementById('run_dc_on_off').innerHTML = '<button type="submit" class="btn btn-primary btn-sm" id="run_dc_on_off"  onclick="run_dc_on_off()" target="_blank">START QUICK RUN</button>';
+                    document.getElementById('run_dc_on_off').innerHTML = '<button class="btn btn-primary btn-sm" id="run_dc_on_off" onclick="run_dc_on_off()">START QUICK RUN</button>';
                     document.getElementById('run_dc_on_off').disabled = true;
                 }
             }
@@ -793,7 +793,7 @@
         var reInfo = /\b(Information|information|INFO|info)\b/g;
         var reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
         document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
-            $.CheckIPs();
+            $.check_if_dc_running();
         }, false);
         function loading_icons(on_off){ /////Loading dots function ----- take true/false, to turn on or off the loading dots
             if(on_off){
@@ -833,11 +833,13 @@
             if(on_off){
                 document.getElementById('uploadRange').disabled = true;
                 document.getElementById('uploadall').disabled = true;
+                document.getElementById('unselectall').disabled = true;
                 document.getElementById('run_dc_on_off').disabled = true;
             }
             else{
                 document.getElementById('uploadRange').disabled = false;
                 document.getElementById('uploadall').disabled = false;
+                document.getElementById('unselectall').disabled = false;
                 document.getElementById('run_dc_on_off').disabled = false;
             }
         }
@@ -992,8 +994,10 @@
                                 }
                             }
                             if(new_dc_log_array[new_dc_log_array.length - 1] == "----------------------------------------------Last Line of UUID: " + uuid + "----------------------------------------------"){
+                                toggle_spinner(false,'run_dc_on_off');
                                 dc_complete = true;
                                 cursor_lock = 0;
+                                disableAllButtons(false);
                             }
                             else{
                                 old_dc_log_array = new_dc_log_array;
@@ -1043,7 +1047,36 @@
                     }
                 }        
             }); 
-        }    
+        }
+        $.check_if_dc_running = function(){
+            $.ajax({
+                url: '/check_if_dc_running', 
+                type: 'GET',
+                dataType: "JSON",
+                beforeSend: function(){
+                    addLine('Check if any DC on off is running...');
+                    $.CheckIPs();
+                },
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (data[key] != '-1'){
+                            uuid = data[key]
+                            addLine('Found running DC on off test with uuid: ' + uuid);
+                            disableAllButtons(true);
+                            dc_complete = false;
+                            cursor_lock = 1;
+                            old_dc_log_array = [];
+                            toggle_spinner(true,'run_dc_on_off');
+                            $.stream_dc_on_off_log(uuid);
+                        }
+                        else{
+                            addLine('No DC on off is currently running.');
+                        }
+                    }
+                }               
+            })    
+        }
     </script>
 </body>
 </html>

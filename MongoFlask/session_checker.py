@@ -41,7 +41,7 @@ def sum_session_checker(sum_session_info):
 def telemetry_session_checker(telemetry_session_info):
     time.sleep(0.100) ##### Fixes timing issue between page close and page reload
     if telemetry_session_info['state'] == 'active':
-        printf("Failed to create new sum_server session")
+        printf("Failed to create new telemetry_server session")
         printf("Current telemetry Session info is:")
         printf("state: " + telemetry_session_info['state'])
         printf("guid: " + telemetry_session_info['guid'])
@@ -58,7 +58,7 @@ def telemetry_session_checker(telemetry_session_info):
 def redfish_session_checker(redfish_session_info):
     time.sleep(0.100) ##### Fixes timing issue between page close and page reload
     if redfish_session_info['state'] == 'active':
-        printf("Failed to create new sum_server session")
+        printf("Failed to create new redfish_server session")
         printf("Current RedFish Session info is:")
         printf("state: " + redfish_session_info['state'])
         printf("guid: " + redfish_session_info['guid'])

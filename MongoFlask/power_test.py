@@ -67,10 +67,12 @@ def get_current_time_for_log():
 
 
 # ====================================================================================================
-def insert_to_database(log_content, os_ip, log_date, log_cmd, uuid, update_db):
+def insert_to_database(running_loop, log_content, os_ip, log_date, log_cmd, uuid, update_db):
     """
     Function that will insert log to the database
 
+    :param running_loop: number of loops currently working on
+    :type running_loop: str
     :param log_content: content of the log
     :type log_content: str
     :param os_ip: os ip address of the server
@@ -92,7 +94,7 @@ def insert_to_database(log_content, os_ip, log_date, log_cmd, uuid, update_db):
     db = MongoClient('localhost', mongoport).redfish
     dc_collection = db.dc
     dc_gridfs = GridFS(db, collection='dc_gridfs')
-    sample_dict = {'uuid': uuid, 'num_loops': num_loops, 'status': None, 'os_ip': os_ip, 'log_date': log_date, 'ipmi_lan': None, 'lspci': None,
+    sample_dict = {'uuid': uuid, 'num_loops': running_loop, 'status': None, 'os_ip': os_ip, 'log_date': log_date, 'ipmi_lan': None, 'lspci': None,
                    'dmidecode': None, 'ipmi_sdr': None, 'power_cycle_log': None, 'dmesg': None}
     
     log_content = dc_gridfs.put(log_content.encode('utf-8')) # save the log content to gridfs and id for to log content
@@ -104,7 +106,7 @@ def insert_to_database(log_content, os_ip, log_date, log_cmd, uuid, update_db):
         the_filter = {'os_ip': os_ip, 'uuid': uuid, 'status': 'Before Start'}
         result = dc_collection.find_one(the_filter)
         if result is not None:
-            update = {'$set': {log_cmd: log_content, 'status': 'Before Start'}}
+            update = {'$set': {'num_loops': running_loop, 'log_date': log_date, log_cmd: log_content, 'status': 'Before Start'}}
             dc_collection.update_one(the_filter, update)
         else:
             sample_dict[log_cmd] = log_content
@@ -117,7 +119,7 @@ def insert_to_database(log_content, os_ip, log_date, log_cmd, uuid, update_db):
         the_filter = {'os_ip': os_ip, 'uuid': uuid, 'status': 'Current'}
         result = dc_collection.find_one(the_filter)
         if result is not None:
-            update = {'$set': {log_cmd: log_content, 'status': 'Current'}}
+            update = {'$set': {'num_loops': running_loop, 'log_date': log_date, log_cmd: log_content, 'status': 'Current'}}
             dc_collection.update_one(the_filter, update)
         else:
             sample_dict[log_cmd] = log_content
@@ -382,10 +384,12 @@ def perform_diff_check(original_file, new_file, test_name, continue_on_error, lo
 
 
 # ====================================================================================================
-def run_ssh_command(ssh_connection, ssh_command, ssh_log, time_stamp, log_purpose, os_ip, uuid, initial_mode=False):
+def run_ssh_command(running_loop, ssh_connection, ssh_command, ssh_log, time_stamp, log_purpose, os_ip, uuid, initial_mode=False):
     """
     Function that will run an ssh command and save the output to specified file.
 
+    :param running_loop: number of loops currently working on
+    :type running_loop: str
     :param ssh_connection: SSH connection information
     :type ssh_connection: Connection
     :param ssh_command: Command to be sent over ssh connection
@@ -408,7 +412,7 @@ def run_ssh_command(ssh_connection, ssh_command, ssh_log, time_stamp, log_purpos
     with open(ssh_log, 'w') as f:
         f.write(ssh_result)
     if uuid:
-        insert_to_database(log_content=ssh_result, os_ip=os_ip, log_date=time_stamp, log_cmd=log_purpose, uuid=uuid,
+        insert_to_database(running_loop=running_loop, log_content=ssh_result, os_ip=os_ip, log_date=time_stamp, log_cmd=log_purpose, uuid=uuid,
                            update_db=not initial_mode)
 
 
@@ -526,11 +530,13 @@ def pcie_device_check(ssh_connection, os_pass, log_file, continue_on_error):
 
 
 # ====================================================================================================
-def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=None):
+def system_log_check(running_loop, df_list, log_file, log_path, continue_on_error=False, uuid=None):
     """
     Function that will check certain commands for errors.
     dmesg check, lspci item count, more in the future
 
+    :param running_loop: number of loops currently working on
+    :type running_loop: str
     :param df_list: Full data frame items
     :type df_list: data frame
     :param log_file: File that holds the log info
@@ -569,7 +575,7 @@ def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=
             # ====================================================================================================
             # Get dmesg log and save to file
             add_to_log(log_file, [f'Grabbing dmesg log.\n'])
-            run_ssh_command(ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S dmesg',
+            run_ssh_command(running_loop=running_loop, ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S dmesg -T',
                             ssh_log=f'{log_path}/{get_current_time_for_log()}-{os_ip_for_log}_dmesg.txt',
                             time_stamp=time_for_database, log_purpose='dmesg', os_ip=os_ip, uuid=uuid,
                             initial_mode=initial_mode)
@@ -596,7 +602,7 @@ def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=
 
             # TODO WILL NEED DATABASE CODE CALL
             if uuid:
-                insert_to_database(log_content=ipmi_lan_print, os_ip=os_ip, log_date=time_for_database,
+                insert_to_database(running_loop=running_loop, log_content=ipmi_lan_print, os_ip=os_ip, log_date=time_for_database,
                                    log_cmd='ipmi_lan', uuid=uuid, update_db=not initial_mode)
             # Only do the comparisons when you are not in initial mode
             if not initial_mode:
@@ -615,7 +621,7 @@ def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=
             else:
                 lspci_log_name = f'{log_path}/{os_ip_for_log}_lspci_new.txt'
 
-            run_ssh_command(ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S lspci',
+            run_ssh_command(running_loop=running_loop, ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S lspci',
                             ssh_log=lspci_log_name, time_stamp=time_for_database, log_purpose='lspci', os_ip=os_ip,
                             uuid=uuid, initial_mode=initial_mode)
 
@@ -637,7 +643,7 @@ def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=
             else:
                 dmidecode_log_name = f'{log_path}/{os_ip_for_log}_dmidecode_new.txt'
 
-            run_ssh_command(ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S dmidecode -t memory',
+            run_ssh_command(running_loop=running_loop, ssh_connection=ssh_connection, ssh_command=f'echo {os_pass} | sudo -S dmidecode -t memory',
                             ssh_log=dmidecode_log_name, time_stamp=time_for_database, log_purpose='dmidecode',
                             os_ip=os_ip, uuid=uuid, initial_mode=initial_mode)
 
@@ -667,7 +673,7 @@ def system_log_check(df_list, log_file, log_path, continue_on_error=False, uuid=
             # TODO WILL NEED DATABASE CODE CALL
             # TODO Update or new?
             if uuid:
-                insert_to_database(log_content=ipmi_sdr_list, os_ip=os_ip, log_date=time_for_database,
+                insert_to_database(running_loop=running_loop, log_content=ipmi_sdr_list, os_ip=os_ip, log_date=time_for_database,
                                    log_cmd='ipmi_sdr', uuid=uuid, update_db=not initial_mode)
             # Only do the comparisons when you are not in initial mode
             if not initial_mode:
@@ -727,7 +733,6 @@ def main():
     description_message = args.description
     version = args.version
     input_file = args.input
-    global num_loops
     num_loops = args.loop
     boot_up_time = args.boot * 60
     continue_on_error = args.continue_on_error
@@ -799,7 +804,7 @@ def main():
     ipmi_ping_check(df_list=df_all, log_file=test_log)
     add_to_log(test_log, [log_padding_small, 'Running Initial IPMI State Check\n'])
     ipmi_power_command(df_list=df_all, log_file=test_log, state='status', loop_count='initial check')
-    system_log_check(df_list=df_all, log_file=test_log, log_path=log_path, continue_on_error=continue_on_error,
+    system_log_check(running_loop=f'0 of {num_loops}', df_list=df_all, log_file=test_log, log_path=log_path, continue_on_error=continue_on_error,
                      uuid=uuid_for_database)
     num_systems = len(df_all)
     num_bad_systems = 0
@@ -817,6 +822,7 @@ def main():
 
     # Run for desired loops and through each specified system, turn off the system, check status, turn on system
     # check status again and then run log check
+    loop = 0 # for edge case that --loop 0
     for loop in range(1, num_loops + 1):
         add_to_log(test_log, [log_padding, f'Running loop {loop} of {num_loops}.'])
 
@@ -835,9 +841,11 @@ def main():
 
         # Stage 4 wait for all servers to turn on
         wait_for_state_change(df_list=df_all, log_file=test_log, timeout=boot_up_time, mode='on', loop_count=loop)
+        time.sleep(30)
+        add_to_log(test_log, ['Waiting 30 seconds for all services up and running ...'])
 
         # Stage 5 run log check
-        system_log_check(df_list=df_all, log_file=test_log, log_path=log_path, continue_on_error=continue_on_error,
+        system_log_check(running_loop=f'{loop} of {num_loops}', df_list=df_all, log_file=test_log, log_path=log_path, continue_on_error=continue_on_error,
                          uuid=uuid_for_database)
         num_bad_systems = 0
         for df_item in df_all.index:
@@ -848,6 +856,7 @@ def main():
             break
         system_summary_log(df_list=df_all, log_file=test_log, message=f'System status at the end of {loop} loop(s).')
 
+    
     for df_item in df_all.index:
         if df_all['link_status'][df_item] == 'on':
             df_all['notes'][df_item] = 'PASSED'
@@ -860,7 +869,7 @@ def main():
     if uuid_for_database:
         with open(test_log, 'r') as f:
             full_log = f.read()
-        insert_to_database(log_content=full_log, os_ip=f'Num-Nodes-{len(df_all)}', log_date=get_current_time_for_log(),
+        insert_to_database(running_loop=f"{loop} of {num_loops}", log_content=full_log, os_ip=f'Num-Nodes-{len(df_all)}', log_date=get_current_time_for_log(),
                            log_cmd='power_cycle_log', uuid=uuid_for_database, update_db=True)
 
 

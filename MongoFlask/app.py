@@ -40,6 +40,7 @@ import numpy as np
 import shutil
 import re
 from session_checker import udp_session_checker, sum_session_checker, telemetry_session_checker, redfish_session_checker
+import psutil
 
 app = Flask(__name__)
 mongoport = int(os.environ['MONGOPORT'])
@@ -690,7 +691,8 @@ def details_redfish():
     return render_template('details.html',allips=allips, ip=ip,rackname=rackname,bmc_ip = ip, system=system, cpu=cpu, memory=memory, storage=storage, pcie=pcie,gpu_temps=gpu_temps,\
     cpu_temps=cpu_temps,vrm_temps=vrm_temps,dimm_temps=dimm_temps,sys_temps=sys_temps,sensor_fans=sensor_fans,sensor_voltages=sensor_voltages,rackobserverurl = rackobserverurl,\
     switch_button = "on") 
- 
+
+# this function is deprecated, 
 @app.route('/systemresetupload',methods=["GET","POST"])
 def systemresetupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
@@ -1340,6 +1342,12 @@ def deselectIPs():
                     df_ipmi = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
                     selected_users = list(df_ipmi['user'])
                     selected_pwds = list(df_ipmi['pwd'])
+                elif request.args.get('inputtype') == "dc_on_off":
+                    df_ipmi = pd.read_csv(savepath,header=None,names=['ip','pwd','os_ip','os_usr','os_pwd'])
+                    selected_pwd = list(df_ipmi['pwd'])
+                    selected_os_ip = list(df_ipmi['os_ip'])
+                    selected_os_usr = list(df_ipmi['os_usr'])
+                    selected_os_pwd = list(df_ipmi['os_pwd'])
                 else:
                     df_ipmi = pd.read_csv(savepath,header=None,names=['ip'])
                 selected_ips = list(df_ipmi['ip'])
@@ -1348,6 +1356,12 @@ def deselectIPs():
                         item_loc = selected_ips.index(sel_ip)
                         del selected_users[item_loc]
                         del selected_pwds[item_loc]
+                    elif request.args.get('inputtype') == "dc_on_off":
+                        item_loc = selected_ips.index(sel_ip)
+                        del selected_pwd[item_loc] 
+                        del selected_os_ip[item_loc]                       
+                        del selected_os_usr[item_loc]
+                        del selected_os_pwd[item_loc]      
                     selected_ips.remove(sel_ip)
                 else:
                     response = {"ERROR": "Error: IP was not selected initially"}
@@ -1363,6 +1377,12 @@ def deselectIPs():
                             fileinput.write('{} ansible_host={} {} {}\n'.format(ip, ip, ansible_usr, ansible_pwd))
                     response = {"SUCCESS" : "Removed " + sel_ip + " from selection"}
                     print("Saved file...",flush=True)
+                elif request.args.get('inputtype') == "dc_on_off":
+                    with open(savepath,"w") as fileinput:
+                        for ipmi_ip, ipmi_pwd, os_ip, os_usr, os_pwd in zip(selected_ips, selected_pwd, selected_os_ip, selected_os_usr, selected_os_pwd):
+                            fileinput.write(f'{ipmi_ip},{ipmi_pwd},{os_ip},{os_usr},{os_pwd}\n')
+                    response = {"SUCCESS" : "Removed " + sel_ip + " from selection"}
+                    print("Saved file...",flush=True)                
                 else:
                     with open(savepath,"w") as fileinput:
                         for ip in iplist:
@@ -1720,6 +1740,26 @@ def dc_log_output():
     return render_template('dc_log_output.html',rackname=rackname,\
     data=zip(uuid, num_loops, ipmi_ip, os_ip, mac, status, log_date, ipmi_lan, ipmi_sdr, lspci, dmidecode, dmesg, power_cycle_log), rackobserverurl = rackobserverurl)
 
+@app.route('/check_if_dc_running', methods=["GET"])
+def check_if_dc_running():
+    response = {'active_dc_uid': '-1'}
+    active_cmd = check_process_by_name('power_test')
+    if active_cmd != False:
+        match = re.search(r"--uuid\s+(\S+)", active_cmd)
+        uuid = match.group(1)
+        response['active_dc_uid'] = uuid
+    response = json.dumps(response)
+    return response
+
+# used to check if process is running, and return the command
+def check_process_by_name(partil_cmd):
+    for proc in psutil.process_iter():
+        for item in proc.cmdline(): # the cmdline is a list: ['python3', 'power_test.py', '-l', '4', '--uuid', 'xxx', '-i', 'xxx', '-o', 'xxx']
+            if partil_cmd in item:
+                return ' '.join(proc.cmdline())
+    # if no process running
+    return False
+        
 @app.route('/send_dc_log')
 def send_dc_log():
     data = request.args.get('objectid')
