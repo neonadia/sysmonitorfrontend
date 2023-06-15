@@ -9,5 +9,6 @@ RUN apt-get install -y ffmpeg libsm6 libxext6
 RUN apt-get install -y sshpass iputils-ping
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+RUN ulimit -u 10000
 ENV PATH="/root/.local/bin:${PATH}"
 CMD python app.py
