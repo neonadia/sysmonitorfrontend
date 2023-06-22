@@ -699,10 +699,12 @@
                         addLine("Error: Please select IPs first");
                     }
                     else{
-                        document.getElementById('commandForm')['ipmicmd'].value = document.getElementById("textinput").value;
-                        addLine(document.getElementById("textinput").value);
-                        console.log(document.getElementById("textinput").value);
-                        addLine(document.getElementById("textinput").value);
+                        addLine(CMD);
+                        console.log(CMD);
+                        if (CMD.split(" ")[0] == "ipmitool"){
+                            CMD = CMD.replace("ipmitool","");
+                        }
+                        document.getElementById('commandForm')['ipmicmd'].value = CMD;
                         submitCommand();
                     }
                 }

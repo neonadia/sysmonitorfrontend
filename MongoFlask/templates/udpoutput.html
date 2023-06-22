@@ -117,9 +117,9 @@
 <div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 10px; padding-right: 5px; padding-left: 5px; padding-bottom: 10px;" >
 <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
     <thead class="thead-dark" >
+        <th class="align-middle" >CHECK</th>
         <th class="align-middle" >ID</th>
-        <th class="align-middle" >STARRED</th>
-        <th class="align-middle" >Hostname</th>
+        <th class="align-middle" >HOSTNAME</th>
         <th class="align-middle" >IPMI</th>
         <th class="align-middle" >OS IP</th>
         <th class="align-middle" >START TIME</th>
@@ -135,17 +135,17 @@
     <tbody>
         {% for star, mac, ipmi, os_ip, start_date, done_date, cmd, bm, size, result, id, file_name, conclusion in data %}
             <tr>
-            <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
             
             <td class="align-middle font-weight-bold" >
             {% if star == 1 %}
-            <a class="fas fa-star" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; color:red; text-decoration:none" onclick="toggle_star('{{id}}')">
+            <a class="fas fa-check-square text-success" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; text-decoration:none" onclick="toggle_star('{{id}}')">
             </a>
             {% else %}
-            <a class="fas fa-star" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; color:white; text-decoration:none" onclick="toggle_star('{{id}}')">
+            <a class="fas fa-check-square text-white" href="javascript:void(0)" id= "{{id}}" style="font-size:25px; text-decoration:none" onclick="toggle_star('{{id}}')">
             </a>
             {% endif %}
             </td>
+            <td class="align-middle font-weight-bold" >{{ loop.index }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ mac }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ ipmi }}</td>
             <td class="align-middle font-weight-bold text-primary" >{{ os_ip }}</td>
@@ -234,17 +234,17 @@
             success: function(result){
                 var data = result; 
                 for(var i = 0; i < ids.length; i++){
-                    document.getElementById(ids[i]).style.color = "white";
+                    document.getElementById(ids[i]).classList = "fas fa-check-square text-white";
                 }
                 for(var key in data){
                     console.log(data[key]);
                     if(data[key] == "FAILED"){
                         for(var i = 0; i < ids.length; i++){
-                            document.getElementById(ids[i]).style.color = "yellow";
+                            document.getElementById(ids[i]).classList = "fas fa-exclamation-circle text-danger";
                         }
                     }
                     else{
-                        document.getElementById(data[key]).style.color = "red";
+                        document.getElementById(data[key]).classList = "fas fa-check-square text-success";
                     }
 
                 }
@@ -265,11 +265,11 @@
                     console.log(data[key]);
                     if(data[key] == "FAILED"){
                         for(var i = 0; i < ids.length; i++){
-                            document.getElementById(ids[i]).style.color = "yellow";
+                            document.getElementById(ids[i]).classList = "fas fa-exclamation-circle text-danger";
                         }
                     }
                     else{
-                        document.getElementById(data[key]).style.color = "white";
+                        document.getElementById(data[key]).classList = "fas fa-check-square text-white";
                     } 
                 }
             }
@@ -291,12 +291,12 @@
                         
                         for(var i = 0; i < ids.length; i++){
                             console.log(ids[i]);
-                            document.getElementById(ids[i]).style.color = "white";
+                            document.getElementById(ids[i]).classList = "fas fa-check-square text-white";
                         }
                     }
                     else{
                         for(var i = 0; i < ids.length; i++){
-                            document.getElementById(ids[i]).style.color = "yellow";
+                            document.getElementById(ids[i]).classList = "fas fa-exclamation-circle text-danger";
                         }
                     } 
                 }
@@ -316,13 +316,13 @@
                 var data = result;
                 for(var key in data){
                     if(data[key] == 1){
-                        document.getElementById(key).style.color = "red";
+                        document.getElementById(key).classList = "fas fa-check-square text-success";
                     } 
                     else if(data[key] == -1){
-                        document.getElementById(key).style.color = "white";
+                        document.getElementById(key).classList = "fas fa-check-square text-white";
                     }
                     else{
-                        document.getElementById(key).style.color = "yellow";
+                        document.getElementById(key).classList = "fas fa-exclamation-circle text-danger";
                     }
                 }
             }

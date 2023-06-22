@@ -619,6 +619,15 @@
                 else{
                     addLine(CMD);
                     addLine("Syntax Error: " + CMD + " command not found");
+                    addLine("-----> Enter 'select all (usr) (pwd) (interpreter [OPTIONAL])' to select all IPs");
+                    addLine("-----> Enter 'unselect all' to unselect all IPs");
+                    addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
+                    addLine("-----> Enter 'show selected' to show the selected IPs");
+                    addLine("-----> Enter 'history' to display console history or history -s (phrase)");
+                    addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter 'power_test -h' to show the help message of power_test");
+                    addLine("-----> Enter 'power_test -l (num of loops) -b (timeout for boot up in mins)' to run dc on off");                         
+                    addLine("-----> Enter 'help' to display this message");
                 }
             }
             else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
