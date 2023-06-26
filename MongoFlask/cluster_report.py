@@ -7,13 +7,15 @@ from pymongo import MongoClient
 from reportlab.lib import utils
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
-from reportlab.lib.colors import PCMYKColor, HexColor, blue, red
+from reportlab.lib.colors import PCMYKColor, HexColor, blue, red, black, darkgrey, grey
 from reportlab.graphics.shapes import Drawing, Line
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.textlabels import Label
 from reportlab.platypus.flowables import HRFlowable, Image
 from benchmark_parser import clean_mac
 from get_data import find_min_max_rack
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 import os
 import pandas as pd
 import sys
@@ -810,81 +812,139 @@ class Test(object):
         """
         self.c = canvas
         centered = ParagraphStyle(name="centered", alignment=TA_CENTER)
-        
-        smclogo = "supermicro.jpg"
-        ssiclogo = "SSIC.png"
-        self.c.drawImage(ssiclogo, 20, self.height + 10, 119, 20)
-        self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
-        self.c.drawImage(ssiclogo, self.width-141, self.height-765, 119, 20)        
         #header_text = """<a name="TOP"/><strong>RACK REPORT: """ + rackname + """</strong>"""
         #p = Paragraph(header_text, centered)
         #p.wrapOn(self.c, self.width, self.height)
         #p.drawOn(self.c, *self.coord(0, 0, mm))
+
         """
-        Add the page number
+        Headers and Footers
         """
-        page_num = self.c.getPageNumber()
-        text = "%s" % page_num
-        self.c.setFillColorRGB(0,0,0)
-        self.c.setFont('Helvetica',10)
-        self.c.drawCentredString(self.width/2,self.height-760,text)
-        """
-        Add author
-        """
-        self.c.setFont('Helvetica',10)
-        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
-        self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
-        self.c.drawString(20,self.height-760,datetime_text)
+        self._addLogos()
+        self._addAuthor()
+        self._addPageNumber()
 
     #----------------------------------------------------------------------
     def myFirstPage(self, canvas, doc):
-        normal = self.styles["Normal"]
-        Title = "L12 Test Report for " + rackname
-        introduction = "Supermicro’s HPC and AI team (part of Supermicro Solution and Integration Center) is an elite team of software and hardware engineers. We generate and publish state-of-the-art benchmarks showcasing the performance of Supermicro’s wide array of Super Servers. We also work with the industry leading HPC and AI partners to generate the latest and greatest performance data."
-        bmlogo = "logos.png"
-        slogo = "ourSolutions.png"
-        smclogo = "supermicro.jpg"
-        ssiclogo = "SSIC.png"
         self.c = canvas
-        p = Paragraph(introduction, normal)
-        w, h = p.wrap(self.doc.width, self.doc.topMargin)
-        self.c.drawImage(ssiclogo, 20, self.height + 10, 119, 20)
-        self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
-        self.c.drawImage(ssiclogo, self.width-141, self.height-765, 119, 20)
-        self.c.setFont('Helvetica-Bold',16)
-        self.c.drawCentredString(self.width/2.0, self.height-10, Title)
-        #self.c.drawCentredString(self.width/2.0, self.height-25, datetime_text)
+        
         """
-        Add author
+        Title
         """
-        self.c.setFont('Helvetica',10)
-        datetime_text =  'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
-        self.c.drawString(20,self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
-        self.c.drawString(20,self.height-760,datetime_text)
-        p.drawOn(self.c, self.doc.leftMargin, self.height-75)
-        self.c.drawCentredString(self.width/2, self.height-90, "Here are some examples of the benchmarks we have conducted:")
-        self.c.drawImage(bmlogo, 75, self.height-300, 466, 200)
-        self.c.drawCentredString(self.width/2, self.height-315, "Here is a list of other solutions that we offer:")
-        self.c.drawImage(slogo, 40, self.height-520, 534, 200)
-        self.c.drawCentredString(self.width/2, self.height-545, "For more information about our services please visit:")
-        self.c.drawCentredString(self.width/2, self.height-580, "If you would like to see an in-depth view of our benchmarks please visit our blog:")
-        self.c.setFillColor(red)
-        self.c.drawCentredString(self.width/2, self.height-630, "NOTE: Both pages require company network to access")
-        self.c.setFillColor(blue)
-        self.c.setFont('Helvetica-Bold',14)
-        self.c.drawCentredString(self.width/2, self.height-560, "Supermicro Solution and Integration Center")
-        self.c.drawCentredString(self.width/2, self.height-595, "HPC & AI Benchmarks")
-        self.c.linkURL('http://solution.supermicro.com/', (165,225,445,245),relative=0)
-        self.c.linkURL('http://aihpc.supermicro.com/', (225,190,385,210),relative=0)
+        def addTitleSection(section_height):
+            Title = "L12 Solution and Validation Report" # + rackname
+            fontsize=24
+            self.c.setFont('Helvetica-Bold', fontsize)
+            self.c.setFillColor(black)
+
+            self.c.drawCentredString(self.width/2.0, section_height, rackname)
+            self.c.drawCentredString(self.width/2.0, section_height-fontsize-5, Title)
+
+            # # left align
+            # self.c.drawString(inch, section_height, rackname)
+            # self.c.setFillColor(darkgrey)
+            # self.c.drawString(inch, section_height-fontsize-5, Title)
+            # self.c.setFillColor(black)
+
         """
-        Add the page number
+        Introduction
         """
-        page_num = self.c.getPageNumber()
-        text = "%s" % page_num
-        self.c.setFillColorRGB(0,0,0)
-        self.c.setFont('Helvetica',10)
-        self.c.drawCentredString(self.width/2,self.height-760,text)
-    
+        def addIntroSection(section_height):
+            aihpclogo = "cluster_report_images/aihpc_logo.png"
+            introduction = "Supermicro’s HPC & AI team (part of Supermicro Solution and Integration Center) is an elite team of software and hardware engineers. We generate and publish state-of-the-art benchmarks showcasing the performance of Supermicro’s wide array of Super Servers. We also work with the industry leading HPC and AI partners to generate the latest and greatest performance data."
+            normal = self.styles["Normal"]
+
+            aihpc_height = section_height
+            aihpclogo_width, aihpclogo_ratio = 200, 12.7
+            aihpclogo_height = aihpclogo_width/aihpclogo_ratio
+            self.c.drawImage(aihpclogo, self.width/2-aihpclogo_width/2, aihpc_height, width=aihpclogo_width, height=aihpclogo_height, mask='auto')
+
+            p = Paragraph(introduction, normal)
+            w, h = p.wrap(self.doc.width, self.doc.topMargin)
+            p.drawOn(self.c, self.doc.leftMargin, aihpc_height-55)
+
+        """
+        Logos for benchmarks
+        """
+        def addBenchmarksSection(section_height):
+            bmlogo = "cluster_report_images/logos.png"
+            self.c.setFont('Helvetica', 10)
+
+            # benchmark logos
+            bm_height = section_height
+            self.c.drawCentredString(self.width/2, bm_height, "Here are some benchmarks we have conducted:")
+            bmlogo_width, bmlogo_ratio = 410, 2.33
+            bmlogo_height = bmlogo_width/bmlogo_ratio
+            self.c.drawImage(bmlogo, self.width/2-bmlogo_width/2, bm_height-bmlogo_height-5, width=bmlogo_width, height=bmlogo_height)
+
+        """
+        Logos for Solutions
+        """
+        def addSolutionsSection(section_height):
+            slogo = "cluster_report_images/ourSolutions.png"
+            self.c.setFont('Helvetica', 10)
+
+            # solutions logos
+            s_height = section_height # 20 points below bmlogo
+            self.c.drawCentredString(self.width/2, s_height, "Here is a list of other solutions that we offer:")
+            slogo_width, slogo_ratio = 410, 2.67
+            slogo_height = slogo_width/slogo_ratio
+            self.c.drawImage(slogo, self.width/2-slogo_width/2, s_height-slogo_height-15, width=slogo_width, height=slogo_height)
+
+        """
+        Links to sites
+        """
+        def addLinkSection(section_height):
+            self.c.setFont('Helvetica',10)
+            self.c.drawCentredString(self.width/2, section_height, "For more information about our services, please visit:")
+            self.c.drawCentredString(self.width/2, section_height-35, "For an in-depth view of our benchmarks, please visit our blog:")
+            
+            self.c.setFillColor(red)
+            self.c.drawCentredString(self.width/2, section_height-85, "NOTE: Both pages require company network to access")
+            
+            self.c.setFillColor(blue)
+            fontsize = 14
+            self.c.setFont('Helvetica-Bold', fontsize)
+
+            ssicline = section_height-15
+            self.c.drawCentredString(self.width/2, ssicline, ssicname := "Supermicro Solution and Integration Center")
+            self.c.linkURL('http://solution.supermicro.com/', (self.width/2-self.c.stringWidth(ssicname)/2, ssicline, self.width/2+self.c.stringWidth(ssicname)/2, ssicline+fontsize), relative=0)
+
+            aihpcline = section_height-50
+            self.c.drawCentredString(self.width/2, aihpcline, aihpcname := "HPC & AI Benchmarks")
+            self.c.linkURL('http://aihpc.supermicro.com/', (self.width/2-self.c.stringWidth(aihpcname)/2, aihpcline, self.width/2+self.c.stringWidth(aihpcname)/2, aihpcline+fontsize), relative=0)
+
+            self.c.setFillColor(black)
+
+        def addTitleBox(section_height, box_height):
+            leftX, rightX = inch, self.width-inch
+            lowerY, upperY = section_height, section_height + box_height
+
+            self.c.setLineWidth(1)
+            self.c.line(leftX, upperY, rightX, upperY) # top
+            self.c.line(leftX, lowerY, rightX, lowerY) # bottom
+            self.c.line(leftX, lowerY, leftX, upperY) # left
+            self.c.line(rightX, lowerY, rightX, upperY) # right
+
+
+        addTitleSection(self.height-20)
+        # addTitleBox(self.height-65, box_height=65)
+        self._addLineBreak(self.height-65, length=self.width-2*inch)
+        addIntroSection(self.height-105)
+        self._addLineBreak(self.height-175)
+        addBenchmarksSection(self.height-200)
+        self._addLineBreak(self.height-382)
+        addSolutionsSection(self.height-407)
+        self._addLineBreak(self.height-590)
+        addLinkSection(self.height-615)
+
+        """
+        Headers and Footers
+        """
+        self._addLogos()
+        self._addAuthor()
+        self._addPageNumber()
+        
         
     #----------------------------------------------------------------------
     def createLineItems(self):
@@ -905,9 +965,12 @@ class Test(object):
         issue_font = ParagraphStyle(name="normal",fontSize=10,leftIndent=0)
         issue_caption_font = ParagraphStyle(name="normal", fontSize=8, alignment=TA_CENTER)
         other_intro = ParagraphStyle(name="normal",fontSize=8,leftIndent=0)
+        cluster_subtitle_font = ParagraphStyle(name="normal",fontSize=14,leftIndent=0)
+        cluster_description_font = ParagraphStyle(name="normal",fontSize=10,leftIndent=0)
         hr_line = HRFlowable(width="100%", thickness=1, lineCap='round', color=colors.lightgrey, spaceBefore=1, spaceAfter=1, hAlign='CENTER', vAlign='BOTTOM', dash=None)
         # Looking for cluster photo
-        image_cluster = "img_cluster.jpg"
+        testing_image = "cluster_report_images/service-testing.png"
+        flow_image = "cluster_report_images/L12_Flow.jpg"
         #self.story.append(PageBreak())
         #Summary and Hardware Tables
         ## column names
@@ -993,9 +1056,11 @@ class Test(object):
         paragraph2.keepWithNext = True
         p.keepWithNext = True
         
-        #Append cluster photo
+        """
+        Cluster Showcase Page
+        """
         self.story.append(PageBreak())
-        ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster showcase during L12 testing</b></font>"""
+        ptext_schema = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Showcase during L12 Testing</b></font>"""
         paragraph_schema = Paragraph(ptext_schema, centered)
         self.story.append(paragraph_schema)
         self.story.append(spacer_tiny)
@@ -1007,8 +1072,49 @@ class Test(object):
         """.format(rackname)
         cluster_schema_intro = Paragraph(ptext_schema_intro, other_intro)
         self.story.append(cluster_schema_intro)
-        self.story.append(ConditionalSpacer(width=0, height=1*cm))
-        self.story.append(get_image(image_cluster, height=18*cm, width=18*cm))        
+        self.story.append(ConditionalSpacer(width=0, height=10))
+
+        """
+        What We Provide
+        """
+        testing_image_width, testing_image_ratio = 18*cm, 2.89
+        testing_image_height = testing_image_width/testing_image_ratio
+        self.story.append(get_image(testing_image, height=testing_image_height, width=testing_image_width))        
+        self.story.append(ConditionalSpacer(width=0, height=10))
+
+        ptext_cluster_subtitle_1 = """<font color="grey"><b>What We Provide</b></font>"""        
+        cluster_subtitle_1 = Paragraph(ptext_cluster_subtitle_1, cluster_subtitle_font)
+        self.story.append(cluster_subtitle_1)
+        self.story.append(ConditionalSpacer(width=0, height=10))
+
+        ptext_cluster_description_1 = "We provide rack/cluster wide integration testing services. Our test items were designed to ensure the overall quality and integrity of the whole rack/cluster, and achieve 100% customer satisfaction with the Supermicro products and solutions."
+        ptext_cluster_description_2 = "The Supermicro integration test aims to expose any issue within the system and network so that we can eliminate the issue and improve the availability, stability and performance of the rack/cluster."
+        # ptext_cluster_description_3 = "In addition, the test will verify the functionality of each system and the interoperability between the systems in the rack/cluster. Our test program is the key for us to deliver high-quality rack/cluster systems to our valued customers."
+        ptext_cluster_description_3 = "Our L12 test program leverages tools in AI, HPC, Big Data, Database, Virtualization/Cloud, File System, and Network, which is key for us to deliver high-quality, customizable rack/cluster solutions to our valued customers."
+        cluster_description_1 = Paragraph(ptext_cluster_description_1, cluster_description_font)   
+        cluster_description_2 = Paragraph(ptext_cluster_description_2, cluster_description_font)
+        cluster_description_3 = Paragraph(ptext_cluster_description_3, cluster_description_font)
+
+        self.story.append(cluster_description_1)
+        self.story.append(ConditionalSpacer(width=0, height=10))
+        self.story.append(cluster_description_2)
+        self.story.append(ConditionalSpacer(width=0, height=10))
+        self.story.append(cluster_description_3)
+        self.story.append(ConditionalSpacer(width=0, height=15))
+
+        """
+        Test Flow
+        """
+        ptext_cluster_subtitle_2 = """<font color="grey"><b>Test Flow</b></font>"""        
+        cluster_subtitle_2 = Paragraph(ptext_cluster_subtitle_2, cluster_subtitle_font)
+        self.story.append(cluster_subtitle_2)
+        self.story.append(ConditionalSpacer(width=0, height=10))
+
+        flow_image_width, flow_image_ratio = 18*cm, 2.14
+        flow_image_height = flow_image_width/flow_image_ratio
+        self.story.append(get_image(flow_image, height=flow_image_height, width=flow_image_width))        
+
+
         #start by appending a pagebreak to separate first page from rest of document
         self.story.append(PageBreak())
         #table1 title
@@ -1861,6 +1967,32 @@ class Test(object):
             self.story.append(spacer_conclusion)
             self.story.append(conclusion_issue2)
 
+
+    #----------------------------------------------------------------------
+
+    def _addPageNumber(self):
+        page_num = self.c.getPageNumber()
+        text = "%s" % page_num
+        self.c.setFillColorRGB(0,0,0) # black
+        self.c.setFont('Helvetica', 10)
+        self.c.drawCentredString(self.width/2, self.height-760, text)
+
+    def _addAuthor(self):
+        self.c.setFont('Helvetica', 10)
+        datetime_text = 'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
+        self.c.drawString(20, self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
+        self.c.drawString(20, self.height-760, datetime_text)
+
+    def _addLogos(self):
+        smclogo = "cluster_report_images/supermicro.jpg"
+        ssiclogo = "cluster_report_images/SSIC.png"
+        self.c.drawImage(ssiclogo, 20, self.height + 10, 119, 20)
+        self.c.drawImage(smclogo, self.width-85, self.height + 10, 62, 30)
+        self.c.drawImage(ssiclogo, self.width-141, self.height-765, 119, 20)     
+
+    def _addLineBreak(self, section_height, length=60):
+        self.c.setLineWidth(1)
+        self.c.line(self.width/2-length/2, section_height, self.width/2+length/2, section_height)
         
 
 #----------------------------------------------------------------------
