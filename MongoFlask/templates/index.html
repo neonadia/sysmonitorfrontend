@@ -49,7 +49,7 @@
             right: 100%;
             top: -7px;
         }
-        .dropright .dropdown-menu{
+        .dropright .dropdown-menu {
             width: min-content;
             height: min-content;
             text-align: center;
@@ -57,6 +57,7 @@
         }
         .dropdown-menu{
             min-width: 0rem;
+            overflow-y: auto;
         }
         .scrollable-menu {
             height: auto;
@@ -160,7 +161,7 @@
 -->
 </ul>
 </nav>
-<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 60px; padding-right: 5px; padding-left: 5px; padding-bottom: 60px; overflow-x:auto; overflow-y:hidden" >
+<div class="jumbotron bg-infor" style="margin: 0rem; padding-top: 60px; padding-right: 5px; padding-left: 5px; padding-bottom: 160px; overflow-x:auto; overflow-y:hidden" >
 <table id="indexpage" class="table table-bordered table-striped" style="width:100%">
     <thead class="thead-dark" >
         <th class="align-middle" >ID</th>
@@ -246,43 +247,88 @@
             <td class="align-middle font-weight-bold" id="{{row[0]}}datetime">{{ row[7] }}</td>
             <td style="text-align:center">
                 <div class="dropdown">
-                    {% if row[6] == "OK" %}
-                    <button class="btn btn-success btn-small btn-block font-weight-bold" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {{ row[6] }}
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
-                        <a class="dropdown-item">Everything is good, no event reported!</a> 
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>Check History</u></a>                        
-                    </div>
-                    {% elif row[6] == "WARNING" %}
-                    <button class="btn btn-warning btn-small btn-block font-weight-bold text-white" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ffa31a">{{ row[8]|length }}</span>
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
-                        {% for n in range(5) if row[8][n] %}
-                            <a class="dropdown-item">{{ row[8][n] }}</a>
-                        {% endfor %}
-                        {% if row[8]|length > 5 %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>More Events</u></a>
-                        {% else %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>Click for Details</u></a>
-                        {% endif %}
-                    </div>
+                    {% set bmc_ip = row[0] %}
+                    {% set bmc_event = row[6] %}
+                    {% set bmc_details = row[8] %}
+                    {% set bmc_crit_details = row[20] %}
+                    {% set bmc_warn_details = row[21] %}
+                    {% set bmc_ok_details = row[22] %}
+
+                    <!--
+                        bmc events button with # of events
+                    -->
+                    {% if bmc_event == "OK" %}
+                        <button class="btn btn-success btn-small btn-block font-weight-bold text-white" type="button" id="{{bmc_ip}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {% if bmc_details|length > 0 %}
+                                {{ bmc_event }} <span class="badge font-weight-bold text-white" style="background-color:#28d818">{{ bmc_details|length }}</span>
+                            {% else %}      
+                                {{ bmc_event }}     <!-- don't show count if no events -->
+                            {% endif %}
+                        </button>
+                    {% elif bmc_event == "WARNING" %}
+                        <button class="btn btn-warning btn-small btn-block font-weight-bold text-white" type="button" id="{{bmc_ip}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ bmc_event }} <span class="badge font-weight-bold text-white" style="background-color:#ffa31a">{{ bmc_details|length }}</span>
+                        </button>
                     {% else %}
-                    <button class="btn btn-small btn-danger btn-block font-weight-bold text-white" type="button" id="{{row[0]}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {{ row[6] }} <span class="badge font-weight-bold text-white" style="background-color:#ff3333" >{{ row[8]|length }}</span>
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{row[0]}}eventSubmenu">
-                        {% for n in range(5) if row[8][n] %}
-                            <a class="dropdown-item">{{ row[8][n] }}</a>
-                        {% endfor %}
-                        {% if row[8]|length > 5 %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>More Events</u></a>
+                        <button class="btn btn-small btn-danger btn-block font-weight-bold text-white" type="button" id="{{bmc_ip}}eventButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ bmc_event }} <span class="badge font-weight-bold text-white" style="background-color:#ff3333" >{{ bmc_details|length }}</span>
+                        </button>
+                    {% endif %}
+
+                    <!--
+                        bmc events dropdown menu
+                    -->
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="{{bmc_ip}}eventSubmenu">
+                        {% if bmc_details|length > 0 %}
+
+                            <div class="scrollable-menu" style="max-height: 450px" id="{{bmc_ip}}eventScrollableMenu">
+
+                            {% set max_per_section = 5 %}                       <!-- maxmum number of events to show per section -->
+
+                            <!-- if critical events, create critical section -->
+                            {% if bmc_crit_details|length > 0 %}
+                                <div class="dropdown-item" id="{{bmc_ip}}eventSubmenu-critical">
+                                    <a id="{{bmc_ip}}eventSubmenu-title-critical"><b>Critical ({{ bmc_crit_details|length }})</b></a>
+                                    {% for n in range(max_per_section) if bmc_crit_details[n] %}
+                                        <a class="dropdown-item" style="background-color:#fd9797">{{ bmc_crit_details[n] }}</a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <!-- if warning events, create warning section -->
+                            {% if bmc_warn_details|length > 0 %}
+                                <div class="dropdown-item" id="{{bmc_ip}}eventSubmenu-warning">
+                                    <a id="{{bmc_ip}}eventSubmenu-title-warning"><b>Warning ({{ bmc_warn_details|length }})</b></a>
+                                    {% for n in range(max_per_section) if bmc_warn_details[n] %}
+                                        <a class="dropdown-item" style="background-color:#faf8a0">{{ bmc_warn_details[n] }}</a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <!-- if OK events, create OK section -->
+                            {% if bmc_ok_details|length > 0 %}
+                                <div class="dropdown-item" id="{{bmc_ip}}eventSubmenu-ok">
+                                    <a id="{{bmc_ip}}eventSubmenu-title-ok"><b>OK ({{ bmc_ok_details|length }})</b></a>
+                                    {% for n in range(max_per_section) if bmc_ok_details[n] %}
+                                        <a class="dropdown-item" style="background-color:#a0faa0">{{ bmc_ok_details[n] }}</a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            </div>
+
+                            <!-- adjust text for link to all events -->
+                            {% if (bmc_crit_details|length > 5) or (bmc_warn_details|length > 5) or (bmc_ok_details|length > 5) %}
+                                <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{bmc_ip}}" id="{{bmc_ip}}event_link" target="_blank"><u>More Events</u></a>
+                            {% else %}
+                                <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{bmc_ip}}" id="{{bmc_ip}}event_link" target="_blank"><u>Click for details</u></a>
+                            {% endif %}
+                        
+                        <!-- if no events -->
                         {% else %}
-                        <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{row[0]}}" id="{{row[0]}}event_link" target="_blank"><u>Click for details</u></a>
+                            <a class="dropdown-item">Everything is good, no event reported!</a> 
+                            <a class="dropdown-item text-info text-center" href="{{ url_for('event') }}?var={{bmc_ip}}" id="{{bmc_ip}}event_link" target="_blank"><u>Check History</u></a>
                         {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </td>
             {% if "D/C" in row[9] %}
@@ -791,32 +837,78 @@
                                 case 'bmc_details':
                                     if (document.getElementById(bmc_ip+'eventSubmenu')) {
                                         var event_menu = document.getElementById(bmc_ip + 'eventSubmenu');
-                                        event_menu.innerHTML = "";
-                                        var event_list = data[bmc_ip][i];
+                                        event_menu.innerHTML = "";      // clear event dropdown menu
+
+                                        var event_list = data[bmc_ip]['bmc_details'];
+                                        var crit_list = data[bmc_ip]['bmc_crit_details'];
+                                        var warn_list = data[bmc_ip]['bmc_warn_details'];
+                                        var ok_list = data[bmc_ip]['bmc_ok_details'];
+
                                         var button_text = document.getElementById(bmc_ip + 'eventButton').innerHTML;
-                                        var event_link = frontend_url + "/event?var=" + bmc_ip
+                                        var event_link = frontend_url + "/event?var=" + bmc_ip;
                                         var inserted_more = false;
-                                        if(event_list[0] != ''){
-                                            for(var y = 0; y < event_list.length; y++){
-                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + event_list[y] + "</a>")
-                                                if(y > 5){
-                                                    inserted_more = true;
-                                                    event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>More Events</u></a>");
-                                                    break;
+                                        
+                                        var max_per_section = 5;     // maximum events per section
+
+                                        if(event_list.length > 0) {
+                                            event_menu.insertAdjacentHTML('beforeend', `<div class='scrollable-menu' style='max-height: 450px' id='${bmc_ip}eventScrollableMenu'></div>`);
+                                            var event_scrollable_menu = document.getElementById(bmc_ip + 'eventScrollableMenu');
+
+                                            // if critical events exist, add critical section
+                                            if(crit_list.length > 0){
+                                                event_scrollable_menu.insertAdjacentHTML('beforeend', `<div class='dropdown-item' id='${bmc_ip}eventSubmenu-critical'></div>`);
+                                                var event_menu_critical = document.getElementById(bmc_ip + 'eventSubmenu-critical');
+
+                                                event_menu_critical.insertAdjacentHTML('beforeend', `<a id='${bmc_ip}eventSubmenu-title-critical'><b>Critical (${crit_list.length})</b></a>`);
+                                                for(var y = 0; y < max_per_section && crit_list[y]; y++){
+                                                    event_menu_critical.insertAdjacentHTML('beforeend', `<a class='dropdown-item' style='background-color:#fd9797'>${crit_list[y]}</a>`);
+                                                }
+                                            } 
+
+                                            // if warning events exist, add warning section
+                                            if(warn_list.length > 0) {
+                                                event_scrollable_menu.insertAdjacentHTML('beforeend', `<div class='dropdown-item' id='${bmc_ip}eventSubmenu-warning'></div>`);
+                                                var event_menu_warning = document.getElementById(bmc_ip + 'eventSubmenu-warning');
+
+                                                event_menu_warning.insertAdjacentHTML('beforeend', `<a id='${bmc_ip}eventSubmenu-title-warning'><b>Warning (${warn_list.length})</b></a>`);
+                                                for(var y = 0; y < max_per_section && warn_list[y]; y++){
+                                                    event_menu_warning.insertAdjacentHTML('beforeend', `<a class='dropdown-item' style='background-color:#faf8a0'>${warn_list[y]}</a>`);
                                                 }
                                             }
-                                            if(!inserted_more && button_text != "OK"){
-                                                event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item text-info text-center' href=" + event_link + " target='_blank'><u>Click for details</u></a>");
+
+                                            // if OK events exist, add OK section
+                                            if(ok_list.length > 0) {
+                                                event_scrollable_menu.insertAdjacentHTML('beforeend', `<div class='dropdown-item' id='${bmc_ip}eventSubmenu-ok'></div>`);
+                                                var event_menu_ok = document.getElementById(bmc_ip + 'eventSubmenu-ok');
+
+                                                event_menu_ok.insertAdjacentHTML('beforeend', `<a id='${bmc_ip}eventSubmenu-title-ok'><b>OK (${ok_list.length})</b></a>`);
+                                                for(var y = 0; y < max_per_section && ok_list[y]; y++){
+                                                    event_menu_ok.insertAdjacentHTML('beforeend', `<a class='dropdown-item' style='background-color:#a0faa0'>${ok_list[y]}</a>`);
+                                                }
                                             }
+                                            
+                                            // adjust text for link to all events
+                                            if(crit_list.length > 5 || warn_list.length > 5 || ok_list.length > 5) {
+                                                event_menu.insertAdjacentHTML('beforeend',`<a class='dropdown-item text-info text-center' href=${event_link} target='_blank'><u>More Events</u></a>`);
+                                            } else{
+                                                event_menu.insertAdjacentHTML('beforeend',`<a class='dropdown-item text-info text-center' href=${event_link} target='_blank'><u>Click for details</u></a>`);
+                                            }
+                                        } else {  // if no events
+                                            event_menu.insertAdjacentHTML('beforeend', `<a class='dropdown-item'>Everything is good, no event reported!</a>`);
+                                            event_menu.insertAdjacentHTML('beforeend', `<a class='dropdown-item text-info text-center' href=${event_link} target='_blank'><u>Check History</u></a>`);
                                         }
+                                        
+                                        // update button color and badge count
                                         if(button_text == "ERROR"){
-                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ff3333'>" + event_list.length + "</span>";
-                                        }
-                                        else if(button_text == "WARNING"){
-                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = button_text + " " + "<span class='badge font-weight-bold text-white' style='background-color:#ffa31a'>" + event_list.length + "</span>";
-                                        }
-                                        else{
-                                            event_menu.insertAdjacentHTML('beforeend',"<a class='dropdown-item'>" + "Everything is good, no event reported!" + "</a>")
+                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = `${button_text} <span class='badge font-weight-bold text-white' style='background-color:#ff3333'>${ event_list.length }</span>`;
+                                        } else if(button_text == "WARNING"){
+                                            document.getElementById(bmc_ip + 'eventButton').innerHTML = `${button_text} <span class='badge font-weight-bold text-white' style='background-color:#ffa31a'>${ event_list.length }</span>`;
+                                        } else {    // "OK"
+                                            if(event_list.length > 0) {
+                                                document.getElementById(bmc_ip + 'eventButton').innerHTML = `${button_text} <span class='badge font-weight-bold text-white' style='background-color:#28d818'>${ event_list.length }</span>`;
+                                            } else { 
+                                                document.getElementById(bmc_ip + 'eventButton').innerHTML = `${button_text}`;   // don't show count if no events
+                                            }
                                         }
                                     }
                                     break;

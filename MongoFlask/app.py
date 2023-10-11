@@ -387,10 +387,20 @@ def indexHelper(bmc_ip_auth):
         details = i['Event']
         break
     details.reverse() # begin from latest
+    
     bmc_details = []
+    bmc_crit_details = []
+    bmc_warn_details = []
+    bmc_ok_details = []
     for i in range(len(details)):
         if "|||" in details[i]: #Split redfish and ipmitool log
-            cur_detail = details[i].split("|||")[1]
+            redfish_log,ipmitool_log = details[i].split("|||")
+            # if ipmitool log message is Unknown use redfish log, else use ipmitool log
+            if ipmitool_log and ipmitool_log.split("|")[3].strip().startswith('Unknown #0x'):
+                split_log = ipmitool_log.split("|")
+                cur_detail = " | ".join(split_log[0:3] + [redfish_log.split('|')[5]] + [split_log[5]])
+            else:
+                cur_detail = ipmitool_log
         elif "only redfish sel log" in details[i] or "only ipmitool sel log" in details[i]:      # remove flag lines
             continue
         else:
@@ -398,19 +408,31 @@ def indexHelper(bmc_ip_auth):
         for key in IPMIdict.keys():
             if key in cur_detail:
                 cur_detail = cur_detail.replace(key,IPMIdict[key])
+
+        # convert ID from hex to int
+        try:
+            cur_id = int(cur_detail.split('|',1)[0], 16)     
+            cur_detail = str(cur_id) + ' | ' + cur_detail.split('|',1)[1]
+        except:
+            continue
+
         bmc_details.append(cur_detail)
-    if details == [''] or bmc_details == ['']:
-        bmc_event = "OK"
-    elif any(w in " ".join(str(x) for x in details) for w in ["|||","only redfish sel log"]): # check if the redfish log exsist, if so check the severity
-        bmc_event = "WARNING"
-        for event in details:
-            if "Critical" in event.split("|")[2] or "critical" in event.split("|")[2] or "CRITICAL" in event.split("|")[2]:
-                bmc_event = "ERROR"
-                break
-    elif any(w in " ".join(str(x) for x in details) for w in err_list): # check if event contains any key from err_list
+        # split bmc details by severity
+        if bool(re.match('critical', details[i].split("|")[2].strip(), re.I)) or any(w in details[i] for w in err_list):
+            bmc_crit_details.append(cur_detail)
+        elif bool(re.match('warning', details[i].split("|")[2].strip(), re.I)):
+            bmc_warn_details.append(cur_detail)
+        else:
+            bmc_ok_details.append(cur_detail)
+
+    # set bmc_event to highest severity
+    if bmc_crit_details:
         bmc_event = "ERROR"
-    else:
+    elif bmc_warn_details:
         bmc_event = "WARNING"
+    else:
+        bmc_event = "OK"
+
     current_auth = (bmc_ip_auth[1],bmc_ip_auth[2])
     if os.environ['POWERDISP'] == "ON":
         current_state = power_state_command(ipmi=bmc_ip, auth=current_auth)
@@ -424,12 +446,12 @@ def indexHelper(bmc_ip_auth):
         cur_date = i['Datetime']
     cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages,gpu_temps = get_sensor_names(bmc_ip)
     client_index.close()
-    return [bmc_event, bmc_details, current_state, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages,gpu_temps]
+    return [bmc_event, bmc_details, current_state, cur_date, uid_state,cpu_temps,vrm_temps,dimm_temps,sys_temps,sys_fans,sys_voltages,gpu_temps,bmc_crit_details,bmc_warn_details,bmc_ok_details]
 
 @app.route('/')
 def index():
     bmc_ip, node_pos, timestamp, serialNumber, modelNumber, bmcVersion, biosVersion, bmc_event, bmc_details, bmcMacAddress, ikvm, monitorStatus, uidStatus, pwd, mac_list, \
-    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey, power_state = ([] for i in range(27))
+    os_ip, cpld_version, cpu_temps, vrm_temps, dimm_temps, sys_temps, sys_fans, sys_voltages, gpu_temps, bmc_ip_auth, licenseKey, power_state, bmc_crit_details, bmc_warn_details, bmc_ok_details = ([] for i in range(30))
     current_flag = read_flag()
     if current_flag == 0:
         monitor = "IDLE "
@@ -497,7 +519,10 @@ def index():
         sys_fans.append(i[9])
         sys_voltages.append(i[10])
         gpu_temps.append(i[11])
-    
+        bmc_crit_details.append(i[12])
+        bmc_warn_details.append(i[13])
+        bmc_ok_details.append(i[14])
+
     json_path = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + '-host.json'
     udp_msg = getMessage(json_path, mac_list)
     show_names = 'true' # default
@@ -509,7 +534,7 @@ def index():
     except Exception as e:
         printf(e)
         show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey, node_pos, power_state)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, ikvm, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey, node_pos, power_state, bmc_crit_details, bmc_warn_details, bmc_ok_details)
     else:
         no_name_count = 0
         for i in bmc_ip:
@@ -518,7 +543,7 @@ def index():
             node_names.append(df_pwd[df_pwd['ip'] == i]['name'].values[0])
         if df_pwd['name'].isnull().sum() == len(bmc_ip) or no_name_count == len(bmc_ip):
             show_names = 'false'
-        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names,node_pos, power_state)
+        data = zip(bmc_ip, bmcMacAddress, modelNumber, serialNumber, biosVersion, bmcVersion, bmc_event, timestamp, bmc_details, monitorStatus, pwd, udp_msg, os_ip, mac_list, uidStatus,cpld_version,licenseKey,node_names,node_pos, power_state, bmc_crit_details, bmc_warn_details, bmc_ok_details)
 
     cur_time = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     time_zone = os.environ['TZ']
@@ -583,6 +608,9 @@ def update_index_page():
         node = bmc_ip[node_iter]
         response[node]['bmc_event'] = i[0]
         response[node]['bmc_details'] = i[1]
+        response[node]['bmc_crit_details'] = i[12]
+        response[node]['bmc_warn_details'] = i[13]
+        response[node]['bmc_ok_details'] = i[14]
         response[node]['monitorStatus'] = monitor + " " + i[2]
         response[node]['timestamp'] = i[3]
         response[node]['udp_message'] = udp_msg[node_iter]
