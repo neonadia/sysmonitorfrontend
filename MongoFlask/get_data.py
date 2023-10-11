@@ -633,7 +633,12 @@ def find_allpowercontrols(ip_list):
     power_avg = [ 0 for x in range(len(dataset['datetime']))]
     for i in range(len(dataset['datetime'])):
         for j in range(len(dataset['PowerControl'])):
-            power_sum[i] += dataset['PowerControl'][j]['Reading'][i]
+            try: # need exception handling here for missing data
+                power_sum[i] += dataset['PowerControl'][j]['Reading'][i] 
+            except Exception:
+                traceback.print_exc()
+                print("Warning: going to use 0 for one data point of Power Control Reading when calculating the power_sum", flush=True)
+                power_sum[i] += 0
     for i in range(len(power_sum)):
         power_avg[i] = round(power_sum[i]/len(dataset['PowerControl']),1)
         power_sum[i] = round(power_sum[i]/1000,1)
