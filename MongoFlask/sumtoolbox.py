@@ -334,19 +334,7 @@ def sumRedfishAPI(inputpath, API_url):
         output[ip] = {"output":{}}
         line_num = 0
         for k in one_dict.keys():
-            #k_html = k.replace(" ","&nbsp;")
-            #val_html = str(one_dict[k]).replace(" ","&nbsp;")
-            cur_line = "'{}':'{}'".format(k, one_dict[k]) # pretty form
-            if len(cur_line) > 132: # split line into multiple lines if too long
-                chunk_size = 132
-                cur_line_split = [cur_line[i: i + chunk_size] for i in range(0, len(cur_line), chunk_size)]
-                for i, cur_line_chunk in enumerate(cur_line_split):
-                    if i == 0:
-                        output[ip]["output"][str(line_num)] = cur_line_chunk.replace(" ","&nbsp;")
-                    else:
-                        output[ip]["output"][str(line_num)] = 4* "&nbsp;" + cur_line_chunk.replace(" ","&nbsp;")
-                    line_num += 1
-            else:
-                output[ip]["output"][str(line_num)] = cur_line.replace(" ","&nbsp;")
-                line_num += 1
+            cur_line = "'{}':'{}'".format(k, json.dumps(one_dict[k],indent = 2).replace("\"","\'")) # pretty form
+            output[ip]["output"][str(line_num)] = cur_line.replace(" ","&nbsp;")
+            line_num += 1
     return output
