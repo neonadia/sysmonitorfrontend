@@ -56,8 +56,8 @@
             
           - name: Copy deb to RedHat systems
             copy:
-              src: /app/ansiblepackages/l12-metrics-1.01-1.el7.x86_64.rpm
-              dest: /root/l12-metrics-1.01-1.el7.x86_64.rpm
+              src: /app/ansiblepackages/l12-metrics-1.01-1.el8.x86_64.rpm
+              dest: /root/l12-metrics-1.01-1.el8.x86_64.rpm
             when: ansible_os_family == "RedHat"
             
           - name: Install Cluster Debian Service
@@ -68,7 +68,7 @@
 
           - name: Install Cluster RedHat Service
             yum:
-              name: /root/l12-metrics-1.01-1.el7.x86_64.rpm
+              name: /root/l12-metrics-1.01-1.el8.x86_64.rpm
               state: present
               disable_gpg_check: yes
             when: ansible_os_family == "RedHat"
