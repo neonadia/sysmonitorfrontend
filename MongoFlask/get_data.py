@@ -80,7 +80,11 @@ def fetch_hardware_details(bmc_ip,hardware):
                     for j in hardware_dict[i]["GPU"]:
                         temp_device_name = "GPU" + str(j)
                         hw_dict[temp_device_name] = {}
-                        hw_dict[temp_device_name]["GPU Id"] = hardware_dict[i]["GPU"][str(j)]["GPU Id"]
+                        try:
+                            hw_dict[temp_device_name]["GPU Id"] = hardware_dict[i]["GPU"][str(j)]["GPU Id"]
+                        except Exception as e:
+                            print("Info: GPU Id not found, using Device ID instead")
+                            hw_dict[temp_device_name]["GPU Id"] = hardware_dict[i]["GPU"][str(j)]["Device Id"]
                         hw_dict[temp_device_name]["Series"] = hardware_dict[i]["GPU"][str(j)]["Series"]
                         hw_dict[temp_device_name]["Model"] = hardware_dict[i]["GPU"][str(j)]["Model"]
                         hw_dict[temp_device_name]["PCI Bus"] = hardware_dict[i]["GPU"][str(j)]["PCI Bus"]
