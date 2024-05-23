@@ -851,7 +851,7 @@ class Test(object):
         """
         def addIntroSection(section_height):
             aihpclogo = "cluster_report_images/aihpc_logo.png"
-            introduction = "Supermicro’s HPC & AI team (part of Supermicro Solution and Integration Center) is an elite team of software and hardware engineers. We generate and publish state-of-the-art benchmarks showcasing the performance of Supermicro’s wide array of Super Servers. We also work with the industry leading HPC and AI partners to generate the latest and greatest performance data."
+            introduction = "Supermicro’s AI and HPC team (part of Supermicro Solution and Integration Center) is an elite team of software and hardware engineers. We generate and publish state-of-the-art benchmarks showcasing the performance of Supermicro’s wide array of Super Servers. We also work with the industry leading AI and HPC partners to generate the latest and greatest performance data."
             normal = self.styles["Normal"]
 
             aihpc_height = section_height
@@ -911,7 +911,7 @@ class Test(object):
             self.c.linkURL('http://solution.supermicro.com/', (self.width/2-self.c.stringWidth(ssicname)/2, ssicline, self.width/2+self.c.stringWidth(ssicname)/2, ssicline+fontsize), relative=0)
 
             aihpcline = section_height-50
-            self.c.drawCentredString(self.width/2, aihpcline, aihpcname := "HPC & AI Benchmarks")
+            self.c.drawCentredString(self.width/2, aihpcline, aihpcname := "AI and HPC Benchmarks")
             self.c.linkURL('http://aihpc.supermicro.com/', (self.width/2-self.c.stringWidth(aihpcname)/2, aihpcline, self.width/2+self.c.stringWidth(aihpcname)/2, aihpcline+fontsize), relative=0)
 
             self.c.setFillColor(black)
@@ -1980,7 +1980,7 @@ class Test(object):
     def _addAuthor(self):
         self.c.setFont('Helvetica', 10)
         datetime_text = 'Generated at: ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + os.environ['TZ'] 
-        self.c.drawString(20, self.height-750, "HPC & AI Team: ReeannZ@supermicro.com" )
+        self.c.drawString(20, self.height-750, "AI and HPC Team: ReeannZ@supermicro.com" )
         self.c.drawString(20, self.height-760, datetime_text)
 
     def _addLogos(self):
