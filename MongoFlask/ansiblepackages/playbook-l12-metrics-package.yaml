@@ -13,7 +13,7 @@
       - name: psutil==5.9.0
       - name: pymongo==4.1.1
       - name: opencv-python==4.5.5.64
-      - name: numpy
+      - name: numpy==1.26.4
 
   tasks:
           - name: Install "{{ item.name }}" on Debian

@@ -21,7 +21,7 @@ from bioscomparison import compareBiosSettings, bootOrderOutput
 import pandas as pd
 import socket
 from ipaddress import ip_address
-from sumtoolbox import makeSumExcutable, sumBiosUpdate, sumBMCUpdate, sumGetBiosSettings, sumCompBiosSettings, sumBootOrder, sumLogOutput, sumChangeBiosSettings, sumRunCustomProcess, sumRedfishAPI, sumCheckOOB
+from saatoolbox import makeSaaExcutable, saaBiosUpdate, saaBMCUpdate, saaGetBiosSettings, saaCompBiosSettings, saaBootOrder, saaLogOutput, saaChangeBiosSettings, saaRunCustomProcess, saaRedfishAPI, saaCheckOOB
 import tarfile
 from udpcontroller import getMessage, insertUdpevent, cleanIP, getMessage_dictResponse, generateCommandInput
 from glob import iglob
@@ -39,7 +39,7 @@ import cv2
 import numpy as np
 import shutil
 import re
-from session_checker import udp_session_checker, sum_session_checker, telemetry_session_checker, redfish_session_checker
+from session_checker import udp_session_checker, saa_session_checker, telemetry_session_checker, redfish_session_checker
 import psutil
 
 app = Flask(__name__)
@@ -57,7 +57,7 @@ hardware_collection = db.hw_data
 dc_collection = db.dc
 dc_gridfs = gridfs.GridFS(db, collection='dc_gridfs')
 udp_session_info = {'state': 'inactive', 'guid' : 'n/a'}
-sum_session_info = {'state': 'inactive', 'guid' : 'n/a'}
+saa_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 redfish_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 telemetry_session_info = {'state': 'inactive', 'guid' : 'n/a'}
 err_list = ['Critical','critical','AER','Error','error','Non-recoverable','non-recoverable','Uncorrectable','uncorrectable','Failure','failure','Failed','failed','Processor','processor','Security','security','thermal','Thermal','throttle','Throttle','Limited','limited'] # need more key words
@@ -188,14 +188,14 @@ def udp_sesssion_handler():
         printf("guid: " + udp_session_info['guid'])
     return 'updated session info'
 
-@app.route('/sum_session_handler',methods = ['POST']) ##### Get SUM Session information on page close
-def sum_sesssion_handler():
+@app.route('/saa_session_handler',methods = ['POST']) ##### Get SAA Session information on page close
+def saa_sesssion_handler():
     if request.method == 'POST':
-        sum_session_info['state'] = request.form['session_state']
-        sum_session_info['guid'] = request.form['session_guid']
-        printf('Updating SUM Session info to...')
-        printf("state: " + sum_session_info['state'])
-        printf("guid: " + sum_session_info['guid'])
+        saa_session_info['state'] = request.form['session_state']
+        saa_session_info['guid'] = request.form['session_guid']
+        printf('Updating SAA Session info to...')
+        printf("state: " + saa_session_info['state'])
+        printf("guid: " + saa_session_info['guid'])
     return 'updated session info'
 
 @app.route('/redfish_session_handler',methods = ['POST']) ##### Get Redfish Session information on page close
@@ -464,21 +464,28 @@ def index():
     elif current_flag == 4:
         monitor = "REBOOT DONE "
     elif current_flag == 5:
-        monitor = "SUM in use "
+        monitor = "SAA in use "
     else:
         monitor = "UNKOWN "                   
     cur = collection.find({},{"BMC_IP":1, "Datetime":1, "UUID":1, "Systems.1.SerialNumber":1, "Systems.1.Model":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, \
-    "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SUM": 1, "_id":0})#.limit(50)
+    "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SAA": 1, "_id":0, "Managers.1.EthernetInterfaces.1.MACAddress": 1})#.limit(50)
     df_pwd = pd.read_csv(os.environ['OUTPUTPATH'],names=['ip','os_ip','mac','node','pwd'])
     for i in cur:
         bmc_ip.append(i['BMC_IP'])
-        bmcMacAddress.append(i['UUID'][24:])
+        
+        try:
+            bmcMacAddress.append(i['Managers']['1']['EthernetInterfaces']['1']['MACAddress'])
+        except:
+            printf('Warning: cannot get BMC MAC from database (redfish API - Managers), reading it from UUID')
+            bmcMacAddress.append(i['UUID'][24:])
+
         if i['Systems']['1']['SerialNumber'] == 'NA' or i['Systems']['1']['SerialNumber'] == 'N/A':
             serialNumber.append(getSerialNumberFromFile(i['BMC_IP'],1)) # opt 1 means using bmc ip, get SN from csv input file when database has NA or N/A
             printf('Warning: cannot get serial number from database (redfish API), reading it from csv file')
         else:
             serialNumber.append(i['Systems']['1']['SerialNumber'])
         modelNumber.append(i['Systems']['1']['Model'])
+        
         try:
             cpld_version.append(i['CPLDVersion'])
         except:
@@ -486,15 +493,15 @@ def index():
         try:
             bmcVersion.append(i['UpdateService']['SmcFirmwareInventory']['1']['Version'])
         except:
-            bmcVersion.append("Not Avaliable")
+            bmcVersion.append("Not Available")
         try:
             biosVersion.append(i['UpdateService']['SmcFirmwareInventory']['2']['Version'])
         except:
-            biosVersion.append("Not Avaliable")
+            biosVersion.append("Not Available")
         try:
-            licenseKey.append(i['SUM']['Node Product Key Activated'])
+            licenseKey.append(i['SAA']['Node Product Key Activated'])
         except:
-            licenseKey.append("N/A") # Archive MongoDB might not contain SUM
+            licenseKey.append("N/A") # Archive MongoDB might not contain SAA
         current_auth = ("ADMIN",df_pwd[df_pwd['ip'] == i['BMC_IP']]['pwd'].values[0])
         pwd.append(current_auth[1])
         mac_list.append(df_pwd[df_pwd['ip'] == i['BMC_IP']]['mac'].values[0])
@@ -572,7 +579,7 @@ def update_index_page():
     elif current_flag == 4:
         monitor = "REBOOT DONE "
     elif current_flag == 5:
-        monitor = "SUM in use "
+        monitor = "SAA in use "
     else:
         monitor = "UNKOWN "  
     for i in cur:
@@ -655,7 +662,7 @@ def details():
     NoneType = type(None)
     if isinstance(data,NoneType) == False:        
         cur = collection.find_one({"BMC_IP": ip},{"BMC_IP":1, "UpdateService.SmcFirmwareInventory.1.Version": 1, \
-        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SUM":1, "_id":0})        
+        "UpdateService.SmcFirmwareInventory.2.Version": 1, "CPLDVersion":1, "SAA":1, "_id":0})        
         cpld_ver = cur.get('CPLDVersion','N/A')
         try:
             bmc_ver = cur['UpdateService']['SmcFirmwareInventory']['1']['Version']
@@ -667,8 +674,8 @@ def details():
             bios_ver = 'N/A'
         data['License'] = {1: {}}
         try:
-            for sum_key, sum_val in cur['SUM'].items():
-                data['License'][1][sum_key] = sum_val
+            for saa_key, saa_val in cur['SAA'].items():
+                data['License'][1][saa_key] = saa_val
         except:
             data.pop('License', None)
         data['Firmware'] = {1: {'BIOS Version': bios_ver, 'BMC Version': bmc_ver, 'CPLD Version': cpld_ver}}
@@ -1319,7 +1326,7 @@ def checkSelectedIps():
     else:
         allips = list(df_pwd['ip'])
     try:
-        if request.args.get('filetype') == "suminput": # sum input file is different
+        if request.args.get('filetype') == "saainput": # saa input file is different
             df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt",header=None,sep='\s+',names=['ip','user','pwd'])
         elif request.args.get('filetype') == "ansible":
             df_input = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
@@ -1364,7 +1371,7 @@ def deselectIPs():
                 return json.dumps(response)
         else:
             if os.path.isfile(savepath):
-                if request.args.get('inputtype') == "suminput":
+                if request.args.get('inputtype') == "saainput":
                     df_ipmi = pd.read_csv(savepath,header=None,sep='\s+',names=['ip','user','pwd'])
                 elif request.args.get('inputtype') == "ansible":
                     df_ipmi = pd.read_csv('/app/inventory.ini',header=None,sep='\s+',names=['ip','host','user','pwd'])
@@ -1416,7 +1423,7 @@ def deselectIPs():
                         for ip in iplist:
                             if request.args.get('iptype') == "ipmi" and ip in ipmi_list:
                                 current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
-                                if 'suminput' in savepath:
+                                if 'saainput' in savepath:
                                     fileinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
                                 else:
                                     fileinput.write(ip + '\n')
@@ -1462,7 +1469,7 @@ def uploadinputipsfileforall():
                     response = {"response":"Error: Input file must have a filename"}
                 else:
                     ipfile.save(savepath+ filetype +".txt.bak")
-                    if filetype == "suminput":
+                    if filetype == "saainput":
                         df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,sep='\s+',names=['ip','user','pwd'])
                     else:
                         df_input = pd.read_csv(savepath+ request.args.get('filetype') + ".txt.bak",header=None,names=['ip'])
@@ -2079,7 +2086,7 @@ def advanceinputgenerator():
             for ip in iplist:
                 if request.form['iptype'] == "ipmi" and ip in ipmi_list:
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
-                    if 'suminput' in savepath:
+                    if 'saainput' in savepath:
                         cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
                     else:
                         cleanerinput.write(ip + '\n')
@@ -2136,7 +2143,7 @@ def advanceinputgenerator_ajaxVerison():
                     cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(ip, ip, ansible_usr, ansible_pwd))
                 elif request.args.get('iptype') == "ipmi" and ip in ipmi_list:
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
-                    if 'suminput' in savepath:
+                    if 'saainput' in savepath:
                         cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
                     else:
                         cleanerinput.write(ip + '\n')
@@ -2189,7 +2196,7 @@ def advanceinputgenerator_all_ajaxVerison():
                     cleanerinput.write('{} ansible_host={} ansible_user={} ansible_ssh_pass={}\n'.format(osip, osip, ansible_usr, ansible_pwd))
                 elif request.args.get('iptype') == "ipmi":
                     current_pwd = df_pwd[df_pwd['ip'] == ip]['pwd'].values[0]
-                    if 'suminput' in savepath:
+                    if 'saainput' in savepath:
                         cleanerinput.write(ip + ' ADMIN ' + current_pwd  + '\n')
                     else:
                         cleanerinput.write(ip + '\n')
@@ -2207,48 +2214,48 @@ def advanceinputgenerator_all_ajaxVerison():
             return json.dumps(response)
 
 # this page might be deprecated        
-@app.route('/sumlogpage',methods=['GET', 'POST'])
-def sumlogpage():
-    sumlogout = sumLogOutput()
-    if sumlogout == 1:
-        return render_template("sumLog.html", sumloglines = ['SUM is not running!!'],rackname=rackname,rackobserverurl = rackobserverurl)
-    elif sumlogout == 2:
-        return render_template("sumLog.html", sumloglines = ['Multiple SUM processes are detected, no output can be displayed!!'],rackname=rackname,rackobserverurl = rackobserverurl)
-    sumloglines = ["SUM is running!!"]
-    with open(sumlogout, "r") as sumlogfile:
-        for line in sumlogfile:
+@app.route('/saalogpage',methods=['GET', 'POST'])
+def saalogpage():
+    saalogout = saaLogOutput()
+    if saalogout == 1:
+        return render_template("saaLog.html", saaloglines = ['SAA is not running!!'],rackname=rackname,rackobserverurl = rackobserverurl)
+    elif saalogout == 2:
+        return render_template("saaLog.html", saaloglines = ['Multiple SAA processes are detected, no output can be displayed!!'],rackname=rackname,rackobserverurl = rackobserverurl)
+    saaloglines = ["SAA is running!!"]
+    with open(saalogout, "r") as saalogfile:
+        for line in saalogfile:
             line = line.strip()
-            sumloglines.append(line)
-    return render_template("sumLog.html", sumloglines = sumloglines,rackname=rackname,rackobserverurl = rackobserverurl)
+            saaloglines.append(line)
+    return render_template("saaLog.html", saaloglines = saaloglines,rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/sumlogtermial')
-def sumlogtermial():
-    sumlogout = sumLogOutput()
+@app.route('/saalogtermial')
+def saalogtermial():
+    saalogout = saaLogOutput()
     response = {'status':-1,'log_lines':[]}
-    if sumlogout == 1:
+    if saalogout == 1:
         response['status'] = 1
-        response['log_lines'] = ['SUM is IDLE ...']
+        response['log_lines'] = ['SAA is IDLE ...']
         return json.dumps(response)
-    elif sumlogout == 2:
+    elif saalogout == 2:
         response['status'] = 2
-        response['log_lines'] = ['Error: multiple SUM processes are detected, no output can be displayed!!']
+        response['log_lines'] = ['Error: multiple SAA processes are detected, no output can be displayed!!']
         return json.dumps(response)
     response['status'] = 0
-    response['log_lines'] = ['SUM is RUNNING NOW, Please do not submit multiple SUM request ...']
-    with open(sumlogout, "r") as sumlogfile:
-        for line in sumlogfile:
+    response['log_lines'] = ['SAA is RUNNING NOW, Please do not submit multiple SAA request ...']
+    with open(saalogout, "r") as saalogfile:
+        for line in saalogfile:
             line = line.strip()
             response['log_lines'].append(line)
     return json.dumps(response)
 
-@app.route('/sumtoolboxupload',methods=['GET', 'POST'])
-def sumtoolboxupload():
-    if not sum_session_checker(sum_session_info): #### Check if a session is active...
-        error = ["ERROR: An instance of the SUM server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+@app.route('/saatoolboxupload',methods=['GET', 'POST'])
+def saatoolboxupload():
+    if not saa_session_checker(saa_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the SAA server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
-        df_input = pd.read_csv(savepath+"suminput.txt",sep=" ",header=None,names=['ip','user','pwd'])
+        df_input = pd.read_csv(savepath+"saainput.txt",sep=" ",header=None,names=['ip','user','pwd'])
         inputips = list(df_input['ip'])
     except:
         inputips = []
@@ -2260,16 +2267,16 @@ def sumtoolboxupload():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('sumtoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = sum_session_info['guid'])
+    return render_template('saatoolboxupload.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = saa_session_info['guid'])
 
-@app.route('/sumtoolboxterminal')
-def sumtoolboxterminal():
-    if not sum_session_checker(sum_session_info): #### Check if a session is active...
-        error = ["ERROR: An instance of the SUM server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
+@app.route('/saatoolboxterminal')
+def saatoolboxterminal():
+    if not saa_session_checker(saa_session_info): #### Check if a session is active...
+        error = ["ERROR: An instance of the SAA server controller has detected.", "Someone might be using this feature.", "Since, this page can create some conflict with multiple users, please only have one instance open."]
         return render_template('simpleresult.html',messages = error)
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     try:
-        df_input = pd.read_csv(savepath+"suminput.txt",header=None,names=['ip'])
+        df_input = pd.read_csv(savepath+"saainput.txt",header=None,names=['ip'])
         inputips = list(df_input['ip'])
     except:
         inputips = []
@@ -2281,67 +2288,67 @@ def sumtoolboxterminal():
             indicators.append(1)
         else:
             indicators.append(0)
-    return render_template('sumtoolboxterminal.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = sum_session_info['guid'])
+    return render_template('saatoolboxterminal.html',data = zip(allips, indicators),rackname=rackname,rackobserverurl = rackobserverurl,frontend_urls = get_frontend_urls(), session_auth = saa_session_info['guid'])
 
-@app.route('/sumtoolboxredfish',methods=["GET"])
-def sumtoolboxredfish(): ### Take a command for processing and distribution to servers
+@app.route('/saatoolboxredfish',methods=["GET"])
+def saatoolboxredfish(): ### Take a command for processing and distribution to servers
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     if request.method == "GET":
-        if fileEmpty(savepath+"suminput.txt"):
+        if fileEmpty(savepath+"saainput.txt"):
             response = {"ERROR": "No input IP found!"}
     api_url = request.args.get('command')
-    makeSumExcutable()
-    return sumRedfishAPI(savepath+"suminput.txt", api_url)        
+    makeSaaExcutable()
+    return saaRedfishAPI(savepath+"saainput.txt", api_url)        
 
-@app.route('/sumbioscompoutput',methods=['GET', 'POST'])
-def sumbioscompoutput():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saabioscompoutput',methods=['GET', 'POST'])
+def saabioscompoutput():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!")
-    makeSumExcutable()
-    sumGetBiosSettings(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
-    sum_bioscomp = sumCompBiosSettings()['compResult']
-    #sumRemoveFiles('htmlBios')
-    return render_template('sumbioscompoutput.html', sum_bioscomp = sum_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
+    makeSaaExcutable()
+    saaGetBiosSettings(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt")
+    saa_bioscomp = saaCompBiosSettings()['compResult']
+    #saaRemoveFiles('htmlBios')
+    return render_template('saabioscompoutput.html', saa_bioscomp = saa_bioscomp,rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/sumcheckactivation',methods=['GET', 'POST'])
-def sumcheckactivation():
+@app.route('/saacheckactivation',methods=['GET', 'POST'])
+def saacheckactivation():
     data = {}
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         data["response"] = ["ERROR: Input file must have a filename."]
         return json.dumps(data)
-    makeSumExcutable()
-    data["response"], sum_license_dict = sumCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
+    makeSaaExcutable()
+    data["response"], saa_license_dict = saaCheckOOB(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt")
     data["response"].append("SUCCESS: Activation check done.")
     # insert latest results to the database
-    for k, v in sum_license_dict.items():
-        collection.update_one({"BMC_IP" :k },{"$set": {"SUM":v}})
+    for k, v in saa_license_dict.items():
+        collection.update_one({"BMC_IP" :k },{"$set": {"SAA":v}})
     return json.dumps(data)
 
-@app.route('/sumbootorderdownload',methods=['GET', 'POST'])
-def sumbootorderdownload():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saabootorderdownload',methods=['GET', 'POST'])
+def saabootorderdownload():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!")
-    makeSumExcutable()
-    sumGetBiosSettings(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt")
-    jsonlist = sumCompBiosSettings()['allsettings']
-    iplist = sumCompBiosSettings()['iplist']
-    df_bootorder = sumBootOrder(jsonlist,iplist)
+    makeSaaExcutable()
+    saaGetBiosSettings(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt")
+    jsonlist = saaCompBiosSettings()['allsettings']
+    iplist = saaCompBiosSettings()['iplist']
+    df_bootorder = saaBootOrder(jsonlist,iplist)
     df_bootorder.to_excel(os.environ['BOOTORDERPATH'],index=None)
     while not os.path.isfile(os.environ['BOOTORDERPATH']):
         time.sleep(1)
-    #sumRemoveFiles('htmlBios')
+    #saaRemoveFiles('htmlBios')
     return send_file(os.environ['BOOTORDERPATH'], as_attachment=False, cache_timeout=0)
 
-@app.route('/sumdownloadbiossettings',methods=['GET', 'POST'])
-def sumdownloadbiossettings():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saadownloadbiossettings',methods=['GET', 'POST'])
+def saadownloadbiossettings():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
-    makeSumExcutable()
-    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
+    makeSaaExcutable()
+    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"
     outputdir = os.environ['UPLOADPATH'] + 'BiosSettings_' + os.environ['RACKNAME']
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
-    sumRunCustomProcess('./sum -l ' + inputpath + ' -c GetCurrentBiosCfg --file ' + outputdir + '/html --overwrite')
+    saaRunCustomProcess('./saa -l ' + inputpath + ' -c GetCurrentBiosCfg --file ' + outputdir + '/html --overwrite')
     tarpath = os.environ['UPLOADPATH'] + 'BiosSettings_' + os.environ['RACKNAME'] + '.tar.gz'
     '''
     if os.path.isfile(tarpath):# maybe not useful at all
@@ -2352,16 +2359,16 @@ def sumdownloadbiossettings():
         time.sleep(1)
     return send_file(tarpath, as_attachment=False, cache_timeout=0)
 
-@app.route('/sumdownloaddmi',methods=['GET', 'POST'])
-def sumdownloaddmi():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saadownloaddmi',methods=['GET', 'POST'])
+def saadownloaddmi():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
-    makeSumExcutable()
-    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
+    makeSaaExcutable()
+    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"
     outputdir = os.environ['UPLOADPATH'] + 'DMI_' + os.environ['RACKNAME']
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
-    sumRunCustomProcess('./sum -l ' + inputpath + ' -c GetDmiInfo --file ' + outputdir + '/txt --overwrite')
+    saaRunCustomProcess('./saa -l ' + inputpath + ' -c GetDmiInfo --file ' + outputdir + '/txt --overwrite')
     tarpath = os.environ['UPLOADPATH'] + 'DMI_' + os.environ['RACKNAME'] + '.tar.gz'
     '''
     if os.path.isfile(tarpath):# maybe not useful at all
@@ -2372,74 +2379,74 @@ def sumdownloaddmi():
         time.sleep(1)
     return send_file(tarpath, as_attachment=False, cache_timeout=0)
 
-@app.route('/sumbiosimageupload',methods=['GET', 'POST'])
-def sumbiosimageupload():
+@app.route('/saabiosimageupload',methods=['GET', 'POST'])
+def saabiosimageupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     data = {"response":"N/A"}
     if request.method == "POST":
         if request.files:
-            sumbiosfile = request.files["biosimage"]
-            if sumbiosfile.filename == "":
+            saabiosfile = request.files["biosimage"]
+            if saabiosfile.filename == "":
                 printf("Input file must have a filename")
                 data["response"] = "Error: Input file must have a filename."
                 return json.dumps(data)
-            sumbiosfile.save(savepath + "bios.222")
+            saabiosfile.save(savepath + "bios.222")
             data["response"] = "Info: BIOS image has been uploaded."
             return json.dumps(data)
     return json.dumps(data)
 
-@app.route('/sumbiosupdateoutput',methods=['GET', 'POST'])
-def sumbiosupdateoutput():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saabiosupdateoutput',methods=['GET', 'POST'])
+def saabiosupdateoutput():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
-    makeSumExcutable()
-    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
+    makeSaaExcutable()
+    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "bios.222"
-    sumBiosUpdate(inputpath,filepath) # should not use --reboot option
+    saaBiosUpdate(inputpath,filepath) # should not use --reboot option
     iplist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['ip'])
     pwdlist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['pwd'])
     for ip, pwd in zip(iplist,pwdlist):
         IPMI = "https://" + ip
         auth = ("ADMIN",pwd)
         systemRebootTesting(IPMI,auth,"GracefulRestart")
-    messages = ["SUM finished BIOS update for following nodes:"]
+    messages = ["SAA finished BIOS update for following nodes:"]
     messages = messages + iplist
     messages.append("System reboot has been performed.")
     return render_template('simpleresult.html', messages = messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/sumbmcimageupload',methods=['GET', 'POST'])
-def sumbmcimageupload():
+@app.route('/saabmcimageupload',methods=['GET', 'POST'])
+def saabmcimageupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     data = {"response":"N/A"}
     if request.method == "POST":
         if request.files:
-            sumbmcfile = request.files["bmcimage"]
-            if sumbmcfile.filename == "":
+            saabmcfile = request.files["bmcimage"]
+            if saabmcfile.filename == "":
                 printf("Input file must have a filename")
                 data["response"] = "Error: Input file must have a filename."
                 return json.dumps(data)
-            sumbmcfile.save(savepath + "bmc.bin")
+            saabmcfile.save(savepath + "bmc.bin")
             data["response"] = "Info: BMC image has been uploaded."
             return json.dumps(data)
     return json.dumps(data) 
 
-@app.route('/sumbmcupdateoutput',methods=['GET', 'POST'])
-def sumbmcupdateoutput():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saabmcupdateoutput',methods=['GET', 'POST'])
+def saabmcupdateoutput():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!")
-    makeSumExcutable()
-    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
+    makeSaaExcutable()
+    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "bmc.bin"
-    sumBMCUpdate(inputpath,filepath) # should not use --reboot option
+    saaBMCUpdate(inputpath,filepath) # should not use --reboot option
     iplist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['ip'])
     pwdlist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['pwd'])
-    messages = ["SUM finished BMC update for following nodes:"]
+    messages = ["SAA finished BMC update for following nodes:"]
     messages = messages + iplist
     messages.append("Redfish will be reset automatically.")
     return render_template('simpleresult.html', messages = messages,rackname=rackname,rackobserverurl = rackobserverurl)
 
-@app.route('/sumbiossettingsupload',methods=['GET', 'POST'])
-def sumbiossettingsupload():
+@app.route('/saabiossettingsupload',methods=['GET', 'POST'])
+def saabiossettingsupload():
     savepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME']
     data = {"response":"N/A"}
     if request.method == "POST":
@@ -2454,21 +2461,21 @@ def sumbiossettingsupload():
             return json.dumps(data)
     return json.dumps(data)
 
-@app.route('/sumbiossettingschangeoutput',methods=['GET', 'POST'])
-def sumbiossettingschangeoutput():
-    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"):
+@app.route('/saabiossettingschangeoutput',methods=['GET', 'POST'])
+def saabiossettingschangeoutput():
+    if fileEmpty(os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"):
         return render_template('error.html',error="No input IP found!",rackname=rackname,rackobserverurl = rackobserverurl)
-    makeSumExcutable()
-    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "suminput.txt"
+    makeSaaExcutable()
+    inputpath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "saainput.txt"
     filepath = os.environ['UPLOADPATH'] + os.environ['RACKNAME'] + "biossettings.html"
-    sumChangeBiosSettings(inputpath,filepath) # should not use --reboot option
+    saaChangeBiosSettings(inputpath,filepath) # should not use --reboot option
     iplist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['ip'])
     pwdlist = list(pd.read_csv(inputpath,sep=' ',names=['ip','user','pwd'])['pwd'])
     for ip, pwd in zip(iplist,pwdlist):
         IPMI = "https://" + ip
         auth = ("ADMIN",pwd)
         systemRebootTesting(IPMI,auth,"GracefulRestart")
-    messages = ["SUM finished BIOS settings change for following nodes:"]
+    messages = ["SAA finished BIOS settings change for following nodes:"]
     messages = messages + iplist
     messages.append("Redfish will be reset automatically.")
     messages.append("After reboot it could take 5 to 10 mins for the BIOS modification take effects.")
@@ -4144,9 +4151,9 @@ def internal_error(e):
     # note that we set the 500 status explicitly!!
     return render_template('500.html',rackname=rackname,rackobserverurl = rackobserverurl), 500
 
-@app.route('/sum_manual')
-def sum_manual():
-    return send_file("/app/templates/SUM_UserGuide_2110.pdf",cache_timeout=0)
+@app.route('/saa_manual')
+def saa_manual():
+    return send_file("/app/templates/SAA_UserGuide.pdf",cache_timeout=0)
 
 @app.route('/howToDeploy')
 def howToDeploy():
@@ -4276,7 +4283,6 @@ def downloadNodeReport_PDF(bmc_ip):
 ### Report Generation ####
 
 if __name__ == '__main__':
-    get_data.makeSmcipmiExcutable()
     rackobserverurl =  'http://' + get_ip() + ':' +  os.environ['RACKPORT']
     printf("Frontend port number is " + str(frontport))
     if os.environ['DEBUG_MODE'] == 'True':

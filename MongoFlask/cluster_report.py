@@ -30,8 +30,9 @@ from subprocess import Popen, PIPE
 
 # 0 : no issue/conclusion section
 # 1 : add issue/conclusion section
-has_issue = 1
-has_conclusion = 1
+has_issue = 0
+has_conclusion = 0
+has_l12_metrics= 1
 n=6 # number of bars for each plot
 
 class ConditionalSpacer(Spacer):
@@ -1024,8 +1025,8 @@ class Test(object):
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data),colors.lightgrey,colors.lightblue))
         ]))
 
-         
-        ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold" fontSize=8>Summary</link> 
+        if has_l12_metrics == 1:
+            ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold" fontSize=8>Summary</link> 
 / <link href="#TABLE2"color="blue" fontName="Helvetica-Bold" fontSize=8>HW Counts</link> 
 / <link href="#TABLE3"color="blue" fontName="Helvetica-Bold" fontSize=8>HW Per Node</link> 
 / <link href="#TOPO_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>PCI TOPO</link>
@@ -1033,6 +1034,12 @@ class Test(object):
 / <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Benchmark</link>
 / <link href="#PN&SN"color="blue" fontName="Helvetica-Bold" fontSize=8>PN & SN</link>
 / <link href="#License"color="blue" fontName="Helvetica-Bold" fontSize=8>License</link>"""
+        else:
+            ptext = """<link href="#TABLE1" color="blue" fontName="Helvetica-Bold" fontSize=8>Summary</link> 
+/ <link href="#TABLE2"color="blue" fontName="Helvetica-Bold" fontSize=8>HW Counts</link> 
+/ <link href="#SR_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Sensors</link> 
+/ <link href="#BM_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Benchmark</link>
+/ <link href="#License"color="blue" fontName="Helvetica-Bold" fontSize=8>License</link>"""            
 
         if has_issue == 1:
             ptext += '/ <link href="#ISSUE_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Issue</link>'
@@ -1158,8 +1165,9 @@ class Test(object):
         ptext_hn = """<a name="TABLE3"/><font color="black" size="12"><b>Detailed Hardware Information Per Node</b></font>"""
         hn_title = Paragraph(ptext_hn, centered)
         hn_title.keepWithNext = True
-        self.story.append(hn_title) 
-        self.story.append(p)
+        if has_l12_metrics == 1:
+            self.story.append(hn_title) 
+            self.story.append(p)
 
         ptext_hn_intro = """
         Table below shows the hardware information for each node:<br />
@@ -1283,7 +1291,8 @@ class Test(object):
                 ]))
                 #self.story.append(hn_title_sub) 
                 #self.story.append(ConditionalSpacer(width=1, height=2.5))     
-                self.story.append(KeepTogether([hn_title_sub,spacer_tiny,table3,spacer_tiny,hr_line,spacer_tiny]))
+                if has_l12_metrics == 1:
+                    self.story.append(KeepTogether([hn_title_sub,spacer_tiny,table3,spacer_tiny,hr_line,spacer_tiny]))
         else:
             ptext_hn_nodata = """
             Warning: No OS level Hardware Data can be found in Database:<br />
@@ -1294,7 +1303,8 @@ class Test(object):
             5. Go the UDP Controller page to reload the data.<br />
             """
             hardware_node_nodata = Paragraph(ptext_hn_nodata, warning)
-            self.story.append(hardware_node_nodata)
+            if has_l12_metrics == 1:
+                self.story.append(hardware_node_nodata)
         ########################################Node by Node Hardware summary END##################################################     
         
         ########################################Node by Node PCI Topo##################################################
@@ -1302,9 +1312,10 @@ class Test(object):
         ptext_topo = """<a name="TOPO_TITLE"/><font color="black" size="12"><b>PCIE TOPOLOGY DIAGRAM</b></font>"""
         topo_title = Paragraph(ptext_topo, centered)
         topo_title.keepWithNext = True
-        self.story.append(topo_title)
-        self.story.append(p)
-        self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
+        if has_l12_metrics == 1:
+            self.story.append(topo_title)
+            self.story.append(p)
+            self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
         
         # load topo files from database
         printf(topo_files)
@@ -1352,8 +1363,9 @@ class Test(object):
             4. Check if any nodes hw data missing.<br />
             """
             topo_nodata = Paragraph(ptext_topo_nodata, warning)
-            self.story.append(topo_nodata)
-            self.story.append(PageBreak())
+            if has_l12_metrics == 1:
+                self.story.append(topo_nodata)
+                self.story.append(PageBreak())
         for cur_sn, cur_mac in zip(serialNumber, MacAddress):
             printf('Scanning ===> ' + cur_mac)
             for key in all_topo_files.keys():
@@ -1363,7 +1375,8 @@ class Test(object):
                         ptext_topo_sub = """<a name="NH_TITLE"/><font color="black" size="12"><b>SN: """ + cur_sn + """ MAC: """ + cur_mac +"""</b></font>"""
                         topo_title_sub = Paragraph(ptext_topo_sub, bm_title)
                         topo_title_sub.keepWithNext = True
-                        self.story.append(KeepTogether([topo_title_sub,spacer_tiny,get_image(all_topo_files[key], height=21*cm, width=15.5*cm),spacer_tiny,hr_line,spacer_tiny]))
+                        if has_l12_metrics == 1:
+                            self.story.append(KeepTogether([topo_title_sub,spacer_tiny,get_image(all_topo_files[key], height=21*cm, width=15.5*cm),spacer_tiny,hr_line,spacer_tiny]))
                         #self.story.append(ConditionalSpacer(width=0, height=0.2*cm))
                         #self.story.append(get_image(all_topo_files[key], height=21*cm, width=15.5*cm))
                         #self.story.append(PageBreak())
@@ -1674,15 +1687,17 @@ class Test(object):
         ptext_hn = """<a name="PN&SN"/><font color="black" size="12"><b>Archive: all parts' Part Number (PN), Serial Number (SN) and Firmware (FW)</b></font>"""
         hn_title = Paragraph(ptext_hn, centered)
         hn_title.keepWithNext = True
-        self.story.append(hn_title) 
-        self.story.append(p)
+        if has_l12_metrics == 1:
+            self.story.append(hn_title) 
+            self.story.append(p)
 
         ptext_hn_intro = """
         Table below shows the parts' PN, SN and FW for each part of every node:<br />
         """
         sn_node_intro = Paragraph(ptext_hn_intro, other_intro)
         sn_node_intro.keepWithNext = True
-        self.story.append(sn_node_intro)
+        if has_l12_metrics == 1:
+            self.story.append(sn_node_intro)
         
         if 'hw_data' in list_of_collections and len(serialNumber) == len(MacAddress) and len(serialNumber) == len(sn_data_sort):
             for sn, mac, cur_sn in zip(serialNumber, MacAddress, sn_data_sort):
@@ -1728,7 +1743,8 @@ class Test(object):
                     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
                     ('ROWBACKGROUNDS', (0, 0), (-1, -1), create_table_colors(len(data4),colors.lightgrey,colors.lightblue))
                 ]))  
-                self.story.append(KeepTogether([sn_title_sub,spacer_tiny,table4,spacer_tiny,hr_line,spacer_tiny]))
+                if has_l12_metrics == 1:
+                    self.story.append(KeepTogether([sn_title_sub,spacer_tiny,table4,spacer_tiny,hr_line,spacer_tiny]))
         else:
             ptext_sn_nodata = """
             Warning: No OS level Hardware Data can be found in Database:<br />
@@ -1739,7 +1755,8 @@ class Test(object):
             5. Go the UDP Controller page to reload the data.<br />
             """
             hardware_node_nodata = Paragraph(ptext_sn_nodata, warning)
-            self.story.append(hardware_node_nodata)
+            if has_l12_metrics == 1:
+                self.story.append(hardware_node_nodata)
             
         ########################################Activation summary##################################################
         self.story.append(PageBreak())

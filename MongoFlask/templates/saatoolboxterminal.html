@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>saatoolboxterminal</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <link href="static/icons/css/all.css" rel="stylesheet">
+</head>
+<style>
+    ul span {
+        color: green;
+    }
+    /* CSS For the terminal window, made scroll incase output is too large */
+    div.scroll {
+        background-color: black;
+        width: 400px;
+        height: 350px;
+        max-height: 600px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        text-align: left;
+        padding: 20px;
+    }
+    .dropright .dropdown-menu{
+        width: min-content;
+        height: min-content;
+        text-align: center;
+        margin: 0%;
+    }
+    /* Background contains everything that is the console */
+    #background {
+        position: fixed;
+        background-color: black;
+        width: 800px;
+        height: 350px;
+        max-height: 600px;
+        overflow-y: auto;
+        text-align: left;
+    }
+    /* Console is a box in the background class */
+    #console {
+        margin: 0px;
+        padding: 0px;
+        width: 1500px;
+        height: 1000px;
+        overflow-x: auto;
+        overflow-y: auto;
+        text-align: left;
+    }
+    /* Input font formatting for console */
+    #textinput {
+        height: max-content;
+        margin: 0px 0px 0px 0px;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        color: rgb(255, 255, 255);
+        font-family: Monospace;
+        overflow: hidden;
+        padding: 0%;
+    }
+    /* Console output formatting */
+    pre {
+        color: rgb(255, 255, 255);
+        margin: 0px 0px 0px 0px;
+    }
+    /* More console input formatting to make input box larger */
+    input#textinput {
+        width: 950px;
+    }
+    /* CSS classes for key word highlighting in the console output */
+    .error{
+        color:red;
+    }
+    .ok{
+        color:chartreuse;
+    }
+    .info{
+        color:aqua;
+    }
+    .ip{
+        color:#FF00FF;
+        font-weight:bold;
+    }
+</style>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-primary bg-primary">
+        <ul class="navbar-nav">
+            <li class='nav-item'>
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-home"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="{{rackobserverurl}}" target="_blank">Rack Observer</a>
+                    {% for url in frontend_urls %}
+                    <a class="dropdown-item" href="{{ url[1] }}" target="_blank"> {{url[0]}} Monitor</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li class='dropdown'>
+                <button class="btn btn-primary dropdown-toggle btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-terminal"></i>
+                </button>
+                <div class="dropdown-menu dropright" aria-labelledby="dropdownMenuButton">
+                    {% for url in frontend_urls %}
+                    <a class="dropdown-item" href="{{ url[1] }}/saatoolboxterminal" target="_blank"> {{url[0]}} SAA RedfishAPI</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li class='dropdown'>
+                <a class="btn btn-primary btn-lg mr-1 text-uppercase font-weight-bold text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                SAA TOOLBOX TERMINAL
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item">Beta Version 1.0</a> 
+                </div>
+            </li>
+            <li class='dropdown' id="display_ips">
+                <a class="btn btn-primary btn-lg mr-1 text-white" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="display_ips">
+                Current Selected IPs
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" >
+                    {% for ip, indicator in data %}
+                    {% if indicator == 1 %}
+                    <a class="dropdown-item text-success font-weight-bold" id="{{ip}}">{{ ip }}</a>
+                    {% else %}
+                    <a class="dropdown-item" id="{{ip}}">{{ ip }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </li>
+            {% include "advancedfeatures_menu.html" %}  
+            {% include "documentationButton.html" %}
+        </ul>
+    </nav>
+    <div class="jumbotron bg-infor" style="margin: 0rem; padding: 25px;" >
+        <div class="row">
+            <div class="col-auto">
+                <div class ="row">
+                    <div class="col-auto">
+                        <form id = "fileform">
+                            <div class="form-group">
+                                <h3>Step 1: Config Input IPs</h3>
+                                <br>
+                                <h4>Option 1: Upload a text file of the BMC IPs</h4>
+                                <label>Choose your text file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="form-control-file form-primary" name="file" id="file">
+                                    <small id="help" class="form-text text-muted">Please upload a text file of <u>VALID</u> BMC IPs, one IP per line
+                                    </small>
+                                    <output id="list"></output>
+                                </div>
+                            </div>
+                        </form>
+                        <button id="uploadbutton" class="btn btn-primary" disabled onclick="uploadFile()">UPLOAD FILE</button>                                        
+                        <small id="help0" class="form-text text-muted">File will be uploaded into local server.</small>
+                    </div>
+                </div>
+                <br>
+                <div class ="row">
+                    <div class="col-auto">
+                        <form id = "inputform">
+                            <div class="form-group">
+                                <h4>Option 2: Input IPs</h4>
+                                <label>Input IP range</label>
+                                    <div class ="row">
+                                    <div class="col-auto">
+                                    <input class="form-control" type="text" name ="ipstart" id="ipstart" placeholder="IP starts from (Included)">
+                                    </div>
+                                    <div class="col-auto">
+                                    <input class="form-control" type="text" name ="ipend" id="ipend" placeholder="IP ends (Not included)">
+                                    </div>
+                                    <input type="hidden" id="inputtype" name="inputtype" value="saainput">
+                                    <input type="hidden" id="iptype" name="iptype" value="ipmi">
+                                    </div>
+                            </div>
+                        </form>
+                        <button id="inputbutton" class="btn btn-primary" id="uploadRange" onclick="uploadIPs()">SELECT RANGE</button>                                        
+                        <button id="inputbutton" class="btn btn-primary" id="uploadall" onclick="uploadallIPs()">SELECT ALL</button>
+                        <a id="unselectall" class="btn btn-warning text-white disabled" name="unselectall" onclick="CallIPCleaner('all')">UNSELECT ALL</a>                                          
+                        <small id="help1" class="form-text text-muted">Input file will be created with selected range or all IPs.</small>
+                    </div>
+                </div>
+                <hr>
+                <div class ="row">
+                    <div class="col-auto">
+                        <form id = "commandForm">
+                            <h3>Step 2: Enter Redfish API</h3>
+                                <div class="form-group row">                         
+                                    <label class="col-auto col-form-label text-left font-weight-bold">./saa &nbsp -i &nbsp <a class="text-success" href="javascript:void(0)">IPMI</a> &nbsp -u  ADMIN &nbsp -p &nbsp  <a class="text-success" href="javascript:void(0)">PWD</a> -c &nbsp RedfishAPI &nbsp --api &nbsp </label>
+                                    <div class="col-md-4 col-lg-4 col-sm-6">
+                                    <input type="text" class="form-control" id="redfishapi" name="redfishapi" placeholder="/redfish/v1/">
+                                    </div>
+                                </div>
+                            <small id="help1" class="form-text text-muted">Please input valid redfishapi</small>
+                            <small id="help2" class="form-text text-muted">Example: <u>/redfish/v1/</u></small>
+                            <br>
+                        </form>
+                        <button id="testrunbutton" class="btn btn-primary"  onclick="submitCommand()">SUBMIT</button>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div class ="col-auto"style="font-weight:bolder" onclick="addCursor()">
+                Console:
+                <div id = " col-auto background" style="background-color: black; color: rgb(255, 255, 255); width: auto; max-block-size: auto; padding: 10px; border: 2px solid greenyellow; font-weight: normal; margin-left: 0%;" >
+                    <div id = "console">
+                            <!-- Commandline output here -->
+                        <pre id="inputbar" >/><input id = "textinput" onkeydown = "checkInput();" style="height: min-content; width: 800px;"></pre>
+                    </div>
+                </div>
+            </div> 
+        </div> 
+    </div>
+    {% include "footer.html" %}
+    <script type="text/javascript">
+        // var terminal = document.getElementById('upload_terminal'); //// terminal window to insert output
+        var output_counter = 0; ///Increasing counter to identify the console output lines. This counter serves as a ID to highlight the keywords.
+        var cursor_lock = 0;
+        var console_history = new Array(); //// Array that contains commands executed in the console.
+        console_history.push("");
+        var position = 0; ///Console History iterator
+        var cmdLineSubmit = document.getElementById('testrunbutton'); ///Command submit button, used to enable and disable the button.
+        var inputtype = document.getElementById('inputform')['inputtype'].value; ////Inputtype here is saatool intput
+        var iptype = document.getElementById('inputform')['iptype'].value; ///iptype is ipmi
+        var unselectButton = document.getElementById('unselectall');
+        document.addEventListener('DOMContentLoaded', function() { //// On page load check system for ip file and update Current Selected IPs
+            addLine("Welcome to Linux Cluster Monitor SAA REDFISH API shell");
+            $.CheckIPMIs(inputtype,iptype);
+        }, false);
+        function submitCommand(){
+            cursor_lock = 1; // lock the cursor when command submitted
+            var command = document.getElementById('commandForm')['redfishapi'].value; /// Get command from input form.
+            $.sendCommandtoServer(command); /// Pass command as argument to ajax function
+        }
+        $.sendCommandtoServer = function(command){
+            $.ajax({
+                url: '/saatoolboxredfish', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {command: command}, // Send Command to server to execute
+                beforeSend: function(){ ///Write executing to console while sending and retrieving data.
+                    addLine("Executing command...... please wait");
+                },
+                success: function(result){ ///Server response and error handling
+                    var data = result;
+                    console.log(data); ////FOR DEBUG PURPOSESs
+                    cursor_lock = 0;
+                    addLine("Successfully got server response")
+                    for (var key in data){  ///// Parse JSON from server. If key == Error display in the below format
+                        if (key == "ERROR"){
+                            addLine("================= Error ===============================");
+                            addLine(data[key]);
+                            addLine("================ End of Error =========================");
+
+                        }
+                        else{ //// Display the response as a succesful command
+                            addLine("<span style='color:purple'>============================== Response from " + key +" ================================</span>");
+                            for(var token in data[key]){
+                                for(var output in data[key][token]){
+                                    var line = data[key][token][output];
+                                    addLine(line);
+                                }
+                            }
+                            addLine("============================== End of Response from " + key +" =========================");
+                            addLine("");
+                        }
+                    }
+                }, /// Ajax error output, rare but neccessary in certain circumstances
+                error: function (xhr, textStatus) {
+                    cursor_lock = 0;
+                    addLine("Error sending command:  " + command + " No response to Linux Cluster Monitor server");
+                    console.log(xhr);
+                }        
+            }); 
+        }
+        function uploadIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL
+            var ipstart = document.getElementById('inputform')['ipstart'].value; /// Start IP range
+            var ipend = document.getElementById('inputform')['ipend'].value;/// End IP range
+            var inputtype = document.getElementById('inputform')['inputtype'].value; /// saainput
+            var iptype = document.getElementById('inputform')['iptype'].value; ///ipmi
+            addLine("Getting IP Range from " + ipstart + " to " + ipend)
+            $.CallAdvancedInputGenerator(ipstart,ipend,inputtype,iptype);
+        }
+        $.CallAdvancedInputGenerator = function(ipstart, ipend,inputtype,iptype){ /// Upload the ip in the Range andrun CheckIPMIs to check selected IPs
+            $.ajax({
+                url: '/advanceinputgenerator_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {ipstart: ipstart, ipend: ipend, inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            cmdLineSubmit.disabled = true;
+                            addLine(data[key]);
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        $.CheckIPMIs(inputtype,iptype);
+                    }
+                }        
+            }); 
+        }
+        function uploadallIPs(){ //// Uploads 4 varibles from the input form and passes them in the URL... A variation of the above ajax function
+            var inputtype = document.getElementById('inputform')['inputtype'].value;
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            addLine("Selecting all the IPs ... ");
+            $.CallAdvancedAllGenerator(inputtype,iptype);
+        }
+        $.CallAdvancedAllGenerator = function(inputtype,iptype){
+            $.ajax({
+                url: '/advanceinputgenerator_all_ajaxVersion', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, iptype: iptype}, // Send the variables to create a IP file.
+                success: function(result){
+                    var data = result;
+                    var complete = true;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key === "ERROR"){ ///If error in key report output to terminal
+                            console.log(data[key]);
+                            complete = false;
+                            cmdLineSubmit.disabled = true;
+                            addLine("Could not generate the file...");
+                            addLine( "Server response: " + data[key] );
+                            break;
+                        }
+                        else{
+                            console.log(data[key]);
+                            addLine(data[key]);
+                        }
+                    }
+                    if(complete === true){  /// Variable complete was not switch to false, which indicates succesful execution of the Generator. Report to terminal
+                        addLine("Getting IP range from server....");
+                        $.CheckIPMIs(inputtype,iptype);
+                    }
+                }        
+            }); 
+        } 
+        function uploadFile(){
+            var file_name = document.getElementById("file").files[0]['name']; ///Upload file from the form element 'file'
+            $.UploadFiletoServer();
+        }
+        $.CheckIPMIs = function(inputtype,iptype){ /// CheckIPMI function, return all bmc_ips managed in the RACK. in the form of {bmc_ip: true/false}. True/false depending on the IP file read.
+            $.ajax({
+                url: '/checkSelectedIPs',
+                dataType : "JSON",
+                type : "GET",
+                data : {filetype: inputtype, iptype: iptype},
+                success: function(result){
+                    var data = result;
+                    var hasIPs = false;
+                    addLine("Reading file with selected IPs");
+                    // terminal.insertAdjacentHTML('beforeend'," <ul> > Reading file with selected IPs </ul>");
+                    for (var key in data){ //// Parse through json and update the IPs in the Current Selected dropdown menu in the nav bar
+                        var ip = document.getElementById(key)
+                        if (data[key] == 'true'){
+                            hasIPs = true;
+                            ip.classList.add("text-success");
+                            ip.classList.add("font-weight-bold");
+                            addLine("Selecting: " + key );
+                            cmdLineSubmit.disabled = false; /// Enable submit command button
+                            unselectButton.classList.remove("disabled");
+                        }
+                        else{
+                            ip.classList.remove("text-success");
+                            ip.classList.remove("font-weight-bold");
+                        }
+                    }
+                    if (hasIPs === false){
+                        cmdLineSubmit.disabled = true; /// Disable submit command button
+                        unselectButton.classList.add("disabled");
+                        addLine("No IPs selected from this Rack");
+                    }
+                    else{
+                        addLine("Current Selected IPs has been updated");
+                        addLine("Submit command when ready...");
+                        ips = document.getElementById("display_ips");
+                        ips.classList.add("show");
+                    }
+                }
+            });
+        }
+        $.UploadFiletoServer = function(){
+            $.ajax({
+                url: '/uploadinputipsfileforall?filetype=saainput&iptype=ipmi', 
+                type: 'POST',
+                data: new FormData($('#fileform')[0]), // The form with the file inputs. 'fileform' is the ID for the form we will submit to server for parsing
+                processData: false,
+                contentType: false                    // Using FormData, no need to process data.
+            }).done(function(){
+                console.log("Success: File sent!");
+                $.CheckIPMIs(inputtype,iptype);///Once form has been uploaded and saved by server. Run the CheckIPMI ajax function to read the file from the server and update the Current Selected IPs
+                input_field = document.getElementById('file');
+                input_field.value = '';
+                var button = document.getElementById('uploadbutton');
+                button.disabled = true;
+
+            }).fail(function(){
+                console.log("An error occurred, the file couldn't be sent!");
+                input_field = document.getElementById('file');
+                input_field.value = '';
+                var button = document.getElementById('uploadbutton');
+                button.disabled = true;
+            });
+        }  
+        function handleFileSelect(evt) {
+            var file = document.getElementById("file").files[0];
+            input_field = document.getElementById('file');
+            var button = document.getElementById('uploadbutton');
+            if (file['name'].includes(".txt")){ //// File type must be in .txt format. This avoids erroneos output when parsing data for valid ips
+                if (file) {
+                    var fileChecker = true;
+                    var reader = new FileReader();
+                    console.log(file)
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = function (evt) {
+                        const inputarray = evt.target.result.split("\n");
+                        var output = "";
+                        for(i = 0; i < inputarray.length; i++ ){
+                            if (inputarray[i].split(",").length != 1) {
+                                output = output + '<div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>';
+                                fileChecker = false
+                                continue;
+                            }
+                            var iparray = inputarray[i].split(",")[0];
+                            if (iparray.length == 0){
+                                output = output + ' <div style="color:red">EACH LINE NEEDS ONE IP ADDRESS!</div>'
+                                fileChecker = false
+                                continue;
+                            }
+                            else {          
+                                if (ValidateIPaddress(iparray)){
+                                    output = output + iparray + ' <a style="color:green">VALID IP</a><br>';
+                                }
+                                else {
+                                    output = output + iparray + ' <a style="color:red">INVALID IP</a><br>';
+                                    fileChecker = false
+                                }
+                            }   
+                        }
+                        if (fileChecker){ ////If valid ips found enable the upload button.
+                            button.disabled = false;
+                            unselectButton.classList.remove("disabled");
+                        }
+                        else{
+                            input_field.value = ''; /// If a single invalid ip, disable upload button
+                            button.disabled = true;
+                            unselectButton.classList.add("disabled");
+                        }
+                        output = "<strong>FOUND IPMI IP:<br />" + output;
+                        document.getElementById("list").innerHTML = output;
+                    }
+                    reader.onerror = function (evt) {
+                        document.getElementById("list").innerHTML = "error reading file";
+                        fileChecker = false
+                        input_field.value = '';
+                        button.disabled = true;
+                        unselectButton.classList.add("disabled");
+                    }
+                }
+            }
+            else{
+                console.log("Wrong file type, only accept .txt"); /// If file does not contain .txt through this error to user
+                output = ' <div style="color:red"> File format incompatible, please upload .txt file !</div>'
+                document.getElementById("list").innerHTML = output;
+                fileChecker = false;
+                input_field.value = '';
+                button.disabled = true;
+            }
+        }
+        ///// Add commmand to history array and update iterator.  
+        function addHistory(command){
+            console_history.pop();
+            if (console_history.length == 0){ /// If history array empty push to array
+                console_history.push(command);
+            }
+            else if(console_history[console_history.length-1] !== command){ // Check if last command in history array is the same as current command.
+                console_history.push(command);
+            }
+            console_history.push("");
+            position = console_history.length - 1; ///Position iterator and the end of list whenever a command is entered (LIFO data structure)
+        }
+        function checkInput() {
+            var event = window.event || event.which; 
+            if (event.keyCode == 13) { ///// When enter key is entered for console
+                var CMD = document.getElementById("textinput").value;
+                addHistory(CMD); /// Add command to history array.
+                //// Parse command and check for internal console command, if not send to server to process as ipmitool commmand.
+                //// INTERNAL CONSOLE COMMANDS ARE HERE!.  Modify or add commands in this area. The else statement sends command to LCM server. ///////////////////////////////
+                if (CMD.trim() === ""){ /// For no input.
+                    addLine("");
+                }                    
+                else if(CMD == "clear" ){ /// Clear function clears console output.
+                    document.getElementById("console").innerHTML = "";
+                    $.CheckIPMIs(inputtype,iptype);
+                    document.getElementById("console").insertAdjacentHTML('beforeend',"<p id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: min-content; max-width: max-content;''></p>")
+                    document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+                    PosEnd(document.getElementById('textinput'));
+                }
+                else if(CMD == "select all" || CMD == "Select all" ){
+                    addLine(document.getElementById("textinput").value);
+                    uploadallIPs(); /// Select all IPS function
+                }
+                else if(CMD ==  "help" || CMD == "Help"){
+                    addLine(document.getElementById("textinput").value);
+                    addLine("-----> Enter 'select all' to select all IPs");
+                    addLine("-----> Enter 'unselect all' to unselect all IPs");
+                    addLine("-----> Enter 'unselect (ip)' to unselect a IPs");
+                    addLine("-----> Enter 'show selected' to show the selected IPs");
+                    addLine("-----> Enter 'history' to display console history or history -s (phrase)");
+                    addLine("-----> Enter 'clear' to clear the output");
+                    addLine("-----> Enter '-h' to display ipmtool help message");
+                    addLine("-----> Enter 'help' to display this message");
+                }
+                else if(CMD == "show selected"){
+                    addLine(CMD);
+                    $.CheckIPMIs(inputtype,iptype);
+                }
+                else if(CMD.split(" ")[0] =="unselect"){
+                    addLine(CMD);
+                    let split = CMD.split(" ").filter(element => {
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if (split[1] == "all"){
+                        CallIPCleaner("all");
+                    }
+                    else{
+                        if (split.length == 2){
+                            console.log(split[1]);
+                            if(ValidateIPaddress(split[1]) == false){
+                                addLine("Enter a valid IP address... or enter 'all' to unselect all")
+                            }
+                            else{
+                                CallIPCleaner(split[1]);
+                            }
+                        }
+                        else{
+                            addLine("Please enter unselect in the form of 'unselect <ip>' or 'unselect all'");
+                        }
+                    }
+                }
+                else if(CMD.split(" ")[0] == "history"){ /// History function
+                    addLine(CMD);
+                    let history_options = CMD.split(" ").filter(element => { ///Split history command in an array in the form of [history,-s,sel,list]
+                        if(element !== ""){
+                            return true;
+                        }
+                    });
+                    if(history_options.length > 1){ ///If length of array is bigger than one, assume user is searching for a command. If not, display ALL history.
+                        if(history_options[1] == "-s"){ ///Check if second string in command is '-s' if not through error
+                            if (history_options.length == 2){ /// If user only input 'history -s' throw error to user
+                                addLine("Please provide search criteria to the console history command: history -s (your search term)");
+                            }
+                            else{
+                                var search_term = "";
+                                for(var i = 0; i < history_options.length; i++){ /// Concantenate all the string after '-s' from array ['sel','list'] = "sel list"
+                                    if (i > 1){
+                                        search_term += history_options[i] + " ";
+                                    }
+                                }
+                                addLine("======================= Console Histroy ============================");
+                                for (var i = 0; i < console_history.length; i++){
+                                    console.log(console_history[i] + " ===== " + search_term);
+                                    if (console_history[i].trim().includes(search_term.trim())){ /// Check if the string are equal and display. Trim() to delete the spaces from outside of the string, but not inbetween.
+                                        addLine(i +" "+console_history[i]);
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                            addLine("Invalid option for history commands:");
+                            addLine("History commands:");
+                            addLine("       -s         Search for phrase in console history");
+                        }
+                    }
+                    else{
+                        addLine("======================= Console Histroy ============================");
+                        for (var i = 0; i < console_history.length; i++){
+                            if(i != console_history.length - 1){
+                                addLine(i +" "+console_history[i]);
+                            }
+                        }
+                    }
+                }
+                else{
+                    if (cmdLineSubmit.disabled == true){ /// Check if IPs are selected by checking the command submit button.
+                        addLine(CMD);
+                        addLine("Error: Please select IPs first");
+                    }
+                    else{
+                        document.getElementById('commandForm')['redfishapi'].value = document.getElementById("textinput").value;
+                        addLine(document.getElementById("textinput").value);
+                        console.log(document.getElementById("textinput").value);
+                        addLine(document.getElementById("textinput").value);
+                        submitCommand();
+                    }
+                }
+            }
+            else if (event.keyCode == 27) { ///// When ESC is entered, CMD won't be excuted.
+                var CMD = document.getElementById("textinput").value;
+                if (CMD.trim() !== ""){ /// For no input.
+                    addHistory(CMD);
+                }
+                addLine(CMD);
+            }
+        }
+        ////Main console driver. This function adds your output to the console in the form of lines. This function will process your string, format it, and replace the cursor at the end of the console output for a future command.
+        ////Do not tamper unless you know what you are doing.
+        function addLine(line) {
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id="+ output_counter + ">" + "> " +  line + "</pre>" ); ///Insert string to console with a unique ID
+            var sentence = document.getElementById(output_counter); /// Acquire html element with ID
+            var text = sentence.textContent; /// Get text from html element
+            //// Format key words in the html element's text with REGEX
+            let reError = /\b(Failed|FAILED|failed|ERROR|Error|error|Invalid|INVALID|no|NO|Overflow|false|No|Not\sAvailable|Critical|CRITICAL)\b/g;
+            let reSuccess = /\b(Successfully|successfully|SUCCESSFULLY|OK|ok|Ok|oK|true|TRUE|True|Response|SUCCESS|Success|success|done|Done)\b/g;
+            let reInfo = /\b(Information|information|INFO|info)\b/g;
+            let reIP = /\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+            let reMAC = /\b(([A-Fa-f0-9]{2}[:|-]){5}[A-Fa-f0-9]{2}[,]?)\b/g;
+            let reKey = /\'[a-zA-Z0-9_._@-]*\'\:/g; /// Capture the Redfish outputs' key
+            var replaceWord = text.replace(reError,"<span class='error'>$&</span>").replace(reSuccess,"<span class='ok'>$&</span>").replace(reInfo,"<span class='info'>$&</span>");
+            var replaceWord = replaceWord.replace(reIP,"<span class='ip'>$&</span>").replace(reMAC,"<span class='ip'>$&</span>")
+            var replaceWord = replaceWord.replace(reKey,"<span class='text-primary'>$&</span>")
+            sentence.innerHTML = replaceWord; /// Replace string in html element
+            output_counter ++; ///Increase unique code identifier by one for next console output. This is a global variable.
+            document.getElementById("textinput").value = ""; /// Set your console input to nothing
+            document.getElementById("inputbar").remove(); //Remove the input bar
+            document.getElementById("console").insertAdjacentHTML('beforeend',"<pre id='inputbar'>/><input id = 'textinput' onkeydown = 'checkInput();'' style='height: width: 800px;''></pre>") ///Place at the end of html element console.
+            document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight; ///Make console scroll to the where you input is visible automatically
+            PosEnd(document.getElementById('textinput'));///Position cursor on the input bar.
+        }  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        document.getElementById('file').addEventListener('change', handleFileSelect, false);
+        function ValidateIPaddress(ipaddress) { ////Validate IP address format
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\s?$/.test(ipaddress))
+            {
+                return (true);
+            }
+            return (false);
+        }
+        ///Function to move cursor to input bar in console.
+        function PosEnd(end) {
+            var len = end.value.length;
+            // Mostly for Web Browsers
+            if (document.getSelection().toString().length == 0 && cursor_lock == 0){ // if nothing selected and nothing running
+                end.focus();
+            }
+            else if (end.createTextRange) {
+                var t = end.createTextRange();
+                t.collapse(true);
+                t.moveEnd('character', len);
+                t.moveStart('character', len);
+                t.select();
+            }
+        }
+        /// Clear selected IPs function. Takes a single IP or "all" to unselect all.
+        function CallIPCleaner(ip){
+            var iptype = document.getElementById('inputform')['iptype'].value;
+            $.clearIPs(inputtype,ip,iptype);
+        }
+        $.clearIPs = function(inputtype,ip,iptype){//// Clear IP ajax function to send command and variables to server for processing
+            $.ajax({
+                url: '/deselectIP', 
+                type: 'GET',
+                dataType: "JSON",
+                data: {inputtype: inputtype, ip: ip, iptype: iptype},
+                beforeSend: function(){ 
+                    addLine("Modifying Selection...")
+                },
+                success: function(result){
+                    var data = result;
+                    for (var key in data){ /// Function return a data in JSON, {SUCCESS: Success Message} or {ERROR:Error message}
+                        if (key == "SUCCESS"){
+                            addLine(data[key]);
+                            $.CheckIPMIs(inputtype,iptype);
+                        }
+                        else{
+                            addLine(data[key]);
+                        }
+                    }
+                }        
+            }); 
+        }
+        function addCursor(){
+            PosEnd(document.getElementById('textinput'));
+        }
+        document.addEventListener('keydown', function(e) { ///// UP and DOWN arrow key listeners to scroll through command history
+            switch (e.keyCode) {/// Switch statment to process UP AND DOWN. Update iterator according and change the input bar text.
+                case 38:///key code 38 is UP arrow
+                    if (console_history.length !== 0 && position == 0){ 
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 0){
+                        console.log("No history");
+                    }
+                    else{
+                        if(position == console_history.length - 1){
+                            position--;
+                        }
+                        document.getElementById("textinput").value = console_history[position];
+                        position--;
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+                case 40:///key code 40 is DOWN arrow key
+                    console.log("Down");
+                    if (console_history.length-1 !== position && console_history.length !== 0){
+                        position++;
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else if(console_history.length == 1){
+                        document.getElementById("textinput").value = console_history[position];
+                    }
+                    else{
+                        console.log("No history");
+                    }
+                    PosEnd(document.getElementById('textinput'));
+                    break;
+            }
+        });
+        ////// Session agent for communicating with the LCM server to send session states ////
+        var session_auth = "{{ session_auth }}";
+        window.addEventListener('beforeunload', function (e) {
+            var agentForm = new FormData();
+            var state = 'inactive'
+            agentForm.append("session_state",state)
+            agentForm.append("session_guid",session_auth)
+            navigator.sendBeacon("/saa_session_handler", agentForm);
+        });
+//        var t = '';
+//        function gText(e) {
+//            t = (document.all) ? document.selection.createRange().text : document.getSelection();
+//            navigator.clipboard.writeText(t);
+//        }
+//        document.onmouseup = gText;
+//        if (!document.all) document.captureEvents(Event.MOUSEUP);
+    </script>
+</body>
+</html>

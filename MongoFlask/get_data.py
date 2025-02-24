@@ -390,29 +390,6 @@ def find_ikvm(bmc_ip):
     connect.close()
     return ikvm_addr
 
-def makeSmcipmiExcutable():
-    process = Popen('find SMCIPMITOOL -type f -iname "*" -exec chmod +x {} \;', shell=True, stdout=PIPE, stderr=PIPE)
-    process.communicate()
-    print("SMCIPMITool is excutable now", flush=True)
-    return(0)
-
-
-def get_Firmware(bmc_ip,user,pwd): #Returns a list of firmware version. You must parse through the return list for the desired value. Will return a boolean if no output
-    r = Popen('./SMCIPMITOOL/SMCIPMITool ' + bmc_ip + ' ' + user + ' ' + pwd + ' ipmi oem summary',shell = 1, stdout = PIPE, stderr = PIPE)
-    try:
-        stdout,stderr = r.communicate(timeout=3)
-        data = stdout.decode()
-        err = stderr.decode()
-        if err != '':
-            print(err,flush=True)
-            return True
-        else:
-            data = data.split('\n')
-            return data
-    except Exception as e:
-        print(e,flush=True)
-        return True
-
 def find_powercontrol(bmc_ip):
     connect = pymongo.MongoClient('localhost', mongoport)
     db = connect['redfish']
@@ -552,7 +529,13 @@ def find_powersupplies(bmc_ip):
 
     # power supplies
     for i in range(len(data_entry[0]['PowerSupplies'])):
-        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 'InputReading': [], 'InputPowerReading': [],  'OutputPowerReading': [], 'OutputPowerReadingSMCIPMI': [], 'InputPowerReadingSMCIPMI': []})
+        dataset['PowerSupplies'].append({'Name': data_entry[0]['PowerSupplies'][str(i + 1)]['Name'], 
+                                         'InputReading': [], 
+                                         'InputPowerReading': [],  
+                                         'OutputPowerReading': [], 
+                                         'OutputPowerReadingSAA': [], 
+                                         'InputPowerReadingSAA': []
+                                         })
 
     # get dataset
     for x in data_entry:
@@ -563,9 +546,9 @@ def find_powersupplies(bmc_ip):
             except:
                 dataset['PowerSupplies'][i]['InputReading'].append(0)
             try:
-                dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'].append(x['PowerSupplies'][str(i+1)]['OutputPower']) # using SMCIPMITOOL api
+                dataset['PowerSupplies'][i]['OutputPowerReadingSAA'].append(x['PowerSupplies'][str(i+1)]['OutputPower']) # using SAA api
             except:
-                dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'].append(0)
+                dataset['PowerSupplies'][i]['OutputPowerReadingSAA'].append(0)
             try:
                 if 'LastPowerOutputWatts' in x['PowerSupplies'][str(i+1)]:
                     dataset['PowerSupplies'][i]['OutputPowerReading'].append(x['PowerSupplies'][str(i+1)]['LastPowerOutputWatts'])
@@ -578,9 +561,9 @@ def find_powersupplies(bmc_ip):
             except:
                 dataset['PowerSupplies'][i]['InputPowerReading'].append(0)
             try:
-                dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'].append(x['PowerSupplies'][str(i+1)]['InputPower'])
+                dataset['PowerSupplies'][i]['InputPowerReadingSAA'].append(x['PowerSupplies'][str(i+1)]['InputPower'])
             except:
-                dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'].append(0)
+                dataset['PowerSupplies'][i]['InputPowerReadingSAA'].append(0)
     connect.close()
 
     return dataset    

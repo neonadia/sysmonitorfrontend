@@ -21,21 +21,21 @@ def udp_session_checker(udp_session_info):
         printf("guid: " + udp_session_info['guid'])
         return True
 
-def sum_session_checker(sum_session_info):
+def saa_session_checker(saa_session_info):
     time.sleep(0.100) ##### Fixes timing issue between page close and page reload
-    if sum_session_info['state'] == 'active':
-        printf("Failed to create new sum_server session")
-        printf("Current SUM Session info is:")
-        printf("state: " + sum_session_info['state'])
-        printf("guid: " + sum_session_info['guid'])
+    if saa_session_info['state'] == 'active':
+        printf("Failed to create new saa_server session")
+        printf("Current SAA Session info is:")
+        printf("state: " + saa_session_info['state'])
+        printf("guid: " + saa_session_info['guid'])
         return False
     else:
         url_saf = secrets.token_urlsafe(8)
-        sum_session_info['state'] = 'active'
-        sum_session_info['guid'] = url_saf
-        printf("Creating new sum_server session")
-        printf("state: " + sum_session_info['state'])
-        printf("guid: " + sum_session_info['guid'])
+        saa_session_info['state'] = 'active'
+        saa_session_info['guid'] = url_saf
+        printf("Creating new saa_server session")
+        printf("state: " + saa_session_info['state'])
+        printf("guid: " + saa_session_info['guid'])
         return True
 
 def telemetry_session_checker(telemetry_session_info):

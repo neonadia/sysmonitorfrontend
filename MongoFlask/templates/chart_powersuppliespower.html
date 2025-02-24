@@ -105,10 +105,10 @@
             colorName = colorNames[config_power_supplies.data.datasets.length % colorNames.length];
             newColor = window.chartColors[colorName];
             newDataset = {
-                    label: dataset['PowerSupplies'][i]['Name'] + ' Input SMCIPMITOOL',
+                    label: dataset['PowerSupplies'][i]['Name'] + ' Input SAA',
                     backgroundColor: newColor,
                     borderColor: newColor,
-                    data: dataset['PowerSupplies'][i]['InputPowerReadingSMCIPMI'],
+                    data: dataset['PowerSupplies'][i]['InputPowerReadingSAA'],
                     fill: false
                 };
             config_power_supplies.data.datasets.push(newDataset);
@@ -120,10 +120,10 @@
             colorName = colorNames[config_power_supplies.data.datasets.length % colorNames.length];
             newColor = window.chartColors[colorName];
             newDataset = {
-                    label: dataset['PowerSupplies'][i]['Name'] + ' Output SMCIPMITOOl',
+                    label: dataset['PowerSupplies'][i]['Name'] + ' Output SAA',
                     backgroundColor: newColor,
                     borderColor: newColor,
-                    data: dataset['PowerSupplies'][i]['OutputPowerReadingSMCIPMI'],
+                    data: dataset['PowerSupplies'][i]['OutputPowerReadingSAA'],
                     fill: false
                 };
             config_power_supplies.data.datasets.push(newDataset);
@@ -222,8 +222,8 @@
                 for (i=range[0]; i <= range[1]; i=i+step) {
                     n_data_1.push(dataset['PowerSupplies'][j]['InputPowerReading'][i]);
                     n_data_2.push(dataset['PowerSupplies'][j]['OutputPowerReading'][i]);
-                    n_data_3.push(dataset['PowerSupplies'][j]['InputPowerReadingSMCIPMI'][i]);
-                    n_data_4.push(dataset['PowerSupplies'][j]['OutputPowerReadingSMCIPMI'][i]);
+                    n_data_3.push(dataset['PowerSupplies'][j]['InputPowerReadingSAA'][i]);
+                    n_data_4.push(dataset['PowerSupplies'][j]['OutputPowerReadingSAA'][i]);
                 }
                 config_power_supplies.data.datasets[j].data = n_data_1; // each typy of power reading contains readings from multiple PSUs
                 config_power_supplies.data.datasets[j + dataset['PowerSupplies'].length].data = n_data_2;
