@@ -32,6 +32,7 @@ from subprocess import Popen, PIPE
 # 1 : add issue/conclusion section
 has_issue = 0
 has_conclusion = 0
+has_notes = 0
 has_l12_metrics= 1
 n=6 # number of bars for each plot
 
@@ -175,7 +176,7 @@ benchmark_data = []
 benchmark_unit = []
 result_name = []
 benchmark_name = {}
-sum_info = []
+saa_info = []
 
 for data in list(collection2.find({})):
     if data['star'] != 1:
@@ -245,7 +246,10 @@ for i in collection.find({}):
     except:
         timestamp.append('N/A')
     try:
-        bmcMacAddress.append(i['UUID'][24:])
+        try:
+            bmcMacAddress.append(i['Managers']['1']['EthernetInterfaces']['1']['MACAddress'])
+        except:
+            bmcMacAddress.append(i['UUID'][24:])
     except:
         bmcMacAddress.append('N/A')
     try:
@@ -265,9 +269,9 @@ for i in collection.find({}):
     except:
         biosVersion.append('N/A')
     try:
-        sum_info.append(i['SUM'])
+        saa_info.append(i['SAA'])
     except:
-        sum_info.append('N/A')
+        saa_info.append('N/A')
     try:
         CPLDVersion.append(i['CPLDVersion'])
     except:
@@ -1045,6 +1049,8 @@ class Test(object):
             ptext += '/ <link href="#ISSUE_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Issue</link>'
         if has_conclusion == 1:
             ptext += '/ <link href="#CONCLUSION_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Remarks</link>'
+        if has_notes == 1:
+            ptext += '/ <link href="#NOTES_TITLE"color="blue" fontName="Helvetica-Bold" fontSize=8>Notes</link>'
         
         ptext2 = """<a name="TABLE2"/><font color="black" size="12"><b>Hardware Counts and Models """ + rackname + """</b></font>"""
         ptext1 = """<a name="TABLE1"/><font color="black" size="12"><b>Cluster Summary for """ + rackname + """</b></font>"""
@@ -1766,17 +1772,17 @@ class Test(object):
         self.story.append(oob_title) 
         self.story.append(p)
 
-        if 'N/A' not in sum_info and len(sum_info) == len(MacAddress) and len(serialNumber) == len(sum_info):
+        if 'N/A' not in saa_info and len(saa_info) == len(MacAddress) and len(serialNumber) == len(saa_info):
             ## Create header with column names
             d5 = []
             oob_columns = ["Serial Number", "MAC"]
-            oob_columns += list(sum_info[0].keys())
+            oob_columns += list(saa_info[0].keys())
             for text in oob_columns:
                 ptext = f"<font size={font_size-3}><b>{text}</b></font>"
                 p5 = Paragraph(ptext, centered)
                 d5.append(p5)
             data5 = [d5]
-            for cur_sum, mac, sn in zip(sum_info, MacAddress, serialNumber):
+            for cur_sum, mac, sn in zip(saa_info, MacAddress, serialNumber):
                 print(cur_sum)
                 p5_cur = []
                 p5_cur.append(Paragraph(f"<font size={font_size-2}>{sn}</font>", centered))
@@ -1795,8 +1801,8 @@ class Test(object):
             self.story.append(KeepTogether([spacer_tiny,table5]))
         else:
             ptext_OOB_nodata = """
-            Warning: No SUM info can be found in Database:<br />
-            1. Please verify if SUM info has been inserted to the Database.<br />
+            Warning: No SAA info can be found in Database:<br />
+            1. Please verify if SAA info has been inserted to the Database.<br />
             2. Try rerun the L12-CM to see if it is working.<br />
             """
             OOB_nodata = Paragraph(ptext_OOB_nodata, warning)
@@ -1983,6 +1989,31 @@ class Test(object):
             self.story.append(conclusion_issue)
             self.story.append(spacer_conclusion)
             self.story.append(conclusion_issue2)
+        
+        if has_notes == 1:
+            #notes section
+            self.story.append(PageBreak())
+            ptext_notes_header = f"""<a name="NOTES_TITLE"/><font color="black" size="12"><b>L11 Testing Notes for {rackname}</b></font>"""
+            notes_title = Paragraph(ptext_notes_header, centered)
+
+            ptext_notes_bullets = """
+            <font color="black" size="11"><b>Notes</b></font><br />
+            <br />
+              &#x2022; ADD NOTE HERE.<br />
+              &#x2022; ADD NOTE HERE.<br/>
+            <br />
+            """
+
+            formatted_notes = Paragraph(ptext_notes_bullets, issue_font)
+
+            self.story.append(notes_title)
+            self.story.append(spacer_conclusion)
+            self.story.append(p)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
+            self.story.append(spacer_conclusion)
+            self.story.append(formatted_notes)
 
 
     #----------------------------------------------------------------------
